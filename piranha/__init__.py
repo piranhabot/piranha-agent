@@ -21,7 +21,6 @@ from piranha_core import (
 
 from piranha.agent import Agent
 
-# New features
 from piranha.async_agent import AgentGroup, AsyncAgent
 from piranha.claude_skills import get_all_claude_skills, register_claude_skills
 from piranha.collaboration import (
