@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from piranha.async_agent import AsyncAgent, AgentGroup
 from piranha.skill import Skill, skill
+from piranha.llm_provider import LLMResponse
 
 
 class TestAsyncAgent:
@@ -75,17 +76,20 @@ class TestAsyncAgent:
     async def test_chat_basic(self):
         """Test basic chat functionality."""
         agent = AsyncAgent(name="test-agent", model="ollama/llama3:latest")
+
+        # Create a proper async mock response
+        mock_response = LLMResponse(
+            content="Hello! How can I help you?",
+            model="ollama/llama3:latest",
+            prompt_tokens=10,
+            completion_tokens=20,
+            cost_usd=0.001,
+            finish_reason="stop",
+        )
         
         with patch.object(agent._llm, 'chat_async', new_callable=AsyncMock) as mock_chat:
-            mock_chat.return_value = MagicMock(
-                content="Hello! How can I help you?",
-                model="ollama/llama3:latest",
-                prompt_tokens=10,
-                completion_tokens=20,
-                cost_usd=0.001,
-                finish_reason="stop",
-            )
-            
+            mock_chat.return_value = mock_response
+
             response = await agent.chat("Hello")
             
             assert response == "Hello! How can I help you?"
@@ -218,16 +222,16 @@ class TestAsyncAgent:
     async def test_multiple_chat_turns(self):
         """Test multiple chat turns maintain context."""
         agent = AsyncAgent(name="test-agent", model="ollama/llama3:latest")
-        
+
         responses = [
             "First response",
             "Second response",
             "Third response",
         ]
-        
+
         with patch.object(agent._llm, 'chat_async', new_callable=AsyncMock) as mock_chat:
             for i, expected_response in enumerate(responses):
-                mock_chat.return_value = MagicMock(
+                mock_chat.return_value = LLMResponse(
                     content=expected_response,
                     model="ollama/llama3:latest",
                     prompt_tokens=10 * (i + 1),
@@ -235,10 +239,10 @@ class TestAsyncAgent:
                     cost_usd=0.001,
                     finish_reason="stop",
                 )
-                
+
                 response = await agent.chat(f"Message {i+1}")
                 assert response == expected_response
-        
+
         # History should have all turns
         history = agent.get_history()
         assert len(history) == len(responses) * 2  # user + assistant for each
