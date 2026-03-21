@@ -1,13 +1,11 @@
 """Piranha Agent - Next-generation autonomous agent framework."""
 
 from piranha_core import (
-    # Phase 6
     AgentOrchestrator,
     DistributedAgent,
     DynamicSkillCompiler,
     EventStore,
     GuardrailEngine,
-    # Phase 5
     PostgresEventStore,
     SemanticCache,
     SkillRegistry,
@@ -86,10 +84,10 @@ __all__ = [
     "create_provider",
     # Memory
     "ContextManager",
-    "EmbeddingModel",
     "Memory",
     "MemoryManager",
     # Embeddings
+    "EmbeddingModel",
     "get_embedding_model",
     "list_supported_providers",
     # Real-Time Monitoring
