@@ -335,7 +335,7 @@ function StatCard({ icon: Icon, title, value, color }: {
   icon: LucideIcon;
   title: string;
   value: number | string;
-  color: string;
+  color: 'blue' | 'green' | 'red' | 'yellow';
 }) {
   const colorClasses = {
     blue: 'bg-blue-500/20 text-blue-400',
