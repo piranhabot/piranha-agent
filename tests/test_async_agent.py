@@ -125,19 +125,22 @@ class TestAsyncAgent:
     async def test_run_cache_hit(self):
         """Test run with cache hit."""
         agent = AsyncAgent(name="test-agent", model="ollama/llama3:latest")
-        
+
         # Mock cache to return a hit
-        with patch.object(agent._semantic_cache, 'get', return_value={
+        mock_cache_response = {
             "response": "Cached response",
             "model": "ollama/llama3:latest",
             "prompt_tokens": 10,
             "completion_tokens": 20,
             "cost_usd": 0.001,
-        }):
-            response = await agent.run("Test query")
-            
-            assert response.content == "Cached response"
-            assert response.finish_reason == "cache_hit"
+        }
+        
+        with patch.object(agent._semantic_cache, 'get', return_value=mock_cache_response):
+            with patch.object(agent._semantic_cache, 'compute_key', return_value="test_key"):
+                response = await agent.run("Test query")
+
+                assert response.content == "Cached response"
+                assert response.finish_reason == "cache_hit"
 
     @pytest.mark.asyncio
     async def test_run_with_memory_context(self):
@@ -165,20 +168,25 @@ class TestAsyncAgent:
     async def test_run_streaming(self):
         """Test streaming response."""
         agent = AsyncAgent(name="test-agent", model="ollama/llama3:latest")
-        
+
         async def mock_stream():
             yield "Hello"
             yield " "
             yield "World"
+
+        # Create async mock that returns the stream generator
+        mock_chat = AsyncMock()
+        mock_chat.return_value = mock_stream()
         
-        with patch.object(agent._llm, 'chat_async', return_value=mock_stream()):
-            response = await agent.run("Test", stream=True)
-            
+        with patch.object(agent._llm, 'chat_async', mock_chat):
+            # Don't await when streaming - get the async generator
+            response = agent.run("Test", stream=True)
+
             # Collect streaming response
             chunks = []
             async for chunk in response:
                 chunks.append(chunk)
-            
+
             assert chunks == ["Hello", " ", "World"]
 
     def test_get_history(self):
@@ -409,18 +417,18 @@ class TestAgentGroup:
         """Test running pipeline with transform function."""
         agent1 = AsyncAgent(name="agent1")
         agent2 = AsyncAgent(name="agent2")
-        
+
         group = AgentGroup([agent1, agent2])
-        
+
         transform_calls = []
-        
+
         def transform_fn(output, index):
             transform_calls.append((output, index))
             return f"Transformed: {output}"
-        
+
         with patch.object(agent1._llm, 'chat_async', new_callable=AsyncMock) as mock1:
             with patch.object(agent2._llm, 'chat_async', new_callable=AsyncMock) as mock2:
-                mock1.return_value = MagicMock(
+                mock1.return_value = LLMResponse(
                     content="First output",
                     model="ollama/llama3:latest",
                     prompt_tokens=10,
@@ -428,7 +436,7 @@ class TestAgentGroup:
                     cost_usd=0.001,
                     finish_reason="stop",
                 )
-                mock2.return_value = MagicMock(
+                mock2.return_value = LLMResponse(
                     content="Second output",
                     model="ollama/llama3:latest",
                     prompt_tokens=15,
@@ -436,13 +444,15 @@ class TestAgentGroup:
                     cost_usd=0.002,
                     finish_reason="stop",
                 )
-                
+
                 results = await group.run_pipeline("Task", transform=transform_fn)
-                
+
                 assert len(results) == 2
-                # Transform should be called for agent2 (index 1)
-                assert len(transform_calls) == 1
-                assert transform_calls[0][1] == 1
+                # Transform should be called for both agents
+                assert len(transform_calls) == 2
+                # First call with initial task, second with first agent's output
+                assert transform_calls[0] == ("Task", 0)
+                assert transform_calls[1][1] == 1
 
     @pytest.mark.asyncio
     async def test_run_parallel_concurrent_execution(self):

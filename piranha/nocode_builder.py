@@ -236,10 +236,12 @@ def create_builder_ui():
                     source_node = gr.Dropdown(
                         choices=[],
                         label="From Node",
+                        allow_custom_value=True,
                     )
                     target_node = gr.Dropdown(
                         choices=[],
                         label="To Node",
+                        allow_custom_value=True,
                     )
                 
                 edge_label = gr.Textbox(
@@ -317,11 +319,11 @@ def create_builder_ui():
         
         def load_template(selected, state: WorkflowBuilder):
             if not selected or selected not in TEMPLATES:
-                return state, [], {}, "Select a template"
-            
+                return state, gr.Dropdown(choices=[], value=None), {}, "Select a template", gr.Dropdown(choices=[], value=None)
+
             template = TEMPLATES[selected]
             state = WorkflowBuilder()
-            
+
             node_ids = []
             for _i, node_data in enumerate(template.get("nodes", [])):
                 node_id = state.add_node(
@@ -330,43 +332,51 @@ def create_builder_ui():
                     config=node_data.get("config", {}),
                 )
                 node_ids.append((node_id, node_data["name"]))
-            
+
             for edge_data in template.get("edges", []):
-                if edge_data["source"] < len(node_ids) and edge_data["target"] < len(node_ids):
+                source_idx = int(edge_data["source"])
+                target_idx = int(edge_data["target"])
+                if source_idx < len(node_ids) and target_idx < len(node_ids):
                     state.connect(
-                        node_ids[int(edge_data["source"])][0],
-                        node_ids[int(edge_data["target"])][0],
+                        node_ids[source_idx][0],
+                        node_ids[target_idx][0],
                         edge_data.get("label", ""),
                     )
-            
+
             node_choices = [f"{nid} - {name}" for nid, name in node_ids]
-            
+            first_choice = node_choices[0] if node_choices else None
+            dropdown_update = gr.Dropdown(choices=node_choices, value=first_choice)
+
             return (
                 state,
-                node_choices,
+                dropdown_update,
                 {"nodes": len(state.nodes), "edges": len(state.edges)},
                 state.to_python_code(),
+                dropdown_update,
             )
         
         def add_node(node_type, name, config_json, state: WorkflowBuilder):
             try:
                 config = json.loads(config_json) if config_json else {}
             except json.JSONDecodeError:
-                return state, [], "Invalid JSON in config", []
-            
+                return state, gr.Dropdown(choices=[], value=None), "Invalid JSON in config", [], gr.Dropdown(choices=[], value=None)
+
             if not name:
-                return state, [], "Node name is required", []
-            
+                return state, gr.Dropdown(choices=[], value=None), "Node name is required", [], gr.Dropdown(choices=[], value=None)
+
             node_id = state.add_node(node_type, name, config)
-            
+
             node_choices = [f"{n.id} - {n.name}" for n in state.nodes]
+            first_choice = node_choices[0] if node_choices else None
             node_list = [{"id": n.id, "type": n.type, "name": n.name} for n in state.nodes]
-            
+            dropdown_update = gr.Dropdown(choices=node_choices, value=first_choice)
+
             return (
                 state,
-                node_choices,
+                dropdown_update,
                 f"✓ Added node: {name} ({node_id})",
                 node_list,
+                dropdown_update,
             )
         
         def connect_nodes(source, target, label, state: WorkflowBuilder):
@@ -429,13 +439,13 @@ if __name__ == "__main__":
         load_template_btn.click(
             fn=load_template,
             inputs=[template_dropdown, workflow_state],
-            outputs=[workflow_state, source_node, workflow_canvas, generated_code],
+            outputs=[workflow_state, source_node, workflow_canvas, generated_code, target_node],
         )
         
         add_node_btn.click(
             fn=add_node,
             inputs=[node_type, node_name, node_config, workflow_state],
-            outputs=[workflow_state, source_node, gr.Textbox(label="Status"), node_list],
+            outputs=[workflow_state, source_node, gr.Textbox(label="Status"), node_list, target_node],
         )
         
         connect_btn.click(
