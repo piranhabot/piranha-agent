@@ -65,10 +65,13 @@ class TestAsyncAgent:
     def test_add_skill(self):
         """Test adding a skill to an async agent."""
         agent = AsyncAgent(name="test-agent")
-        
+
+        # Verify that the default model is correctly set when not specified
+        assert agent.model == "ollama/llama3:latest"
+
         new_skill = Skill(name="new_skill", description="A new skill")
         agent.add_skill(new_skill)
-        
+
         assert len(agent.skills) == 1
         assert agent.skills[0].name == "new_skill"
 
@@ -103,9 +106,9 @@ class TestAsyncAgent:
             model="ollama/llama3:latest",
             system_prompt="You are a coding assistant",
         )
-        
+
         with patch.object(agent._llm, 'chat_async', new_callable=AsyncMock) as mock_chat:
-            mock_chat.return_value = MagicMock(
+            mock_chat.return_value = LLMResponse(
                 content="Here's the code...",
                 model="ollama/llama3:latest",
                 prompt_tokens=50,
@@ -113,9 +116,9 @@ class TestAsyncAgent:
                 cost_usd=0.005,
                 finish_reason="stop",
             )
-            
+
             response = await agent.run("Write a function")
-            
+
             assert response.content == "Here's the code..."
             # System prompt should be in history
             history = agent.get_history()
@@ -217,14 +220,29 @@ class TestAsyncAgent:
         assert len(history) == 1
         assert history[0]["role"] == "system"
 
-    def test_get_cost_report(self):
-        """Test getting cost report."""
+    @pytest.mark.asyncio
+    async def test_get_cost_report(self):
+        """Test getting cost report after operations with known cost."""
         agent = AsyncAgent(name="test-agent", model="ollama/llama3:latest")
-        
+
+        # Perform a chat with a mocked LLM response that has a known cost
+        with patch.object(agent._llm, 'chat_async', new_callable=AsyncMock) as mock_chat:
+            mock_chat.return_value = LLMResponse(
+                content="Mocked response",
+                model="ollama/llama3:latest",
+                prompt_tokens=10,
+                completion_tokens=20,
+                cost_usd=0.01,
+                finish_reason="stop",
+            )
+            await agent.chat("Test message")
+
         report = agent.get_cost_report()
-        
+
         assert isinstance(report, dict)
-        assert "total_cost_usd" in report or report == {}
+        assert "total_cost_usd" in report
+        # The total cost should reflect the mocked LLM response cost
+        assert report["total_cost_usd"] == pytest.approx(0.01)
 
     @pytest.mark.asyncio
     async def test_multiple_chat_turns(self):
