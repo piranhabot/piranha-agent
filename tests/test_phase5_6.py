@@ -91,11 +91,12 @@ class TestPhase6DistributedAgents:
         _agents = []
         for i in range(5):
             agent = DistributedAgent(f"agent-{i}")
-            agents.append(agent)
+            _agents.append(agent)
+            orchestrator.register_agent(agent)
         
-        assert len(agents) == 5
-        ids = [a.get_id() for a in agents]
-        assert len(set(ids)) == 5  # All unique
+        assert len(_agents) == 5
+        _ids = [a.get_id() for a in _agents]
+        assert len(set(_ids)) == 5  # All unique
 
 
 class TestPhase5Phase6Integration:

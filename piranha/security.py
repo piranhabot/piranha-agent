@@ -10,10 +10,7 @@ This module provides security utilities:
 
 import os
 import jwt
-from datetime import datetime, timedelta
-from typing import Optional
-from fastapi import HTTPException, status, WebSocket
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import WebSocket
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 

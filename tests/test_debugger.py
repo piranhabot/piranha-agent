@@ -1,6 +1,5 @@
 """Tests for Phase 3: Time-Travel Debugger."""
 
-import json
 import pytest
 import tempfile
 import os

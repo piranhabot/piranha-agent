@@ -10,7 +10,6 @@ This script validates all components are properly wired together:
 - Multi-agent collaboration
 """
 
-import asyncio
 from piranha import (
     Agent,
     Task,

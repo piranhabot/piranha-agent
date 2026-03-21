@@ -24,7 +24,6 @@ try:
     from piranha import (
         Agent,
         Task,
-        Skill,
     )
 except ImportError:
     console.print(

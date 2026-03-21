@@ -627,11 +627,12 @@ def competitive_ads_extractor(competitors: list[str], platform: str = "all") -> 
         "required": ["keywords"],
     },
 )
-def domain_name_brainstormer(keywords: list[str], style: str = "all", 
+def domain_name_brainstormer(keywords: list[str], style: str = "all",
                              tlds: list[str] | None = None) -> str:
     """Domain name brainstormer."""
-    _tlds = tlds or ['.com', '.io', '.dev', '.ai']
-    
+    tlds_list = tlds or ['.com', '.io', '.dev', '.ai']
+    tld_headers = " | ".join(tlds_list)
+
     return f"""
 # Domain Name Brainstormer
 
@@ -641,7 +642,11 @@ def domain_name_brainstormer(keywords: list[str], style: str = "all",
 ## Style
 {style}
 
+## TLDs
+{tld_headers}
+
 ## Generated Names
+"""
 
 ### Descriptive
 | Name | .com | .io | .dev | .ai |
