@@ -81,7 +81,7 @@ except Exception as e:
 print("\n3. Validating Agent-Monitor Integration...")
 try:
     # Create monitor
-    monitor = start_monitoring(port=8081)
+    integration_monitor = start_monitoring(port=8081)
     print("   ✓ Monitor started")
     
     # Create agent
@@ -93,7 +93,7 @@ try:
     print("   ✓ Agent monitoring enabled")
     
     # Verify agent is tracked
-    assert agent.id in monitor.agents
+    assert agent.id in integration_monitor.agents
     print("   ✓ Agent properly tracked in monitor")
     
 except Exception as e:
