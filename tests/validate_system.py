@@ -114,7 +114,7 @@ print("\n4. Validating Skill Template with Monitoring...")
         },
         "required": ["input"],
     },
-    auto_monitor=True  # NEW: Auto-monitoring flag
+    auto_monitor=True  # Enable automatic monitoring of this skill
 )
 def monitored_skill(input: str) -> str:
     """Skill with automatic monitoring."""
