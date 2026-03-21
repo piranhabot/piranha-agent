@@ -13,7 +13,6 @@ This script validates all components are properly wired together:
 from piranha import (
     Agent,
     Task,
-    Skill,
     skill,
     SemanticCache,
     WasmRunner,
