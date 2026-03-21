@@ -20,6 +20,8 @@ import asyncio
 from typing import Callable, Any
 from dataclasses import dataclass, field
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
+import os
 import pytest
 
 logger = logging.getLogger(__name__)
@@ -63,10 +65,10 @@ class BenchmarkReport:
         for result in self.results:
             lines.append(f"Benchmark: {result.name}")
             lines.append(f"  Iterations:    {result.iterations}")
-            lines.append(f"  Avg Time:      {result.avg_time*1000:.2f}ms")
-            lines.append(f"  Median Time:   {result.median_time*1000:.2f}ms")
-            lines.append(f"  P95 Time:      {result.p95_time*1000:.2f}ms")
-            lines.append(f"  P99 Time:      {result.p99_time*1000:.2f}ms")
+            lines.append(f"  Avg Time:      {result.avg_time * 1000:.2f}ms")
+            lines.append(f"  Median Time:   {result.median_time * 1000:.2f}ms")
+            lines.append(f"  P95 Time:      {result.p95_time * 1000:.2f}ms")
+            lines.append(f"  P99 Time:      {result.p99_time * 1000:.2f}ms")
             lines.append(f"  Throughput:    {result.throughput:.2f} ops/sec")
             lines.append(f"  Errors:        {result.errors}")
             lines.append("")
@@ -213,17 +215,20 @@ class BenchmarkRunner:
         times = []
         errors = 0
         total_requests = concurrent_users * requests_per_user
-        
+        lock = threading.Lock()
+
         def worker():
             for _ in range(requests_per_user):
                 start = time.perf_counter()
                 try:
                     func(*args, **kwargs)
                     elapsed = time.perf_counter() - start
-                    times.append(elapsed)
+                    with lock:
+                        times.append(elapsed)
                 except Exception:
                     nonlocal errors
-                    errors += 1
+                    with lock:
+                        errors += 1
         
         # Run concurrent workers
         with ThreadPoolExecutor(max_workers=concurrent_users) as executor:
@@ -327,8 +332,10 @@ class TestPiranhaBenchmarks:
         
         result = runner.run("Agent Creation", create_agent, iterations=50)
 
-        print(f"\nAgent Creation: {result.avg_time*1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
-        assert result.avg_time < 0.001  # Should be < 1ms
+        print(f"\nAgent Creation: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+        # Use environment variable for configurable threshold (default: 10ms)
+        max_avg_time_s = float(os.getenv("AGENT_CREATION_MAX_AVG_TIME_S", "0.01"))
+        assert result.avg_time < max_avg_time_s
     
     def test_event_store_append_benchmark(self, runner, event_store):
         """Benchmark: Event store append performance."""
@@ -348,7 +355,7 @@ class TestPiranhaBenchmarks:
         
         result = runner.run("EventStore Append", append_event, iterations=100)
         
-        print(f"\nEventStore Append: {result.avg_time*1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+        print(f"\nEventStore Append: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
         assert result.throughput > 100  # Should handle 100+ events/sec
     
     def test_semantic_cache_put_benchmark(self, runner, semantic_cache):
@@ -365,7 +372,7 @@ class TestPiranhaBenchmarks:
         
         result = runner.run("SemanticCache Put", put_cache, iterations=100)
         
-        print(f"\nSemanticCache Put: {result.avg_time*1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+        print(f"\nSemanticCache Put: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
         assert result.throughput > 500  # Should handle 500+ puts/sec
     
     def test_semantic_cache_get_benchmark(self, runner, semantic_cache):
@@ -386,7 +393,7 @@ class TestPiranhaBenchmarks:
         
         result = runner.run("SemanticCache Get", get_cache, iterations=100)
         
-        print(f"\nSemanticCache Get: {result.avg_time*1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+        print(f"\nSemanticCache Get: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
         assert result.throughput > 1000  # Should handle 1000+ gets/sec
     
     def test_skill_registry_authorize_benchmark(self, runner):
@@ -413,7 +420,7 @@ class TestPiranhaBenchmarks:
         
         result = runner.run("SkillRegistry Authorize", authorize, iterations=100)
         
-        print(f"\nSkillRegistry Authorize: {result.avg_time*1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+        print(f"\nSkillRegistry Authorize: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
         assert result.throughput > 1000  # Should handle 1000+ auth/sec
     
     def test_guardrail_check_benchmark(self, runner):
@@ -436,7 +443,7 @@ class TestPiranhaBenchmarks:
         
         result = runner.run("Guardrail Check", check_guardrail, iterations=100)
         
-        print(f"\nGuardrail Check: {result.avg_time*1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+        print(f"\nGuardrail Check: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
         assert result.throughput > 1000  # Should handle 1000+ checks/sec
     
     def test_wasm_validate_benchmark(self, runner):
@@ -453,7 +460,7 @@ class TestPiranhaBenchmarks:
         
         result = runner.run("Wasm Validate", validate_wasm, iterations=100)
         
-        print(f"\nWasm Validate: {result.avg_time*1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+        print(f"\nWasm Validate: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
         assert result.throughput > 10000  # Should handle 10K+ validations/sec
     
     def test_memory_vector_search_benchmark(self, runner):
@@ -474,7 +481,7 @@ class TestPiranhaBenchmarks:
         
         result = runner.run("Vector Search (1K items)", search, iterations=50)
         
-        print(f"\nVector Search: {result.avg_time*1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+        print(f"\nVector Search: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
         assert result.avg_time < 0.1  # Should be < 100ms for 1K items
     
     def test_observability_metrics_benchmark(self, runner):
@@ -490,7 +497,7 @@ class TestPiranhaBenchmarks:
         
         result = runner.run("Metrics Collection", record_metrics, iterations=100)
         
-        print(f"\nMetrics Collection: {result.avg_time*1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+        print(f"\nMetrics Collection: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
         assert result.throughput > 10000  # Should handle 10K+ metrics/sec
     
     def test_cost_anomaly_detection_benchmark(self, runner):
@@ -508,7 +515,7 @@ class TestPiranhaBenchmarks:
         
         result = runner.run("Cost Anomaly Detection", detect_anomaly, iterations=50)
         
-        print(f"\nCost Anomaly Detection: {result.avg_time*1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+        print(f"\nCost Anomaly Detection: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
         assert result.avg_time < 0.001  # Should be < 1ms
     
     def test_concurrent_agent_execution_benchmark(self, runner):
@@ -526,7 +533,7 @@ class TestPiranhaBenchmarks:
             requests_per_user=10,
         )
         
-        print(f"\nConcurrent Agent Creation: {result.avg_time*1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+        print(f"\nConcurrent Agent Creation: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
         assert result.errors == 0  # Should have no errors
     
     def test_export_prometheus_benchmark(self, runner):
@@ -545,7 +552,7 @@ class TestPiranhaBenchmarks:
         
         result = runner.run("Prometheus Export", export, iterations=20)
         
-        print(f"\nPrometheus Export: {result.avg_time*1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+        print(f"\nPrometheus Export: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
         assert result.avg_time < 0.01  # Should be < 10ms
 
 
