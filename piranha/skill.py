@@ -86,8 +86,9 @@ class Skill:
                             "error": str(e)
                         }
                     )
-                except Exception:
-                    pass
+                except Exception as monitor_error:
+                    # Silently fail if monitoring fails
+                    logger.debug(f"Failed to record skill failure: {monitor_error}")
                 
                 raise
         else:

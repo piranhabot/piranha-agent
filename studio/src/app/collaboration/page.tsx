@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Users, MessageSquare, GitBranch, Clock, Play, CheckCircle } from 'lucide-react';
+import { Users, MessageSquare, GitBranch, Play, CheckCircle } from 'lucide-react';
 
 const API_BASE = 'http://localhost:8080/api';
 

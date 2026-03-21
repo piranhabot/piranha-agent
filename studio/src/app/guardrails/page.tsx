@@ -35,7 +35,6 @@ export default function GuardrailsPage() {
   const [stats, setStats] = useState<GuardrailsStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [autoRefresh, setAutoRefresh] = useState(true);
 
   useEffect(() => {
     loadGuardrailsData();

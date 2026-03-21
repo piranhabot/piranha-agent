@@ -92,10 +92,12 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
                 models = response.json().get("models", [])
                 for model in models:
                     if model.get("name", "").startswith(self.model_name):
-                        # Ollama embedding models typically have 768 or 1024 dimensions
-                        return model.get("details", {}).get("embedding_only", False) and 768 or 768
-        except Exception:
-            pass
+                        # Ollama embedding models typically have 768 dimensions
+                        return 768
+        except Exception as e:
+            # Log error but return default dimension
+            logger.debug(f"Failed to get Ollama model dimension: {e}")
+        
         return 768  # Default dimension
     
     def embed(self, text: str) -> list[float]:

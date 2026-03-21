@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Activity, Users, FileText, DollarSign, Zap, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { Activity, Users, FileText, DollarSign, Zap, Clock, CheckCircle } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
 const API_BASE = 'http://localhost:8080/api';
