@@ -36,9 +36,6 @@ if not _env_secret_key:
             UserWarning,
         )
         SECRET_KEY = secrets.token_urlsafe(32)
-        if not SECRET_KEY:
-            # Fallback for extremely constrained environments
-            SECRET_KEY = DEFAULT_DEV_SECRET_KEY
     else:
         # In non-development environments, refuse to start without an explicit SECRET_KEY
         raise RuntimeError(
@@ -56,7 +53,12 @@ ALLOWED_ORIGINS = os.getenv(
 RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
 API_KEYS = os.getenv("API_KEYS", "").split(",") if os.getenv("API_KEYS") else []
 
-# Initialize rate limiter
+# Initialize rate limiter.
+# Use this `limiter` instance to protect FastAPI routes, for example:
+#     @app.get("/items")
+#     @limiter.limit(f"{RATE_LIMIT_PER_MINUTE}/minute")
+#     async def list_items():
+#         ...
 limiter = Limiter(key_func=get_remote_address)
 
 # Security bearer token
@@ -160,7 +162,13 @@ def run_security_check() -> dict:
     if "*" in ALLOWED_ORIGINS:
         issues.append("CRITICAL: CORS allows all origins (*)!")
         recommendations.append("Restrict ALLOWED_ORIGINS to specific domains")
-    elif "http://localhost" in str(ALLOWED_ORIGINS):
+    elif (
+        isinstance(ALLOWED_ORIGINS, str)
+        and "http://localhost" in ALLOWED_ORIGINS
+    ) or (
+        not isinstance(ALLOWED_ORIGINS, str)
+        and any("http://localhost" in origin for origin in ALLOWED_ORIGINS)
+    ):
         warnings.append("Development origins detected (localhost)")
 
     # Check API_KEYS
