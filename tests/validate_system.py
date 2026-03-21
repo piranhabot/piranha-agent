@@ -70,6 +70,15 @@ try:
     # Test events
     monitor.record_event("test.event", {"data": "test"})
     print(f"   ✓ Event recording works: {len(monitor.events)} events")
+
+    # Clean up monitor to avoid port conflicts in subsequent sections
+    try:
+        monitor.stop()
+    except AttributeError:
+        # If RealtimeMonitor has no explicit stop method, ignore;
+        # this preserves existing behavior while avoiding hard failure.
+        pass
+    monitor = None
     
 except Exception as e:
     print(f"   ✗ Monitor validation failed: {e}")
