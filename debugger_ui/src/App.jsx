@@ -44,7 +44,7 @@ const EventNode = ({ data }) => {
       <div style={{ fontSize: '12px' }}>
         <div>Agent: {data.agent_id}...</div>
         <div>Tokens: {data.tokens}</div>
-        <div>Cost: ${data.cost_usd?.toFixed(6)}</div>
+        <div>Cost: ${(data.cost_usd?.toFixed(6) ?? '0.000000')}</div>
       </div>
     </div>
   )
@@ -270,7 +270,9 @@ function App() {
               </div>
               <div className="stat">
                 <span className="stat-label">Est. Savings:</span>
-                <span className="stat-value">${costSummary.estimated_savings?.toFixed(6)}</span>
+                <span className="stat-value">
+                  ${costSummary.estimated_savings?.toFixed(6) || '0.000000'}
+                </span>
               </div>
             </div>
           ) : (
