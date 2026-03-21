@@ -36,9 +36,6 @@ if not _env_secret_key:
             UserWarning,
         )
         SECRET_KEY = secrets.token_urlsafe(32)
-        if not SECRET_KEY:
-            # Fallback for extremely constrained environments
-            SECRET_KEY = DEFAULT_DEV_SECRET_KEY
     else:
         # In non-development environments, refuse to start without an explicit SECRET_KEY
         raise RuntimeError(
