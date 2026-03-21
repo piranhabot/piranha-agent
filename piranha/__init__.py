@@ -36,6 +36,11 @@ from piranha.complete_claude_skills import (
 )
 from piranha.debugger import create_ui as create_debugger_ui
 from piranha.embeddings import EmbeddingModel, get_embedding_model, list_supported_providers
+
+# Backwards-compatible alias with a more specific name to avoid ambiguity.
+# `list_supported_providers` here refers specifically to embedding providers.
+list_supported_embedding_providers = list_supported_providers
+
 from piranha.llm_provider import LLMMessage, LLMProvider, LLMResponse, create_provider
 from piranha.memory import ContextManager, Memory, MemoryManager
 from piranha.nocode_builder import create_builder_ui as create_nocode_ui
@@ -97,6 +102,7 @@ __all__ = [
     "EmbeddingModel",
     "get_embedding_model",
     "list_supported_providers",
+    "list_supported_embedding_providers",
     # Real-Time Monitoring
     "RealtimeMonitor",
     "get_monitor",
