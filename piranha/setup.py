@@ -3,7 +3,7 @@
 This installs the pure Python wrapper alongside the Rust extension.
 """
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     name="piranha",

@@ -22,8 +22,8 @@ Usage:
 from __future__ import annotations
 
 import hashlib
-from typing import Any, Optional
 from abc import ABC, abstractmethod
+from typing import Any
 
 
 class EmbeddingProvider(ABC):
@@ -128,8 +128,8 @@ class OpenAIEmbeddingProvider(EmbeddingProvider):
     def __init__(
         self,
         model_name: str = "text-embedding-3-small",
-        api_key: Optional[str] = None,
-        organization: Optional[str] = None
+        api_key: str | None = None,
+        organization: str | None = None
     ):
         self.model_name = model_name
         self.api_key = api_key
@@ -221,10 +221,10 @@ class EmbeddingModel:
     def __init__(
         self,
         provider: str = "hash",
-        model: Optional[str] = None,
-        api_key: Optional[str] = None,
-        api_base: Optional[str] = None,
-        dimension: Optional[int] = None,
+        model: str | None = None,
+        api_key: str | None = None,
+        api_base: str | None = None,
+        dimension: int | None = None,
         **kwargs: Any
     ):
         """Initialize embedding model.
@@ -246,10 +246,10 @@ class EmbeddingModel:
     def _create_provider(
         self,
         provider: str,
-        model: Optional[str],
-        api_key: Optional[str],
-        api_base: Optional[str],
-        dimension: Optional[int],
+        model: str | None,
+        api_key: str | None,
+        api_base: str | None,
+        dimension: int | None,
         **kwargs: Any
     ) -> EmbeddingProvider:
         """Create embedding provider instance."""

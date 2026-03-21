@@ -11,12 +11,12 @@ Supports 100+ LLM providers including:
 
 from __future__ import annotations
 
-import json
+from collections.abc import AsyncGenerator, Generator
 from dataclasses import dataclass, field
-from typing import Any, AsyncGenerator, Generator, Optional
+from typing import Any
 
 import litellm
-from litellm import completion, acompletion
+from litellm import acompletion, completion
 
 
 @dataclass
@@ -41,7 +41,7 @@ class LLMResponse:
     total_tokens: int = 0
     cost_usd: float = 0.0
     finish_reason: str = "stop"
-    raw_response: Optional[Any] = field(default=None, repr=False)
+    raw_response: Any | None = field(default=None, repr=False)
     
     @property
     def is_complete(self) -> bool:
@@ -62,8 +62,8 @@ class LLMProvider:
     def __init__(
         self,
         model: str = "ollama/llama3:latest",
-        api_base: Optional[str] = None,
-        api_key: Optional[str] = None,
+        api_base: str | None = None,
+        api_key: str | None = None,
         temperature: float = 0.7,
         max_tokens: int = 2048,
         timeout: int = 120,

@@ -10,13 +10,10 @@ Features:
 """
 
 import json
-from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 import gradio as gr
-
-from piranha_core import EventStore, SkillRegistry
-
+from piranha_core import EventStore
 
 # =============================================================================
 # Trace Loader

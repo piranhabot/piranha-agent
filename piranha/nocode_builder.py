@@ -8,10 +8,10 @@ Features:
 - One-click deployment
 """
 
-import gradio as gr
 import json
-from typing import Any, Optional
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
+
+import gradio as gr
 
 
 @dataclass
@@ -323,7 +323,7 @@ def create_builder_ui():
             state = WorkflowBuilder()
             
             node_ids = []
-            for i, node_data in enumerate(template.get("nodes", [])):
+            for _i, node_data in enumerate(template.get("nodes", [])):
                 node_id = state.add_node(
                     node_type=node_data["type"],
                     name=node_data["name"],

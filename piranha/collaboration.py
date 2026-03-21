@@ -13,13 +13,12 @@ Features:
 
 from __future__ import annotations
 
-import asyncio
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional
 from enum import Enum
+from typing import Any
 
-from piranha import Agent, Task
+from piranha import Agent
 from piranha.realtime import RealtimeMonitor, get_monitor
 
 
@@ -42,7 +41,7 @@ class ConversationMessage:
     content: str
     role: str
     timestamp: str = field(default_factory=lambda: "")
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -51,9 +50,9 @@ class CollaborationTask:
     id: str
     description: str
     status: str = "pending"
-    assigned_roles: List[str] = field(default_factory=list)
-    results: List[str] = field(default_factory=list)
-    conversation: List[ConversationMessage] = field(default_factory=list)
+    assigned_roles: list[str] = field(default_factory=list)
+    results: list[str] = field(default_factory=list)
+    conversation: list[ConversationMessage] = field(default_factory=list)
 
 
 class MultiAgentCollaboration:
@@ -87,7 +86,7 @@ class MultiAgentCollaboration:
     
     def __init__(
         self,
-        monitor: Optional[RealtimeMonitor] = None,
+        monitor: RealtimeMonitor | None = None,
         max_turns: int = 10,
         auto_monitor: bool = True
     ):
@@ -98,8 +97,8 @@ class MultiAgentCollaboration:
             max_turns: Maximum conversation turns
             auto_monitor: Enable automatic monitoring
         """
-        self.agents: Dict[str, Dict[str, Any]] = {}
-        self.tasks: Dict[str, CollaborationTask] = {}
+        self.agents: dict[str, dict[str, Any]] = {}
+        self.tasks: dict[str, CollaborationTask] = {}
         self.max_turns = max_turns
         self.auto_monitor = auto_monitor
         
@@ -111,7 +110,7 @@ class MultiAgentCollaboration:
             except Exception:
                 self.monitor = None
         
-        self.collaboration_log: List[str] = []
+        self.collaboration_log: list[str] = []
     
     def add_agent(self, agent: Agent, role: AgentRole | str, description: str = ""):
         """Add agent with specific role.
@@ -145,8 +144,8 @@ class MultiAgentCollaboration:
     def create_task(
         self,
         description: str,
-        agent_roles: Optional[List[str]] = None,
-        task_id: Optional[str] = None
+        agent_roles: list[str] | None = None,
+        task_id: str | None = None
     ) -> str:
         """Create collaboration task.
         
@@ -177,7 +176,7 @@ class MultiAgentCollaboration:
         
         return task_id
     
-    async def execute_task(self, task_id: str) -> List[str]:
+    async def execute_task(self, task_id: str) -> list[str]:
         """Execute multi-agent collaboration task.
         
         Args:
@@ -285,7 +284,7 @@ class MultiAgentCollaboration:
         
         return message
     
-    def get_conversation_history(self, task_id: str) -> List[Dict[str, str]]:
+    def get_conversation_history(self, task_id: str) -> list[dict[str, str]]:
         """Get conversation history for task.
         
         Args:
@@ -308,7 +307,7 @@ class MultiAgentCollaboration:
             for msg in task.conversation
         ]
     
-    def get_collaboration_report(self) -> Dict[str, Any]:
+    def get_collaboration_report(self) -> dict[str, Any]:
         """Get collaboration report.
         
         Returns:
@@ -342,7 +341,7 @@ class MultiAgentCollaboration:
             "log": self.collaboration_log[-20:]  # Last 20 entries
         }
     
-    def _find_agent_by_role(self, role: str) -> Optional[Dict[str, Any]]:
+    def _find_agent_by_role(self, role: str) -> dict[str, Any] | None:
         """Find agent by role."""
         for agent_data in self.agents.values():
             if agent_data["role"] == role:
@@ -353,7 +352,7 @@ class MultiAgentCollaboration:
         self,
         agent_id: str,
         status: str,
-        current_task: Optional[str]
+        current_task: str | None
     ):
         """Update agent status in monitor."""
         if self.auto_monitor and self.monitor:
@@ -385,7 +384,7 @@ class MultiAgentCollaboration:
 
 # Convenience functions
 def create_collaboration(
-    monitor: Optional[RealtimeMonitor] = None,
+    monitor: RealtimeMonitor | None = None,
     auto_monitor: bool = True
 ) -> MultiAgentCollaboration:
     """Create multi-agent collaboration system.
@@ -401,11 +400,11 @@ def create_collaboration(
 
 
 async def run_collaboration(
-    agents: List[Agent],
-    roles: List[AgentRole | str],
+    agents: list[Agent],
+    roles: list[AgentRole | str],
     task_description: str,
-    monitor: Optional[RealtimeMonitor] = None
-) -> Dict[str, Any]:
+    monitor: RealtimeMonitor | None = None
+) -> dict[str, Any]:
     """Quick helper to run multi-agent collaboration.
     
     Args:
@@ -424,7 +423,7 @@ async def run_collaboration(
     collab = create_collaboration(monitor=monitor)
     
     # Add agents
-    for agent, role in zip(agents, roles):
+    for agent, role in zip(agents, roles, strict=False):
         collab.add_agent(agent, role)
     
     # Create and execute task

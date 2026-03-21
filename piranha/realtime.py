@@ -25,18 +25,22 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from dataclasses import dataclass, field, asdict
-from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Set
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, FileResponse
-from pydantic import BaseModel
-import uvicorn
-from pathlib import Path
 import threading
 import uuid
+from dataclasses import asdict
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+import uvicorn
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from pydantic import BaseModel
+
+# Get the directory where this file is located
+CURRENT_DIR = Path(__file__).parent
+DASHBOARD_HTML = CURRENT_DIR / "studio_dashboard.html"
 
 logger = logging.getLogger(__name__)
 
@@ -51,12 +55,12 @@ class AgentStatus(BaseModel):
     name: str
     model: str
     status: str  # idle, busy, offline
-    current_task: Optional[str] = None
+    current_task: str | None = None
     tokens_used: int = 0
     cost_usd: float = 0.0
     tasks_completed: int = 0
     last_active: str = ""
-    session_id: Optional[str] = None
+    session_id: str | None = None
 
 
 class TaskStatus(BaseModel):
@@ -64,10 +68,10 @@ class TaskStatus(BaseModel):
     id: str
     description: str
     status: str  # pending, running, completed, failed
-    agent_id: Optional[str] = None
+    agent_id: str | None = None
     created_at: str = ""
-    completed_at: Optional[str] = None
-    result: Optional[str] = None
+    completed_at: str | None = None
+    result: str | None = None
     tokens_used: int = 0
     cost_usd: float = 0.0
 
@@ -92,7 +96,7 @@ class Event(BaseModel):
     id: str
     type: str  # agent.created, task.started, task.completed, etc.
     timestamp: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
 
 
 # =============================================================================
@@ -106,7 +110,7 @@ class RealtimeMonitor:
         self,
         host: str = "0.0.0.0",
         port: int = 8080,
-        dashboard_path: Optional[str] = None
+        dashboard_path: str | None = None
     ):
         """Initialize real-time monitor.
         
@@ -120,14 +124,14 @@ class RealtimeMonitor:
         self.dashboard_path = dashboard_path
         
         # State
-        self.agents: Dict[str, AgentStatus] = {}
-        self.tasks: Dict[str, TaskStatus] = {}
-        self.events: List[Event] = []
+        self.agents: dict[str, AgentStatus] = {}
+        self.tasks: dict[str, TaskStatus] = {}
+        self.events: list[Event] = []
         self.metrics = SystemMetrics()
         self.start_time = datetime.now()
         
         # WebSocket connections
-        self.active_connections: Set[WebSocket] = set()
+        self.active_connections: set[WebSocket] = set()
         
         # Create FastAPI app
         self.app = FastAPI(
@@ -154,12 +158,13 @@ class RealtimeMonitor:
     
     def _setup_routes(self):
         """Setup API and WebSocket routes."""
-        
+
         @self.app.get("/")
         async def root():
             """Serve dashboard or API info."""
-            if self.dashboard_path and Path(self.dashboard_path).exists():
-                return FileResponse(Path(self.dashboard_path) / "index.html")
+            # Always serve our built-in dashboard
+            if DASHBOARD_HTML.exists():
+                return FileResponse(DASHBOARD_HTML)
             return {
                 "name": "Piranha Studio",
                 "version": "0.4.0",
@@ -185,7 +190,7 @@ class RealtimeMonitor:
             return self.agents[agent_id]
         
         @self.app.get("/api/tasks")
-        async def get_tasks(status: Optional[str] = None):
+        async def get_tasks(status: str | None = None):
             """Get all tasks, optionally filtered by status."""
             tasks = list(self.tasks.values())
             if status:
@@ -403,7 +408,7 @@ class RealtimeMonitor:
                 # Keep connection alive
                 while True:
                     try:
-                        data = await asyncio.wait_for(
+                        await asyncio.wait_for(
                             websocket.receive_text(),
                             timeout=30.0
                         )
@@ -488,13 +493,13 @@ class RealtimeMonitor:
     def _broadcast_sync(self, message: dict):
         """Broadcast message (sync wrapper)."""
         try:
-            loop = asyncio.get_running_loop()
+            asyncio.get_running_loop()
             asyncio.create_task(self._broadcast(message))
         except RuntimeError:
             # No running loop, create one
             asyncio.run(self._broadcast(message))
     
-    def register_agent(self, agent_id: str, name: str, model: str, session_id: Optional[str] = None):
+    def register_agent(self, agent_id: str, name: str, model: str, session_id: str | None = None):
         """Register an agent for monitoring."""
         agent = AgentStatus(
             id=agent_id,
@@ -517,10 +522,10 @@ class RealtimeMonitor:
     def update_agent_status(
         self,
         agent_id: str,
-        status: Optional[str] = None,
-        current_task: Optional[str] = None,
-        tokens_used: Optional[int] = None,
-        cost_usd: Optional[float] = None
+        status: str | None = None,
+        current_task: str | None = None,
+        tokens_used: int | None = None,
+        cost_usd: float | None = None
     ):
         """Update agent status."""
         if agent_id not in self.agents:
@@ -546,7 +551,7 @@ class RealtimeMonitor:
             "agent": agent.model_dump()
         })
     
-    def register_task(self, task_id: str, description: str, agent_id: Optional[str] = None):
+    def register_task(self, task_id: str, description: str, agent_id: str | None = None):
         """Register a task for monitoring."""
         task = TaskStatus(
             id=task_id,
@@ -568,10 +573,10 @@ class RealtimeMonitor:
     def update_task_status(
         self,
         task_id: str,
-        status: Optional[str] = None,
-        result: Optional[str] = None,
-        tokens_used: Optional[int] = None,
-        cost_usd: Optional[float] = None
+        status: str | None = None,
+        result: str | None = None,
+        tokens_used: int | None = None,
+        cost_usd: float | None = None
     ):
         """Update task status."""
         if task_id not in self.tasks:
@@ -598,7 +603,7 @@ class RealtimeMonitor:
             "task": task.model_dump()
         })
     
-    def record_event(self, event_type: str, data: Dict[str, Any]):
+    def record_event(self, event_type: str, data: dict[str, Any]):
         """Record and broadcast an event."""
         event = Event(
             id=str(uuid.uuid4()),
@@ -647,7 +652,7 @@ class RealtimeMonitor:
 # =============================================================================
 
 # Global monitor instance
-_monitor: Optional[RealtimeMonitor] = None
+_monitor: RealtimeMonitor | None = None
 
 
 def get_monitor() -> RealtimeMonitor:
@@ -658,7 +663,7 @@ def get_monitor() -> RealtimeMonitor:
     return _monitor
 
 
-def start_monitoring(port: int = 8080, dashboard_path: Optional[str] = None):
+def start_monitoring(port: int = 8080, dashboard_path: str | None = None):
     """Start real-time monitoring."""
     global _monitor
     _monitor = RealtimeMonitor(port=port, dashboard_path=dashboard_path)

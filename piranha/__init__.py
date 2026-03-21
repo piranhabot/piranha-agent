@@ -1,63 +1,60 @@
 """Piranha Agent - Next-generation autonomous agent framework."""
 
 from piranha_core import (
-    EventStore,
-    GuardrailEngine,
-    SemanticCache,
-    SkillRegistry,
-    WasmRunner,
-    DynamicSkillCompiler,
-    __version__ as _rust_version,
-    # Phase 5
-    PostgresEventStore,
     # Phase 6
     AgentOrchestrator,
     DistributedAgent,
+    DynamicSkillCompiler,
+    EventStore,
+    GuardrailEngine,
+    # Phase 5
+    PostgresEventStore,
+    SemanticCache,
+    SkillRegistry,
+    WasmRunner,
 )
 
 from piranha.agent import Agent
-from piranha.task import Task
-from piranha.session import Session
-from piranha.skill import Skill, skill
 
 # New features
-from piranha.async_agent import AsyncAgent, AgentGroup
-from piranha.llm_provider import LLMProvider, LLMMessage, LLMResponse, create_provider
-from piranha.memory import MemoryManager, ContextManager, Memory, EmbeddingModel as MemoryEmbeddingModel
-from piranha.debugger import create_ui as create_debugger_ui
-from piranha.claude_skills import register_claude_skills, get_all_claude_skills
-from piranha.official_claude_skills import (
-    register_official_claude_skills,
-    get_all_official_claude_skills,
-)
-from piranha.complete_claude_skills import (
-    register_additional_claude_skills,
-    get_all_additional_claude_skills,
-    register_complete_claude_skills,
-    get_complete_claude_skills,
-)
-from piranha.embeddings import EmbeddingModel, get_embedding_model, list_supported_providers
-from piranha.realtime import (
-    RealtimeMonitor,
-    start_monitoring,
-    monitor_agent,
-    get_monitor,
-)
+from piranha.async_agent import AgentGroup, AsyncAgent
+from piranha.claude_skills import get_all_claude_skills, register_claude_skills
 from piranha.collaboration import (
-    MultiAgentCollaboration,
-    AgentRole,
     create_collaboration,
     run_collaboration,
 )
+from piranha.complete_claude_skills import (
+    get_all_additional_claude_skills,
+    get_complete_claude_skills,
+    register_additional_claude_skills,
+    register_complete_claude_skills,
+)
+from piranha.debugger import create_ui as create_debugger_ui
+from piranha.embeddings import EmbeddingModel, get_embedding_model, list_supported_providers
+from piranha.llm_provider import LLMMessage, LLMProvider, LLMResponse, create_provider
+from piranha.memory import ContextManager, Memory, MemoryManager
+from piranha.nocode_builder import create_builder_ui as create_nocode_ui
 from piranha.observability import (
-    ObservabilityManager,
-    MetricsCollector,
     AlertManager,
     CostAnomalyDetector,
+    MetricsCollector,
+    ObservabilityManager,
     get_observability,
     init_observability,
 )
-from piranha.nocode_builder import create_builder_ui as create_nocode_ui
+from piranha.official_claude_skills import (
+    get_all_official_claude_skills,
+    register_official_claude_skills,
+)
+from piranha.realtime import (
+    RealtimeMonitor,
+    get_monitor,
+    monitor_agent,
+    start_monitoring,
+)
+from piranha.session import Session
+from piranha.skill import Skill, skill
+from piranha.task import Task
 
 __version__ = "0.3.0"
 __all__ = [

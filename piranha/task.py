@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 from piranha.agent import Agent, AgentResponse
 
@@ -29,7 +29,7 @@ class Task:
     agent: Agent
     context: str = ""
     expected_output: str = ""
-    parent: Optional[Task] = None
+    parent: Task | None = None
     _subtasks: list[Task] = field(default_factory=list)
     
     def run(self) -> TaskResult:
@@ -127,8 +127,8 @@ class TaskResult:
     task: Task
     success: bool
     result: str
-    error: Optional[str] = None
-    agent_response: Optional[AgentResponse] = None
+    error: str | None = None
+    agent_response: AgentResponse | None = None
     subtask_results: list[TaskResult] = field(default_factory=list)
     
     @property

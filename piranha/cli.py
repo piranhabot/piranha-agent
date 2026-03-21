@@ -68,9 +68,9 @@ def version() -> None:
     import piranha_core
     
     click.echo("🐍 Piranha Agent")
-    click.echo(f"  Python SDK: v0.2.0")
+    click.echo("  Python SDK: v0.2.0")
     click.echo(f"  Rust Core: v{piranha_core.__version__}")
-    click.echo(f"  Features: LiteLLM, Async, Memory, Wasm, Time-Travel Debug")
+    click.echo("  Features: LiteLLM, Async, Memory, Wasm, Time-Travel Debug")
 
 
 if __name__ == "__main__":

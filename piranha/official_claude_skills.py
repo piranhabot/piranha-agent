@@ -8,11 +8,8 @@ https://github.com/ComposioHQ/awesome-claude-skills
 This module implements authentic Claude Skills following the official format.
 """
 
-from piranha.skill import skill
-from typing import Optional, List, Dict, Any
-import re
-import json
 
+from piranha.skill import skill
 
 # =============================================================================
 # Document Skills (Official Anthropic Skills)
@@ -31,7 +28,7 @@ import json
         "required": ["action"],
     },
 )
-def docx_skill(action: str, content: Optional[str] = None, formatting: Optional[Dict] = None) -> str:
+def docx_skill(action: str, content: str | None = None, formatting: dict | None = None) -> str:
     """Word document processing skill."""
     return f"""
 # DOCX Skill - {action.title()}
@@ -95,7 +92,7 @@ def pdf_skill(action: str, file_path: str, pages: str = "all") -> str:
         "required": ["action"],
     },
 )
-def pptx_skill(action: str, template: Optional[str] = None, slides: Optional[List[Dict]] = None) -> str:
+def pptx_skill(action: str, template: str | None = None, slides: list[dict] | None = None) -> str:
     """PowerPoint presentation skill."""
     return f"""
 # PPTX Skill - {action.title()}
@@ -128,7 +125,7 @@ def pptx_skill(action: str, template: Optional[str] = None, slides: Optional[Lis
         "required": ["action"],
     },
 )
-def xlsx_skill(action: str, file_path: Optional[str] = None, sheet: str = "Sheet1", data: Optional[List] = None) -> str:
+def xlsx_skill(action: str, file_path: str | None = None, sheet: str = "Sheet1", data: list | None = None) -> str:
     """Excel spreadsheet skill."""
     return f"""
 # XLSX Skill - {action.title()}
@@ -167,7 +164,7 @@ def xlsx_skill(action: str, file_path: Optional[str] = None, sheet: str = "Sheet
         "required": ["type"],
     },
 )
-def frontend_design(type: str, style: Optional[str] = None, features: Optional[List[str]] = None) -> str:
+def frontend_design(type: str, style: str | None = None, features: list[str] | None = None) -> str:
     """Frontend design skill following Anthropic best practices."""
     return f"""
 # Frontend Design Skill
@@ -223,7 +220,7 @@ export default function Component() {{
         "required": ["api_name"],
     },
 )
-def mcp_builder(api_name: str, endpoints: Optional[List[str]] = None, auth_type: str = "api_key") -> str:
+def mcp_builder(api_name: str, endpoints: list[str] | None = None, auth_type: str = "api_key") -> str:
     """MCP server builder skill."""
     return f"""
 # MCP Builder Skill
@@ -360,7 +357,7 @@ npm test
         "required": ["code"],
     },
 )
-def code_review(code: str, focus_areas: Optional[List[str]] = None, severity_threshold: str = "medium") -> str:
+def code_review(code: str, focus_areas: list[str] | None = None, severity_threshold: str = "medium") -> str:
     """Code review skill."""
     return f"""
 # Code Review
@@ -423,7 +420,7 @@ def code_review(code: str, focus_areas: Optional[List[str]] = None, severity_thr
         "required": ["type"],
     },
 )
-def canvas_design(type: str, theme: Optional[str] = None, dimensions: str = "1920x1080") -> str:
+def canvas_design(type: str, theme: str | None = None, dimensions: str = "1920x1080") -> str:
     """Canvas design skill."""
     return f"""
 # Canvas Design Skill
@@ -471,7 +468,7 @@ def canvas_design(type: str, theme: Optional[str] = None, dimensions: str = "192
         "required": ["artifact_type"],
     },
 )
-def brand_guidelines(artifact_type: str, brand: Optional[str] = None) -> str:
+def brand_guidelines(artifact_type: str, brand: str | None = None) -> str:
     """Brand guidelines skill."""
     return f"""
 # Brand Guidelines
@@ -521,7 +518,7 @@ Applied to: {artifact_type}
         "required": ["type"],
     },
 )
-def internal_comms(type: str, audience: str = "All Staff", key_points: Optional[List[str]] = None) -> str:
+def internal_comms(type: str, audience: str = "All Staff", key_points: list[str] | None = None) -> str:
     """Internal communications skill."""
     return f"""
 # Internal Communication
@@ -599,7 +596,7 @@ def article_extractor(url: str, include_metadata: bool = True) -> str:
 ### Content
 [Full article text would be extracted here]
 
-{f'### Metadata\n- Tags: [tags]\n- Category: [category]\n- Reading Time: [X] min' if include_metadata else ''}
+{'### Metadata\n- Tags: [tags]\n- Category: [category]\n- Reading Time: [X] min' if include_metadata else ''}
 
 ---
 *Note: Full implementation requires newspaper3k or similar library*
@@ -775,7 +772,7 @@ def file_organizer(directory: str, strategy: str = "by-type") -> str:
         "required": ["action"],
     },
 )
-def git_workflows(action: str, branch: Optional[str] = None) -> str:
+def git_workflows(action: str, branch: str | None = None) -> str:
     """Git workflows skill."""
     return f"""
 # Git Workflows

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 from piranha_core import (
     EventStore,
@@ -12,10 +12,11 @@ from piranha_core import (
     SemanticCache,
     SkillRegistry,
 )
+
+from piranha.llm_provider import LLMMessage, LLMProvider, LLMResponse
+from piranha.memory import ContextManager, MemoryManager
 from piranha.session import Session
 from piranha.skill import Skill
-from piranha.llm_provider import LLMProvider, LLMMessage, LLMResponse
-from piranha.memory import ContextManager, MemoryManager
 
 
 @dataclass
@@ -43,17 +44,17 @@ class Agent:
     description: str = ""
     system_prompt: str = ""
     skills: list[Skill] = field(default_factory=list)
-    session: Optional[Session] = None
-    api_base: Optional[str] = None
-    api_key: Optional[str] = None
-    _event_store: Optional[EventStore] = field(default=None, repr=False)
-    _skill_registry: Optional[SkillRegistry] = field(default=None, repr=False)
-    _guardrail_engine: Optional[GuardrailEngine] = field(default=None, repr=False)
-    _semantic_cache: Optional[SemanticCache] = field(default=None, repr=False)
+    session: Session | None = None
+    api_base: str | None = None
+    api_key: str | None = None
+    _event_store: EventStore | None = field(default=None, repr=False)
+    _skill_registry: SkillRegistry | None = field(default=None, repr=False)
+    _guardrail_engine: GuardrailEngine | None = field(default=None, repr=False)
+    _semantic_cache: SemanticCache | None = field(default=None, repr=False)
     _agent_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    _llm: Optional[LLMProvider] = field(default=None, repr=False)
-    _context: Optional[ContextManager] = field(default=None, repr=False)
-    _memory: Optional[MemoryManager] = field(default=None, repr=False)
+    _llm: LLMProvider | None = field(default=None, repr=False)
+    _context: ContextManager | None = field(default=None, repr=False)
+    _memory: MemoryManager | None = field(default=None, repr=False)
     _messages: list[LLMMessage] = field(default_factory=list)
     
     def __post_init__(self) -> None:
@@ -181,7 +182,7 @@ class Agent:
         
         return response
     
-    def add_to_memory(self, content: str, tags: Optional[list[str]] = None) -> None:
+    def add_to_memory(self, content: str, tags: list[str] | None = None) -> None:
         """Add content to agent's long-term memory.
         
         Args:

@@ -8,11 +8,8 @@ Based on:
 This module contains ALL available Claude Skills (100+ skills).
 """
 
-from piranha.skill import skill
-from typing import Optional, List, Dict, Any
-import re
-import json
 
+from piranha.skill import skill
 
 # =============================================================================
 # Research & Analysis Skills
@@ -31,7 +28,7 @@ import json
         "required": ["topic"],
     },
 )
-def deep_research(topic: str, depth: str = "medium", sources: Optional[List[str]] = None) -> str:
+def deep_research(topic: str, depth: str = "medium", sources: list[str] | None = None) -> str:
     """Deep research skill for comprehensive analysis."""
     return f"""
 # Deep Research
@@ -76,7 +73,7 @@ def deep_research(topic: str, depth: str = "medium", sources: Optional[List[str]
         "required": ["error"],
     },
 )
-def root_cause_tracing(error: str, context: Optional[str] = None, timeline: Optional[str] = None) -> str:
+def root_cause_tracing(error: str, context: str | None = None, timeline: str | None = None) -> str:
     """Root cause analysis skill."""
     return f"""
 # Root Cause Tracing
@@ -136,8 +133,8 @@ def root_cause_tracing(error: str, context: Optional[str] = None, timeline: Opti
         "required": ["industry"],
     },
 )
-def lead_research_assistant(industry: str, company_size: Optional[str] = None, 
-                            location: Optional[str] = None, criteria: Optional[List[str]] = None) -> str:
+def lead_research_assistant(industry: str, company_size: str | None = None, 
+                            location: str | None = None, criteria: list[str] | None = None) -> str:
     """Lead research assistant skill."""
     return f"""
 # Lead Research Assistant
@@ -186,7 +183,7 @@ def lead_research_assistant(industry: str, company_size: Optional[str] = None,
         "required": ["skill_name", "purpose"],
     },
 )
-def skill_creator(skill_name: str, purpose: str, target_audience: Optional[str] = None) -> str:
+def skill_creator(skill_name: str, purpose: str, target_audience: str | None = None) -> str:
     """Skill creator interactive tool."""
     return f"""
 # Skill Creator
@@ -338,7 +335,7 @@ src/
         "required": ["idea"],
     },
 )
-def brainstorming(idea: str, domain: Optional[str] = None, constraints: Optional[List[str]] = None) -> str:
+def brainstorming(idea: str, domain: str | None = None, constraints: list[str] | None = None) -> str:
     """Brainstorming skill for idea development."""
     return f"""
 # Brainstorming Session
@@ -405,7 +402,7 @@ def brainstorming(idea: str, domain: Optional[str] = None, constraints: Optional
         "required": ["prompt"],
     },
 )
-def imagen(prompt: str, style: Optional[str] = None, dimensions: str = "1024x1024") -> str:
+def imagen(prompt: str, style: str | None = None, dimensions: str = "1024x1024") -> str:
     """Image generation skill using Gemini/Imagen."""
     return f"""
 # Image Generation (Imagen)
@@ -461,7 +458,7 @@ response = client.models.generate_image(
         "required": ["subreddit"],
     },
 )
-def reddit_fetch(subreddit: str, query: Optional[str] = None, sort: str = "hot") -> str:
+def reddit_fetch(subreddit: str, query: str | None = None, sort: str = "hot") -> str:
     """Reddit content fetcher skill."""
     return f"""
 # Reddit Fetch
@@ -578,7 +575,7 @@ def meeting_insights_analyzer(transcript: str, analysis_type: str = "full") -> s
         "required": ["competitors"],
     },
 )
-def competitive_ads_extractor(competitors: List[str], platform: str = "all") -> str:
+def competitive_ads_extractor(competitors: list[str], platform: str = "all") -> str:
     """Competitive ads extractor."""
     return f"""
 # Competitive Ads Extractor
@@ -630,8 +627,8 @@ def competitive_ads_extractor(competitors: List[str], platform: str = "all") -> 
         "required": ["keywords"],
     },
 )
-def domain_name_brainstormer(keywords: List[str], style: str = "all", 
-                             tlds: Optional[List[str]] = None) -> str:
+def domain_name_brainstormer(keywords: list[str], style: str = "all", 
+                             tlds: list[str] | None = None) -> str:
     """Domain name brainstormer."""
     tlds = tlds or ['.com', '.io', '.dev', '.ai']
     
@@ -745,7 +742,7 @@ transcript = YouTubeTranscriptApi.get_transcript('{video_id}')
         "required": ["process"],
     },
 )
-def kaizen(process: str, current_issues: Optional[List[str]] = None) -> str:
+def kaizen(process: str, current_issues: list[str] | None = None) -> str:
     """Kaizen continuous improvement skill."""
     return f"""
 # Kaizen Continuous Improvement
@@ -816,8 +813,8 @@ def kaizen(process: str, current_issues: Optional[List[str]] = None) -> str:
         "required": ["topic", "format"],
     },
 )
-def content_research_writer(topic: str, format: str, tone: Optional[str] = None, 
-                           word_count: Optional[int] = None) -> str:
+def content_research_writer(topic: str, format: str, tone: str | None = None, 
+                           word_count: int | None = None) -> str:
     """Content research writer skill."""
     return f"""
 # Content Research Writer
@@ -889,7 +886,7 @@ def content_research_writer(topic: str, format: str, tone: Optional[str] = None,
     },
 )
 def tailored_resume_generator(job_description: str, experience: str, 
-                              skills: Optional[List[str]] = None) -> str:
+                              skills: list[str] | None = None) -> str:
     """Tailored resume generator."""
     return f"""
 # Tailored Resume Generator

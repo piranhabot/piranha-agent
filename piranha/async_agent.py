@@ -9,9 +9,11 @@ Provides async/await interface for agents, enabling:
 from __future__ import annotations
 
 import asyncio
-from typing import Any, AsyncGenerator, Callable, Optional
+from collections.abc import AsyncGenerator, Callable
+from typing import Any
 
 from piranha_core import EventStore, GuardrailEngine, SemanticCache, SkillRegistry
+
 from piranha.llm_provider import LLMMessage, LLMProvider, LLMResponse
 from piranha.session import Session
 from piranha.skill import Skill
@@ -33,8 +35,8 @@ class AsyncAgent:
         description: str = "",
         system_prompt: str = "",
         skills: list[Skill] | None = None,
-        api_base: Optional[str] = None,
-        api_key: Optional[str] = None,
+        api_base: str | None = None,
+        api_key: str | None = None,
     ):
         """Initialize async agent.
         

@@ -7,9 +7,9 @@ Supports auto-monitoring for skill execution tracking.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable, Optional
-import functools
+from typing import Any
 
 
 @dataclass
@@ -30,7 +30,7 @@ class Skill:
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     name: str = ""
     description: str = ""
-    function: Optional[Callable] = None
+    function: Callable | None = None
     parameters_schema: dict = field(default_factory=dict)
     required_permissions: list[str] = field(default_factory=list)
     inheritable: bool = True
@@ -108,10 +108,10 @@ class Skill:
 
 
 def skill(
-    name: Optional[str] = None,
+    name: str | None = None,
     description: str = "",
-    parameters: Optional[dict] = None,
-    permissions: Optional[list[str]] = None,
+    parameters: dict | None = None,
+    permissions: list[str] | None = None,
     inheritable: bool = True,
     auto_monitor: bool = False,
 ) -> Callable:

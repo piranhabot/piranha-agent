@@ -11,11 +11,9 @@ This module provides advanced AI skills similar to Claude's capabilities:
 - Multi-step problem solving
 """
 
-from piranha.skill import skill
-from typing import Optional, List, Dict, Any
 import re
-import json
 
+from piranha.skill import skill
 
 # =============================================================================
 # Reasoning & Analysis Skills
@@ -87,10 +85,10 @@ def analyze_complex_problem(problem: str, domain: str = "general") -> str:
         "required": ["premises"],
     },
 )
-def logical_reasoning(premises: List[str], conclusion: Optional[str] = None) -> str:
+def logical_reasoning(premises: list[str], conclusion: str | None = None) -> str:
     """Apply logical reasoning to evaluate arguments."""
     
-    result = f"""
+    result = """
 # Logical Reasoning Analysis
 
 ## Premises
@@ -117,7 +115,7 @@ def logical_reasoning(premises: List[str], conclusion: Optional[str] = None) -> 
             result += f"- {fallacy}\n"
     
     if conclusion:
-        result += f"\n## Conclusion Evaluation\n"
+        result += "\n## Conclusion Evaluation\n"
         result += f"Proposed: {conclusion}\n"
         result += "\nValidity: Requires further analysis based on premises\n"
     
@@ -206,7 +204,7 @@ This code appears to be a {language} program that performs specific operations.
         "required": ["task", "language"],
     },
 )
-def generate_code(task: str, language: str = "python", requirements: Optional[List[str]] = None) -> str:
+def generate_code(task: str, language: str = "python", requirements: list[str] | None = None) -> str:
     """Generate code for specific tasks."""
     
     code = f'''"""
@@ -264,10 +262,10 @@ if __name__ == "__main__":
         "required": ["code"],
     },
 )
-def debug_code(code: str, error_message: Optional[str] = None, expected_behavior: Optional[str] = None) -> str:
+def debug_code(code: str, error_message: str | None = None, expected_behavior: str | None = None) -> str:
     """Debug code and identify issues."""
     
-    result = f"""
+    result = """
 # Code Debugging Report
 
 ## Code Analysis
@@ -332,11 +330,11 @@ def summarize_text(text: str, length: str = "medium", focus: str = "main points"
     
     # Determine summary length
     if length == "short":
-        target_ratio = 0.1
+        pass
     elif length == "long":
-        target_ratio = 0.3
+        pass
     else:
-        target_ratio = 0.2
+        pass
     
     summary = f"""
 # Text Summary
@@ -493,7 +491,7 @@ def solve_math_problem(problem: str, show_steps: bool = True) -> str:
         "required": ["data"],
     },
 )
-def statistical_analysis(data: List[float], analysis_type: str = "descriptive") -> str:
+def statistical_analysis(data: list[float], analysis_type: str = "descriptive") -> str:
     """Perform statistical analysis on data."""
     
     if not data:
@@ -646,7 +644,7 @@ def edit_improve_text(text: str, goal: str = "clarity") -> str:
         "required": ["data_description"],
     },
 )
-def analyze_data(data_description: str, questions: Optional[List[str]] = None) -> str:
+def analyze_data(data_description: str, questions: list[str] | None = None) -> str:
     """Analyze data and provide insights."""
     
     result = f"""
@@ -698,13 +696,13 @@ def analyze_data(data_description: str, questions: Optional[List[str]] = None) -
         "required": ["options"],
     },
 )
-def compare_options(options: List[str], criteria: Optional[List[str]] = None) -> str:
+def compare_options(options: list[str], criteria: list[str] | None = None) -> str:
     """Compare multiple options systematically."""
     
     if not criteria:
         criteria = ["Cost", "Quality", "Time", "Risk", "Scalability"]
     
-    result = f"""
+    result = """
 # Options Comparison Analysis
 
 ## Options to Compare
@@ -712,7 +710,7 @@ def compare_options(options: List[str], criteria: Optional[List[str]] = None) ->
     for i, opt in enumerate(options, 1):
         result += f"{i}. {opt}\n"
     
-    result += f"\n## Comparison Criteria\n"
+    result += "\n## Comparison Criteria\n"
     for criterion in criteria:
         result += f"- {criterion}\n"
     
@@ -758,7 +756,7 @@ def compare_options(options: List[str], criteria: Optional[List[str]] = None) ->
         "required": ["problem"],
     },
 )
-def step_by_step_solver(problem: str, context: Optional[str] = None) -> str:
+def step_by_step_solver(problem: str, context: str | None = None) -> str:
     """Solve problems step-by-step."""
     
     solution = f"""

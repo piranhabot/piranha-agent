@@ -9,13 +9,13 @@ Provides:
 
 from __future__ import annotations
 
-import json
+import statistics
 import time
+from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Any, Callable, Optional
-from collections import defaultdict
-import statistics
+from typing import Any
 
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
@@ -51,12 +51,12 @@ class MetricsCollector:
         self._gauges: dict[str, float] = {}
         self._histograms: dict[str, list[float]] = defaultdict(list)
     
-    def increment_counter(self, name: str, value: int = 1, labels: Optional[dict] = None) -> None:
+    def increment_counter(self, name: str, value: int = 1, labels: dict | None = None) -> None:
         """Increment a counter metric."""
         key = self._make_key(name, labels)
         self._counters[key] += value
     
-    def set_gauge(self, name: str, value: float, labels: Optional[dict] = None) -> None:
+    def set_gauge(self, name: str, value: float, labels: dict | None = None) -> None:
         """Set a gauge metric."""
         key = self._make_key(name, labels)
         self._gauges[key] = value
@@ -66,7 +66,7 @@ class MetricsCollector:
             labels=labels or {},
         ))
     
-    def record_histogram(self, name: str, value: float, labels: Optional[dict] = None) -> None:
+    def record_histogram(self, name: str, value: float, labels: dict | None = None) -> None:
         """Record a histogram value."""
         key = self._make_key(name, labels)
         self._histograms[key].append(value)
@@ -76,17 +76,17 @@ class MetricsCollector:
             labels=labels or {},
         ))
     
-    def get_counter(self, name: str, labels: Optional[dict] = None) -> int:
+    def get_counter(self, name: str, labels: dict | None = None) -> int:
         """Get counter value."""
         key = self._make_key(name, labels)
         return self._counters.get(key, 0)
     
-    def get_gauge(self, name: str, labels: Optional[dict] = None) -> Optional[float]:
+    def get_gauge(self, name: str, labels: dict | None = None) -> float | None:
         """Get gauge value."""
         key = self._make_key(name, labels)
         return self._gauges.get(key)
     
-    def get_histogram_stats(self, name: str, labels: Optional[dict] = None) -> dict[str, float]:
+    def get_histogram_stats(self, name: str, labels: dict | None = None) -> dict[str, float]:
         """Get histogram statistics."""
         key = self._make_key(name, labels)
         values = self._histograms.get(key, [])
@@ -137,7 +137,7 @@ class MetricsCollector:
         
         return "\n".join(lines)
     
-    def _make_key(self, name: str, labels: Optional[dict]) -> str:
+    def _make_key(self, name: str, labels: dict | None) -> str:
         """Create a metric key with labels."""
         if not labels:
             return name
@@ -208,7 +208,7 @@ class AlertManager:
         
         return triggered
     
-    def _get_metric_value(self, metrics: MetricsCollector, alert_name: str) -> Optional[float]:
+    def _get_metric_value(self, metrics: MetricsCollector, alert_name: str) -> float | None:
         """Get metric value for an alert."""
         # Try gauge first
         value = metrics.get_gauge(alert_name)
@@ -275,11 +275,11 @@ class CostAnomalyDetector:
         self.window_size = window_size
         self.threshold_std = threshold_std
         self._cost_history: list[float] = []
-        self._baseline_mean: Optional[float] = None
-        self._baseline_std: Optional[float] = None
+        self._baseline_mean: float | None = None
+        self._baseline_std: float | None = None
         self._anomalies: list[dict] = []
     
-    def record_cost(self, cost: float) -> Optional[dict]:
+    def record_cost(self, cost: float) -> dict | None:
         """Record a cost and check for anomaly."""
         self._cost_history.append(cost)
         
@@ -299,7 +299,7 @@ class CostAnomalyDetector:
         self._baseline_std = statistics.stdev(baseline_data) if len(baseline_data) > 1 else 0
         
         # Check recent costs for anomalies
-        for i, cost in enumerate(recent_data):
+        for _i, cost in enumerate(recent_data):
             if self._is_anomaly(cost):
                 anomaly = {
                     "timestamp": datetime.utcnow().isoformat(),
@@ -370,7 +370,7 @@ class ObservabilityManager:
     def __init__(
         self,
         service_name: str = "piranha-agent",
-        otlp_endpoint: Optional[str] = None,
+        otlp_endpoint: str | None = None,
     ):
         self.metrics = MetricsCollector()
         self.alerts = AlertManager()
@@ -383,7 +383,7 @@ class ObservabilityManager:
         # Register default alerts
         self._register_default_alerts()
     
-    def _init_tracing(self, service_name: str, otlp_endpoint: Optional[str]) -> None:
+    def _init_tracing(self, service_name: str, otlp_endpoint: str | None) -> None:
         """Initialize OpenTelemetry tracing."""
         provider = TracerProvider()
         
@@ -447,12 +447,12 @@ class ObservabilityManager:
         if anomaly:
             print(f"⚠️ Cost anomaly detected: ${cost_usd:.4f} (z-score: {anomaly['z_score']:.2f})")
     
-    def record_latency(self, operation: str, latency_ms: float, labels: Optional[dict] = None) -> None:
+    def record_latency(self, operation: str, latency_ms: float, labels: dict | None = None) -> None:
         """Record request latency."""
         self.metrics.record_histogram(f"{operation}_latency", latency_ms, labels)
         self.metrics.set_gauge("request_latency", latency_ms, labels)
     
-    def record_error(self, operation: str, error_type: str, labels: Optional[dict] = None) -> None:
+    def record_error(self, operation: str, error_type: str, labels: dict | None = None) -> None:
         """Record an error."""
         self.metrics.increment_counter("errors_total", 1, {** (labels or {}), "type": error_type})
     
@@ -515,7 +515,7 @@ class RequestTracker:
 
 
 # Global observability instance
-_observability: Optional[ObservabilityManager] = None
+_observability: ObservabilityManager | None = None
 
 
 def get_observability() -> ObservabilityManager:
@@ -528,7 +528,7 @@ def get_observability() -> ObservabilityManager:
 
 def init_observability(
     service_name: str = "piranha-agent",
-    otlp_endpoint: Optional[str] = None,
+    otlp_endpoint: str | None = None,
 ) -> ObservabilityManager:
     """Initialize global observability manager."""
     global _observability

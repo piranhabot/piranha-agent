@@ -13,7 +13,7 @@ import hashlib
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -22,7 +22,7 @@ class Memory:
     
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     content: str = ""
-    embedding: Optional[list[float]] = None
+    embedding: list[float] | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     access_count: int = 0
     importance: float = 1.0
@@ -65,7 +65,7 @@ class VectorStore:
         self.vectors.pop(item_id, None)
         self.items.pop(item_id, None)
     
-    def get(self, item_id: str) -> Optional[Any]:
+    def get(self, item_id: str) -> Any | None:
         """Get item by ID."""
         return self.items.get(item_id)
     
@@ -101,7 +101,7 @@ class VectorStore:
         if len(a) != len(b):
             return 0.0
         
-        dot_product = sum(x * y for x, y in zip(a, b))
+        dot_product = sum(x * y for x, y in zip(a, b, strict=False))
         norm_a = sum(x * x for x in a) ** 0.5
         norm_b = sum(x * x for x in b) ** 0.5
         
@@ -172,7 +172,7 @@ class MemoryManager:
     
     def __init__(
         self,
-        embedding_model: Optional[EmbeddingModel] = None,
+        embedding_model: EmbeddingModel | None = None,
         max_memories: int = 1000,
     ):
         """Initialize memory manager.
@@ -189,9 +189,9 @@ class MemoryManager:
     def add(
         self,
         content: str,
-        tags: Optional[list[str]] = None,
+        tags: list[str] | None = None,
         importance: float = 1.0,
-        metadata: Optional[dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> Memory:
         """Add a memory.
         
@@ -256,7 +256,7 @@ class MemoryManager:
         
         return filtered
     
-    def get(self, memory_id: str) -> Optional[Memory]:
+    def get(self, memory_id: str) -> Memory | None:
         """Get memory by ID."""
         return self._memories.get(memory_id)
     
@@ -301,7 +301,7 @@ class MemoryManager:
         context_parts = []
         total_tokens = 0
         
-        for memory, score in results:
+        for memory, _score in results:
             # Rough token estimation
             tokens = len(memory.content) // 4
             

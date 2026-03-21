@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any
 
 from piranha_core import EventStore
 
@@ -25,7 +25,7 @@ class Session:
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: dict[str, Any] = field(default_factory=dict)
-    _event_store: Optional[EventStore] = field(default=None, repr=False)
+    _event_store: EventStore | None = field(default=None, repr=False)
     
     def __post_init__(self) -> None:
         """Initialize event store if not provided."""
@@ -33,7 +33,7 @@ class Session:
             self._event_store = EventStore()
     
     @classmethod
-    def create(cls, event_store: Optional[EventStore] = None) -> "Session":
+    def create(cls, event_store: EventStore | None = None) -> Session:
         """Create a new session.
         
         Args:
@@ -50,7 +50,7 @@ class Session:
         agent_id: str,
         event_type: str,
         payload: dict[str, Any],
-        parent_event_id: Optional[str] = None,
+        parent_event_id: str | None = None,
     ) -> str:
         """Record an event in the session.
         
