@@ -103,7 +103,7 @@ class BenchmarkRunner:
                 logger.debug(f"Warmup error (ignored): {e}")
         
         # Benchmark
-        for i in range(iterations):
+        for _ in range(iterations):
             start = time.perf_counter()
             try:
                 func(*args, **kwargs)
@@ -162,7 +162,7 @@ class BenchmarkRunner:
                 logger.debug(f"Warmup error (ignored): {e}")
         
         # Benchmark
-        for i in range(iterations):
+        for _ in range(iterations):
             start = time.perf_counter()
             try:
                 await func(*args, **kwargs)
@@ -326,9 +326,9 @@ class TestPiranhaBenchmarks:
             return Agent(name="test", model="ollama/llama3:latest")
         
         result = runner.run("Agent Creation", create_agent, iterations=50)
-        
+
         print(f"\nAgent Creation: {result.avg_time*1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
-        assert result.avg_time < 1.0  # Should be < 1ms
+        assert result.avg_time < 0.001  # Should be < 1ms
     
     def test_event_store_append_benchmark(self, runner, event_store):
         """Benchmark: Event store append performance."""
