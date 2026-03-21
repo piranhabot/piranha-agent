@@ -94,9 +94,9 @@ function App() {
       const edges = []
       for (let i = 0; i < rawNodes.length - 1; i++) {
         edges.push({
-          id: `edge-${i}-${i+1}`,
+          id: `edge-${i}-${i + 1}`,
           source: rawNodes[i].id,
-          target: rawNodes[i+1].id,
+          target: rawNodes[i + 1].id,
           type: 'bezier',
           animated: true,
           style: { 
