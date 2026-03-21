@@ -9,6 +9,7 @@ Provides async/await interface for agents, enabling:
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import AsyncGenerator, Callable
 from typing import Any
 
@@ -18,6 +19,9 @@ from piranha.llm_provider import LLMMessage, LLMProvider, LLMResponse
 from piranha.session import Session
 from piranha.skill import Skill
 from piranha.memory import ContextManager, MemoryManager
+
+
+logger = logging.getLogger(__name__)
 
 
 class AsyncAgent:
@@ -97,7 +101,15 @@ class AsyncAgent:
     def add_skill(self, skill: Skill) -> None:
         """Add a skill to the agent."""
         self.skills.append(skill)
-        self._register_skills()
+        # Register only the newly added skill for efficiency
+        self._skill_registry.register_skill(
+            skill_id=skill.id,
+            name=skill.name,
+            description=skill.description,
+            parameters_schema=skill.parameters_schema,
+            permissions=skill.required_permissions,
+            inheritable=skill.inheritable,
+        )
 
     def add_to_memory(self, content: str, tags: list[str] | None = None) -> None:
         """Add content to agent's memory."""
@@ -117,7 +129,7 @@ class AsyncAgent:
         self,
         task: str,
         stream: bool = False,
-    ) -> LLMResponse | AsyncGenerator[str, None, None]:
+    ) -> LLMResponse | AsyncGenerator[str, None]:
         """Run a task asynchronously.
         
         Args:
@@ -173,7 +185,7 @@ class AsyncAgent:
     async def _stream_response(
         self,
         task: str,
-    ) -> AsyncGenerator[str, None, None]:
+    ) -> AsyncGenerator[str, None]:
         """Stream response token by token."""
         full_response = ""
         
@@ -193,7 +205,7 @@ class AsyncAgent:
         try:
             self._event_store.record_llm_call(
                 session_id=self.session.id,
-                agent_id=self.id,
+                agent_id=self.name,  # Use agent name as identifier
                 model=response.model,
                 prompt_tokens=response.prompt_tokens,
                 completion_tokens=response.completion_tokens,
@@ -201,12 +213,19 @@ class AsyncAgent:
                 cache_hit=response.finish_reason == "cache_hit",
                 context_event_count=len(self._messages),
             )
-        except Exception:
-            pass  # Non-critical, don't fail the request
-    
+        except Exception as exc:
+            # Non-critical, don't fail the request, but log for observability
+            logger.warning(
+                "Failed to record LLM call for session '%s', agent '%s': %s",
+                self.session.id,
+                self.name,
+                exc,
+                exc_info=True,
+            )
+
     @property
-    def id(self) -> str:
-        """Get agent ID from session."""
+    def session_id(self) -> str:
+        """Get session ID."""
         return self.session.id
     
     def get_history(self) -> list[dict[str, str]]:

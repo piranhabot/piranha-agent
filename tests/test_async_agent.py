@@ -284,12 +284,12 @@ class TestAsyncAgent:
             with pytest.raises(Exception):
                 await agent.run("Test")
 
-    def test_agent_id_property(self):
-        """Test agent ID property."""
+    def test_agent_session_id_property(self):
+        """Test agent session ID property."""
         agent = AsyncAgent(name="test-agent")
-        
-        assert agent.id is not None
-        assert len(agent.id) > 0
+
+        assert agent.session_id is not None
+        assert len(agent.session_id) > 0
 
     def test_context_manager_property(self):
         """Test context manager property."""
