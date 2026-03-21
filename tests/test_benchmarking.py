@@ -16,6 +16,7 @@ Usage:
 import time
 import statistics
 import logging
+import asyncio
 from typing import Callable, Any
 from dataclasses import dataclass, field
 from concurrent.futures import ThreadPoolExecutor
