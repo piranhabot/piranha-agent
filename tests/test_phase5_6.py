@@ -1,6 +1,5 @@
 """Tests for Phase 5: PostgreSQL Backend and Phase 6: Distributed Agents."""
 
-import pytest
 from piranha import PostgresEventStore, AgentOrchestrator, DistributedAgent
 
 

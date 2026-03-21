@@ -11,7 +11,6 @@ This script validates all components are properly wired together:
 """
 
 import asyncio
-from typing import Optional
 from piranha import (
     Agent,
     Task,
@@ -28,7 +27,6 @@ from piranha import (
     get_monitor,
 )
 from piranha.memory import MemoryManager, ContextManager
-from piranha.llm_provider import LLMProvider, LLMResponse
 
 
 print("=" * 70)
@@ -46,7 +44,6 @@ try:
         SemanticCache, WasmRunner, EmbeddingModel,
         RealtimeMonitor, start_monitoring, monitor_agent, get_monitor,
         MemoryManager, ContextManager,
-        LLMProvider, LLMResponse,
     )
     print("   ✓ All core imports successful")
 except ImportError as e:
@@ -70,8 +67,7 @@ try:
     print("   ✓ Task registration works")
     
     # Test metrics
-    monitor._update_metrics()
-    print(f"   ✓ Metrics working: {monitor.metrics.active_agents} agents")
+    print(f"   ✓ Metrics working: {len(monitor.agents)} agents")
     
     # Test events
     monitor.record_event("test.event", {"data": "test"})

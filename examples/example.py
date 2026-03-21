@@ -22,11 +22,9 @@ console = Console()
 
 try:
     from piranha import (
-        PiranhaAgent,
+        Agent,
         Task,
-        Guardrail,
-        GroupChat,
-        skill,
+        Skill,
     )
 except ImportError:
     console.print(

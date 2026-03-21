@@ -7,7 +7,7 @@ This example demonstrates:
 - Using skills in task execution
 """
 
-from piranha import Agent, Task, Skill
+from piranha import Agent, Task
 from piranha.skill import skill
 
 

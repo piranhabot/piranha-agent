@@ -9,14 +9,10 @@ This example shows:
 - Multi-agent coordination
 """
 
-import asyncio
 from piranha import (
     Agent,
     AsyncAgent,
     AgentGroup,
-    LLMProvider,
-    MemoryManager,
-    ContextManager,
     skill,
 )
 

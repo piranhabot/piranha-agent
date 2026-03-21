@@ -7,7 +7,7 @@ Usage:
     python examples/09_claude_skills.py
 """
 
-from piranha import Agent, Task
+from piranha import Agent
 from piranha.claude_skills import (
     analyze_complex_problem,
     logical_reasoning,

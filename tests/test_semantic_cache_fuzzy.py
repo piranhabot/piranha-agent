@@ -1,6 +1,5 @@
 """Tests for Embedding-based Semantic Cache with Fuzzy Matching (Phase 4)."""
 
-import pytest
 from piranha import SemanticCache
 
 

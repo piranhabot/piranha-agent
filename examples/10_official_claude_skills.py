@@ -11,28 +11,6 @@ from piranha import Agent
 from piranha.official_claude_skills import (
     register_official_claude_skills,
     get_all_official_claude_skills,
-    # Document Skills
-    docx_skill,
-    pdf_skill,
-    pptx_skill,
-    xlsx_skill,
-    # Development Skills
-    frontend_design,
-    mcp_builder,
-    test_driven_development,
-    code_review,
-    # Creative Skills
-    canvas_design,
-    brand_guidelines,
-    # Communication Skills
-    internal_comms,
-    article_extractor,
-    # Data Skills
-    csv_data_summarizer,
-    postgres,
-    # Productivity Skills
-    file_organizer,
-    git_workflows,
 )
 
 

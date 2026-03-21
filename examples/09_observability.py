@@ -13,9 +13,6 @@ Usage:
 
 from piranha import (
     Agent,
-    ObservabilityManager,
-    init_observability,
-    get_observability,
 )
 
 

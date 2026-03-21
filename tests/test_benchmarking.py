@@ -15,10 +15,8 @@ Usage:
 
 import time
 import statistics
-import asyncio
 from typing import Callable, Any
 from dataclasses import dataclass, field
-from concurrent.futures import ThreadPoolExecutor
 import pytest
 
 

@@ -8,7 +8,6 @@ This example demonstrates:
 - SkillRegistry for permission management
 """
 
-import json
 from piranha_core import (
     EventStore,
     SemanticCache,
