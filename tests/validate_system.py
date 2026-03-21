@@ -178,7 +178,7 @@ class MultiAgentCollaboration:
         })
         
         # Register with monitor
-        self.monitor.register_task(task_id, description)
+        self.monitor.register_task(task_id, description, agent_id=None)
         self.collaboration_log.append(f"Created task chain: {description}")
         
         return task_id
