@@ -40,8 +40,8 @@ try:
         Agent, Task, Session, Skill, skill,
         SemanticCache, WasmRunner, EmbeddingModel,
         RealtimeMonitor, start_monitoring, monitor_agent, get_monitor,
-        MemoryManager, ContextManager,
     )
+    from piranha.memory import MemoryManager, ContextManager
     print("   ✓ All core imports successful")
 except ImportError as e:
     print(f"   ✗ Import failed: {e}")
