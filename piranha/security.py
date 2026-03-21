@@ -53,7 +53,7 @@ ALLOWED_ORIGINS = os.getenv(
 ).split(",")
 RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
 _env_api_keys = os.getenv("API_KEYS")
-API_KEYS = _env_api_keys.split(",") if _env_api_keys else []
+API_KEYS = [k.strip() for k in _env_api_keys.split(",") if k.strip()] if _env_api_keys else []
 
 # Initialize rate limiter.
 # Use this `limiter` instance to protect FastAPI routes, for example:
@@ -130,7 +130,7 @@ def verify_api_key(api_key: str) -> bool:
         # This aligns with the security check, which only warns in this case.
         return True
     
-    return api_key in API_KEYS
+    return any(secrets.compare_digest(api_key, valid_key) for valid_key in API_KEYS)
 
 
 def get_cors_origins() -> list[str]:
