@@ -4,8 +4,8 @@ build-backend = "maturin"
 
 [project]
 name = "piranha-agent"
-version = "0.1.0"
-description = "Next-generation autonomous agent framework with Rust core, time-travel debugging, and semantic caching"
+version = "0.4.0"
+description = "Next-generation autonomous agent framework with Rust core, time-travel debugging, Wasm sandbox, and 46+ Claude Skills"
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"

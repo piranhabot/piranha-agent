@@ -56,7 +56,7 @@ from piranha.session import Session
 from piranha.skill import Skill, skill
 from piranha.task import Task
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __all__ = [
     # Core classes
     "Agent",
