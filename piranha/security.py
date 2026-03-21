@@ -56,7 +56,12 @@ ALLOWED_ORIGINS = os.getenv(
 RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
 API_KEYS = os.getenv("API_KEYS", "").split(",") if os.getenv("API_KEYS") else []
 
-# Initialize rate limiter
+# Initialize rate limiter.
+# Use this `limiter` instance to protect FastAPI routes, for example:
+#     @app.get("/items")
+#     @limiter.limit(f"{RATE_LIMIT_PER_MINUTE}/minute")
+#     async def list_items():
+#         ...
 limiter = Limiter(key_func=get_remote_address)
 
 # Security bearer token
