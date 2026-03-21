@@ -1,0 +1,131 @@
+{
+  "name": "piranha-agent",
+  "displayName": "Piranha Agent",
+  "description": "AI Agent development with Piranha - Build, debug, and deploy autonomous agents",
+  "version": "0.3.0",
+  "publisher": "piranha-agent",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Machine Learning",
+    "Programming Languages",
+    "Other"
+  ],
+  "keywords": [
+    "ai",
+    "agent",
+    "llm",
+    "piranha",
+    "automation",
+    "rust",
+    "python"
+  ],
+  "activationEvents": [
+    "onLanguage:python",
+    "onView:piranhaAgents"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "piranha-container",
+          "title": "Piranha Agent",
+          "icon": "$(robot)"
+        }
+      ]
+    },
+    "views": {
+      "piranha-container": [
+        {
+          "id": "piranhaAgents",
+          "name": "Agents"
+        },
+        {
+          "id": "piranhaTasks",
+          "name": "Tasks"
+        },
+        {
+          "id": "piranhaSkills",
+          "name": "Skills"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "piranha.createAgent",
+        "title": "Create New Agent",
+        "icon": "$(plus)"
+      },
+      {
+        "command": "piranha.runAgent",
+        "title": "Run Agent",
+        "icon": "$(play)"
+      },
+      {
+        "command": "piranha.debugAgent",
+        "title": "Debug Agent",
+        "icon": "$(debug)"
+      },
+      {
+        "command": "piranha.createTask",
+        "title": "Create Task",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "piranha.runTask",
+        "title": "Run Task",
+        "icon": "$(play)"
+      },
+      {
+        "command": "piranha.openDebugger",
+        "title": "Open Time-Travel Debugger",
+        "icon": "$(debug-alt)"
+      },
+      {
+        "command": "piranha.showSkills",
+        "title": "Show Available Skills",
+        "icon": "$(list-flat)"
+      },
+      {
+        "command": "piranha.chatWithAgent",
+        "title": "Chat with Agent",
+        "icon": "$(comment-discussion)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "piranha.createAgent",
+          "when": "view == piranhaAgents",
+          "group": "navigation"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "piranha.runTask",
+          "when": "resourceLangId == python",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0"
+  }
+}

@@ -1,0 +1,34 @@
+[package]
+name = "piranha_core"
+version.workspace = true
+edition.workspace = true
+
+[lib]
+name = "piranha_core"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+pyo3.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+rusqlite.workspace = true
+sha2.workspace = true
+hex = "0.4"
+parking_lot = "0.12"
+wasmtime.workspace = true
+wasmtime-wasi.workspace = true
+base64 = "0.21"
+
+# Phase 5: PostgreSQL support
+deadpool-postgres = "0.12"
+tokio-postgres = "0.7"
+
+[dev-dependencies]
+tempfile = "3.10"
