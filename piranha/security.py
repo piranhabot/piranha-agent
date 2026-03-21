@@ -9,8 +9,12 @@ This module provides security utilities:
 """
 
 import os
+from datetime import datetime, timedelta
+from typing import Optional
+
 import jwt
 from fastapi import WebSocket
+from fastapi.security import HTTPBearer
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 

@@ -646,7 +646,6 @@ def domain_name_brainstormer(keywords: list[str], style: str = "all",
 {tld_headers}
 
 ## Generated Names
-"""
 
 ### Descriptive
 | Name | .com | .io | .dev | .ai |
