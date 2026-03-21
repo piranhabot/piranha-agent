@@ -64,16 +64,16 @@ __all__ = [
     "Skill",
     "Task",
     "skill",
-    # Rust core
+    # Rust core and caching
     "DynamicSkillCompiler",
     "EventStore",
     "GuardrailEngine",
     "SemanticCache",
     "SkillRegistry",
     "WasmRunner",
-    # Phase 5: PostgreSQL
+    # PostgreSQL integration
     "PostgresEventStore",
-    # Phase 6: Distributed
+    # Distributed orchestration
     "AgentOrchestrator",
     "DistributedAgent",
     # Async support
