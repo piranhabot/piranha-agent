@@ -19,9 +19,6 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 import secrets
 
-# Default development secret key (DO NOT USE IN PRODUCTION)
-DEFAULT_DEV_SECRET_KEY = "dev-secret-key-32-chars-long!!XX"
-
 # Security configuration from environment
 _env_secret_key = os.getenv("SECRET_KEY")
 _env = os.getenv("ENV") or os.getenv("PYTHON_ENV") or "production"
