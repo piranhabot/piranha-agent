@@ -195,9 +195,16 @@ class AsyncAgent:
         
         # Store complete response
         self._messages.append(LLMMessage(role="assistant", content=full_response))
-        
-        # Record event
-        response = LLMResponse(content=full_response, model=self.model)
+
+        # Record event with complete token and cost information
+        response = LLMResponse(
+            content=full_response,
+            model=self.model,
+            prompt_tokens=0,  # Token counts not available in streaming mode
+            completion_tokens=0,
+            cost_usd=0.0,
+            finish_reason="stream",
+        )
         self._record_llm_event(response)
     
     def _record_llm_event(self, response: LLMResponse) -> None:
