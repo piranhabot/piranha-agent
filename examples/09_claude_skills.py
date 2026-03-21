@@ -20,7 +20,6 @@ from piranha.claude_skills import (
     statistical_analysis,
     compare_options,
     step_by_step_solver,
-    register_claude_skills,
 )
 
 

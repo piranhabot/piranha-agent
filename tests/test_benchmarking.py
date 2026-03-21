@@ -14,7 +14,6 @@ Usage:
 """
 
 import time
-import statistics
 import logging
 from typing import Callable, Any
 from dataclasses import dataclass, field
