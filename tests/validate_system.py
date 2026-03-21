@@ -299,9 +299,9 @@ try:
     monitor_agent(agent1)
     monitor_agent(agent2)
 
-    # Create and track tasks
-    _ = Task(description="Task 1", agent=agent1)
-    _ = Task(description="Task 2", agent=agent2)
+    # Create and track tasks (kept in variables for clarity and potential verification)
+    task1 = Task(description="Task 1", agent=agent1)
+    task2 = Task(description="Task 2", agent=agent2)
 
     # Verify monitoring
     assert agent1.id in workflow_monitor.agents
