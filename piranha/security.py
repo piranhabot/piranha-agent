@@ -21,11 +21,16 @@ from slowapi.util import get_remote_address
 # Security configuration from environment
 _env_secret_key = os.getenv("SECRET_KEY")
 if not _env_secret_key:
-    raise RuntimeError(
-        "SECRET_KEY environment variable is not set. "
-        "Set a strong, random secret key before starting the application."
+    # Allow development without SECRET_KEY but warn
+    import warnings
+    warnings.warn(
+        "⚠️  WARNING: SECRET_KEY not set! Using default for development. "
+        "Set a strong, random SECRET_KEY in .env for production.",
+        UserWarning
     )
-SECRET_KEY = _env_secret_key
+    SECRET_KEY = "dev-secret-key-change-in-production"
+else:
+    SECRET_KEY = _env_secret_key
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 ALLOWED_ORIGINS = os.getenv(
