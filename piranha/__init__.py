@@ -1,4 +1,11 @@
-"""Piranha Agent - Next-generation autonomous agent framework."""
+"""Piranha Agent - Next-generation autonomous agent framework.
+
+This top-level package re-exports core Rust-backed primitives from the
+separately distributed ``piranha_core`` module (typically installed as the
+``piranha-core`` package). The underscore in ``piranha_core`` reflects the
+standard Python import naming convention for packages whose distribution
+name uses a dash.
+"""
 
 from piranha_core import (
     AgentOrchestrator,
