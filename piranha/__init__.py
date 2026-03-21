@@ -86,10 +86,10 @@ __all__ = [
     "create_provider",
     # Memory
     "ContextManager",
-    "EmbeddingModel",
     "Memory",
     "MemoryManager",
     # Embeddings
+    "EmbeddingModel",
     "get_embedding_model",
     "list_supported_providers",
     # Real-Time Monitoring
