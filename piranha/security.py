@@ -19,6 +19,10 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 import secrets
 
+# Historical default development secret key retained only for detection.
+# This value SHOULD NOT be used for any new deployments.
+DEFAULT_DEV_SECRET_KEY = "dev-secret-key-change-me"
+
 # Security configuration from environment
 _env_secret_key = os.getenv("SECRET_KEY")
 _env = os.getenv("ENV") or os.getenv("PYTHON_ENV") or "production"
