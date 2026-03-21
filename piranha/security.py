@@ -86,7 +86,7 @@ async def verify_websocket_token(websocket: WebSocket) -> Optional[dict]:
     try:
         token = websocket.query_params.get("token")
         if not token:
-            await websocket.close(code=4001, reason="Missing authentication token")
+            await websocket.close(code=4001, reason="Missing authentication token in query parameters")
             return None
 
         payload = verify_token(token)
