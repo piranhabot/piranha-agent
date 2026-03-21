@@ -25,6 +25,7 @@ from piranha import (
 )
 from piranha.memory import MemoryManager, ContextManager
 from typing import Optional
+import asyncio
 
 print("=" * 70)
 print("PIRANHA AGENT - COMPLETE SYSTEM VALIDATION")
@@ -37,7 +38,7 @@ print()
 print("1. Validating Core Imports...")
 try:
     from piranha import (
-        Agent, Task, Session, Skill, skill,
+        Agent, Task, skill,
         SemanticCache, WasmRunner, EmbeddingModel,
         RealtimeMonitor, start_monitoring, monitor_agent, get_monitor,
     )
@@ -114,7 +115,7 @@ print("\n4. Validating Skill Template with Monitoring...")
         },
         "required": ["input"],
     },
-    auto_monitor=True  # NEW: Auto-monitoring flag
+    auto_monitor=True  # Enable automatic monitoring of this skill
 )
 def monitored_skill(input: str) -> str:
     """Skill with automatic monitoring."""
@@ -299,9 +300,9 @@ try:
     monitor_agent(agent1)
     monitor_agent(agent2)
 
-    # Create and track tasks
-    _ = Task(description="Task 1", agent=agent1)
-    _ = Task(description="Task 2", agent=agent2)
+    # Create and track tasks (kept in variables for clarity and potential verification)
+    task1 = Task(description="Task 1", agent=agent1)
+    task2 = Task(description="Task 2", agent=agent2)
 
     # Verify monitoring
     assert agent1.id in workflow_monitor.agents
