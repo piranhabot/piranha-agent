@@ -53,7 +53,7 @@ ALLOWED_ORIGINS = os.getenv(
 ).split(",")
 RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
 _env_api_keys = os.getenv("API_KEYS")
-API_KEYS = _env_api_keys.split(",") if _env_api_keys else []
+API_KEYS = [k.strip() for k in _env_api_keys.split(",") if k.strip()] if _env_api_keys else []
 
 # Initialize rate limiter.
 # Use this `limiter` instance to protect FastAPI routes, for example:
