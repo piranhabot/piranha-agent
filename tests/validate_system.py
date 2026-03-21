@@ -25,6 +25,7 @@ from piranha import (
 )
 from piranha.memory import MemoryManager, ContextManager
 from typing import Optional
+import asyncio
 
 print("=" * 70)
 print("PIRANHA AGENT - COMPLETE SYSTEM VALIDATION")
