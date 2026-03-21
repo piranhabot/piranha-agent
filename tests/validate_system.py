@@ -24,7 +24,7 @@ from piranha import (
     get_monitor,
 )
 from piranha.memory import MemoryManager, ContextManager
-
+from typing import Optional
 
 print("=" * 70)
 print("PIRANHA AGENT - COMPLETE SYSTEM VALIDATION")
