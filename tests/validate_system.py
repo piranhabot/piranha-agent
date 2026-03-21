@@ -177,8 +177,16 @@ class MultiAgentCollaboration:
             "results": []
         })
         
+        # Determine initial responsible agent (first matching role with a registered agent)
+        first_agent_id = None
+        for role in agent_roles:
+            agent_data = next((a for a in self.agents if a["role"] == role), None)
+            if agent_data is not None:
+                first_agent_id = agent_data["agent"].id
+                break
+        
         # Register with monitor
-        self.monitor.register_task(task_id, description, agent_id=None)
+        self.monitor.register_task(task_id, description, agent_id=first_agent_id)
         self.collaboration_log.append(f"Created task chain: {description}")
         
         return task_id
