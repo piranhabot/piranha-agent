@@ -423,7 +423,7 @@ async def run_collaboration(
     collab = create_collaboration(monitor=monitor)
     
     # Add agents
-    for agent, role in zip(agents, roles, strict=False):
+    for agent, role in zip(agents, roles, strict=True):
         collab.add_agent(agent, role)
     
     # Create and execute task
