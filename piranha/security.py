@@ -19,9 +19,6 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 import secrets
 
-# Default development secret key (DO NOT USE IN PRODUCTION)
-DEFAULT_DEV_SECRET_KEY = "dev-secret-key-32-chars-long!!XX"
-
 # Security configuration from environment
 _env_secret_key = os.getenv("SECRET_KEY")
 _env = os.getenv("ENV") or os.getenv("PYTHON_ENV") or "production"
@@ -147,9 +144,9 @@ def run_security_check() -> dict:
     warnings = []
     recommendations = []
 
-    # Check SECRET_KEY and report if it is unset or appears too weak
-    if not SECRET_KEY or len(SECRET_KEY) < 32:
-        issues.append("CRITICAL: SECRET_KEY is too short or not set!")
+    # Check SECRET_KEY and report if it appears too weak
+    if len(SECRET_KEY) < 32:
+        issues.append("CRITICAL: SECRET_KEY is too short!")
         recommendations.append("Set a strong SECRET_KEY (min 32 chars) in .env file")
     elif SECRET_KEY == DEFAULT_DEV_SECRET_KEY:
         issues.append("CRITICAL: DEFAULT_DEV_SECRET_KEY is in use!")
@@ -186,13 +183,17 @@ def run_security_check() -> dict:
         warnings.append(f"Token expiration is long ({ACCESS_TOKEN_EXPIRE_MINUTES} minutes)")
         recommendations.append("Consider shorter token expiration for security")
 
+    # A secret key is considered properly configured if it is present, sufficiently long,
+    # and not equal to the built-in development key.
+    secret_key_configured = bool(SECRET_KEY) and len(SECRET_KEY) >= 32 and SECRET_KEY != DEFAULT_DEV_SECRET_KEY
+
     return {
         "status": "secure" if not issues else "issues_found",
         "issues": issues,
         "warnings": warnings,
         "recommendations": recommendations,
         "config": {
-            "secret_key_configured": SECRET_KEY != DEFAULT_DEV_SECRET_KEY,
+            "secret_key_configured": secret_key_configured,
             "cors_origins": ALLOWED_ORIGINS,
             "api_keys_configured": len(API_KEYS) > 0,
             "rate_limit_per_minute": RATE_LIMIT_PER_MINUTE,
