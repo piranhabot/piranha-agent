@@ -31,13 +31,14 @@ export default function GuardrailsPage() {
     blocked_actions: [],
     warning_threshold: 80
   });
-  
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(true);
 
   useEffect(() => {
     loadGuardrailsData();
-    
+
     if (autoRefresh) {
       const interval = setInterval(loadGuardrailsData, 5000);
       return () => clearInterval(interval);
