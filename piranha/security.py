@@ -133,6 +133,16 @@ async def verify_websocket_token(websocket: WebSocket) -> Optional[dict]:
     The authentication token is expected to be provided as the first WebSocket
     message sent by the client, rather than via URL query parameters, to avoid
     exposing credentials in logs, browser history, or referrer headers.
+
+    Args:
+        websocket (WebSocket): The client WebSocket connection from which the
+            authentication token is received and which is closed on
+            authentication failure.
+
+    Returns:
+        Optional[dict]: The decoded JWT payload if the token is valid.
+            Returns ``None`` if authentication fails or the connection is
+            closed during verification.
     """
     try:
         # Receive the first message from the client, which should contain the token.
@@ -165,11 +175,10 @@ def verify_api_key(api_key: str) -> bool:
         # This aligns with the security check, which only warns in this case.
         return True
     
-    is_valid = False
     for valid_key in API_KEYS:
         if secrets.compare_digest(api_key, valid_key):
-            is_valid = True
-    return is_valid
+            return True
+    return False
 
 
 def get_cors_origins() -> list[str]:
