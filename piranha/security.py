@@ -55,6 +55,12 @@ ALLOWED_ORIGINS = os.getenv(
     "http://localhost:3000,http://localhost:3001"
 ).split(",")
 RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
+# Storage backend for rate limiting; can be overridden in production deployments.
+# Common examples:
+#   - "memory://" (default here, single-process in-memory)
+#   - "redis://localhost:6379"
+#   - "memcached://localhost:11211"
+RATE_LIMIT_STORAGE_URI = os.getenv("RATE_LIMIT_STORAGE_URI", "memory://")
 _env_api_keys = os.getenv("API_KEYS")
 API_KEYS = []
 if _env_api_keys:
@@ -80,7 +86,11 @@ if _env_api_keys:
 #     @limiter.limit(f"{RATE_LIMIT_PER_MINUTE}/minute")
 #     async def list_items():
 #         ...
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=[f"{RATE_LIMIT_PER_MINUTE}/minute"],
+    storage_uri=RATE_LIMIT_STORAGE_URI,
+)
 
 # Security bearer token
 security = HTTPBearer()
