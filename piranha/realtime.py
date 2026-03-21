@@ -608,8 +608,8 @@ class RealtimeMonitor:
             )
 
         return result
-    
-    def _update_metrics(self):
+
+    def update_metrics(self):
         """Update system metrics."""
         self.metrics.active_agents = len(self.agents)
         self.metrics.idle_agents = sum(1 for a in self.agents.values() if a.status == "idle")
