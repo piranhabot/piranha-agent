@@ -48,6 +48,9 @@ from .security import (
     run_security_check,
 )
 
+# Get limiter instance
+limiter = get_limiter()
+
 # Get the directory where this file is located
 CURRENT_DIR = Path(__file__).parent
 DASHBOARD_HTML = CURRENT_DIR / "studio_dashboard.html"

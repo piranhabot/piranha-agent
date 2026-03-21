@@ -2,6 +2,8 @@
 """No-Code Visual Agent Builder - Clean categorized UI."""
 
 import json
+import time
+
 import gradio as gr
 
 
@@ -133,20 +135,24 @@ def render_canvas(workflow):
     conn_paths.append('</svg>')
     
     # Build node HTML
+    node_colors = {k: v["color"] for cat in NODE_CATEGORIES.values() for k, v in cat.items()}
+    node_icons = {k: v["icon"] for cat in NODE_CATEGORIES.values() for k, v in cat.items()}
+    node_labels = {k: v["label"] for cat in NODE_CATEGORIES.values() for k, v in cat.items()}
+    
     node_html = []
     for node in nodes:
-        all_nodes = {k: v for cat in NODE_CATEGORIES.values() for k, v in cat.items()}
-        info = all_nodes.get(node.get("type"), {"icon": "📦", "label": "Node", "color": "#888"})
+        color = node_colors.get(node.get("type"), "#888")
+        icon = node_icons.get(node.get("type"), "📦")
+        label = node_labels.get(node.get("type"), "Node")
         nid, name, x, y = node.get("id"), node.get("name", "Node"), node.get("x", 0), node.get("y", 0)
-        color = info["color"]
         node_html.append(f'''
 <div class="node" data-id="{nid}" data-type="{node.get('type')}" data-name="{name}" data-x="{x}" data-y="{y}"
      style="position:absolute;left:{x}px;top:{y}px;width:200px;background:#161b22;border:2px solid {color};border-radius:10px;cursor:grab;box-shadow:0 4px 12px rgba(0,0,0,0.3);">
     <div class="header" style="padding:12px;background:linear-gradient(135deg,{color}33,{color}11);border-bottom:1px solid {color}44;border-radius:8px 8px 0 0;display:flex;align-items:center;gap:10px;">
-        <span style="font-size:20px">{info["icon"]}</span>
+        <span style="font-size:20px">{icon}</span>
         <div>
             <div style="font-weight:600;color:#fff;font-size:14px">{name}</div>
-            <div style="font-size:11px;color:#8b949e">{info["label"]}</div>
+            <div style="font-size:11px;color:#8b949e">{label}</div>
         </div>
     </div>
     <div style="padding:10px 12px;"><div style="font-size:11px;color:#6e7681;">Drag to move • Click to edit</div></div>
@@ -169,11 +175,6 @@ def render_canvas(workflow):
     let dragging = null;
     let scale = 1;
     
-    function refresh() {{
-        const event = new Event('change');
-        canvas.dispatchEvent(event);
-    }}
-    
     canvas.querySelectorAll('.node').forEach(el => {{
         const header = el.querySelector('.header');
         header.onmousedown = e => {{
@@ -187,12 +188,11 @@ def render_canvas(workflow):
             selected = el.dataset.id;
             canvas.querySelectorAll('.node').forEach(n => {{
                 const type = n.dataset.type;
-                const colors = {json.dumps({k: v["color"] for cat in NODE_CATEGORIES.values() for k, v in cat.items()})};
+                const colors = {json.dumps(node_colors)};
                 n.style.borderColor = colors[type] || '#888';
             }});
             el.style.borderColor = '#58a6ff';
             const node = nodes.find(n => n.id === selected);
-            if (window.parent?.updateNode) window.parent.updateNode(node);
         }};
     }});
     
@@ -215,7 +215,6 @@ def render_canvas(workflow):
             dragging.el.style.zIndex = '';
             dragging.el.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
             dragging = null;
-            if (window.parent?.onWorkflowChange) window.parent.onWorkflowChange({{ nodes, connections }});
         }}
     }};
     
@@ -223,13 +222,6 @@ def render_canvas(workflow):
         e.preventDefault();
         scale *= e.deltaY > 0 ? 0.9 : 1.1;
         scale = Math.max(0.5, Math.min(2, scale));
-        canvas.querySelector('svg').style.transform = `scale(${{scale}})`;
-        canvas.querySelector('svg').style.transformOrigin = 'top left';
-    }};
-    
-    window.canvasAPI = {{
-        setWorkflow: wf => {{ nodes = wf.nodes; connections = wf.connections; location.reload(); }},
-        getWorkflow: () => ({{ nodes, connections }}),
     }};
 }})();
 </script>
@@ -240,31 +232,31 @@ def add_node(workflow, node_type):
     """Add a node."""
     all_nodes = {k: v for cat in NODE_CATEGORIES.values() for k, v in cat.items()}
     info = all_nodes.get(node_type, {"label": "Node"})
-    import time
     nid = f"n{len(workflow.get('nodes', [])) + 1}_{int(time.time())[-4:]}"
-    workflow.setdefault("nodes", []).append({
+    new_wf = {"nodes": list(workflow.get("nodes", [])), "connections": list(workflow.get("connections", []))}
+    new_wf["nodes"].append({
         "id": nid, "type": node_type, "name": info["label"],
-        "x": 50 + len(workflow["nodes"]) * 30, "y": 180,
+        "x": 50 + len(new_wf["nodes"]) * 30, "y": 180,
     })
-    return workflow, render_canvas(workflow), generate_code(workflow)
+    return new_wf, render_canvas(new_wf), generate_code(new_wf), new_wf.get("nodes", [])
 
 
 def load_template(name):
     """Load template."""
     tpl = TEMPLATES.get(name, {})
-    wf = {"nodes": tpl.get("nodes", []), "connections": tpl.get("connections", [])}
-    return wf, render_canvas(wf), generate_code(wf)
+    wf = {"nodes": list(tpl.get("nodes", [])), "connections": list(tpl.get("connections", []))}
+    return wf, render_canvas(wf), generate_code(wf), wf.get("nodes", [])
 
 
 def clear_canvas():
     """Clear."""
     wf = {"nodes": [], "connections": []}
-    return wf, render_canvas(wf), generate_code(wf)
+    return wf, render_canvas(wf), generate_code(wf), []
 
 
 def create_builder_ui():
     """Create UI."""
-    with gr.Blocks(title="Piranha Workflow Builder", theme=gr.themes.Base()) as ui:
+    with gr.Blocks(title="Piranha Workflow Builder") as ui:
         gr.Markdown("# 🛠️ Piranha Workflow Builder\nBuild AI agent workflows visually")
         
         workflow_state = gr.State({"nodes": [], "connections": []})
@@ -277,12 +269,12 @@ def create_builder_ui():
                 for cat_name, cat_nodes in NODE_CATEGORIES.items():
                     gr.Markdown(f"**{cat_name}**")
                     for ntype, info in cat_nodes.items():
-                        btn = gr.Button(
-                            f"{info['icon']} {info['label']}",
-                            size="sm",
-                            variant="secondary",
+                        btn = gr.Button(f"{info['icon']} {info['label']}", size="sm", variant="secondary")
+                        btn.click(
+                            fn=add_node,
+                            inputs=[workflow_state, gr.State(ntype)],
+                            outputs=[workflow_state, gr.HTML(variant="panel"), gr.Code(), gr.JSON(visible=False)],
                         )
-                        btn.click(add_node, inputs=[workflow_state, gr.State(ntype)], outputs=[workflow_state, gr.HTML(), gr.Code()])
                     gr.Markdown("---")
             
             # Center - Canvas and toolbar
@@ -293,7 +285,7 @@ def create_builder_ui():
                     export_btn = gr.Button("📤 Export", size="sm", scale=0)
                     run_btn = gr.Button("▶️ Run", variant="primary", size="sm", scale=0)
                 
-                canvas = gr.HTML(value=render_canvas({"nodes": [], "connections": []}), label="Workflow Canvas")
+                canvas = gr.HTML(value=render_canvas({"nodes": [], "connections": []}), label="Workflow Canvas", variant="panel")
                 
                 gr.Markdown("### 📄 Generated Code")
                 code_out = gr.Code(label="Python", language="python", lines=12)
@@ -316,10 +308,17 @@ def create_builder_ui():
         run_out = gr.Textbox(label="🚀 Run Output", lines=5, visible=False)
         
         # Events
-        template_dd.change(load_template, inputs=[template_dd], outputs=[workflow_state, canvas, code_out, info_out])
-        clear_btn.click(clear_canvas, outputs=[workflow_state, canvas, code_out, info_out])
-        export_btn.click(lambda wf: json.dumps(wf, indent=2), inputs=[workflow_state], outputs=[code_out])
-        run_btn.click(lambda wf: "🚀 Running...\n" + "\n".join([f"  ▶️ {n.get('name')}" for n in wf.get("nodes", [])]) + "\n✅ Complete!", inputs=[workflow_state], outputs=[run_out])
+        template_dd.change(
+            fn=load_template,
+            inputs=[template_dd],
+            outputs=[workflow_state, gr.HTML(variant="panel"), gr.Code(), info_out],
+        )
+        clear_btn.click(
+            fn=clear_canvas,
+            outputs=[workflow_state, gr.HTML(variant="panel"), gr.Code(), info_out],
+        )
+        export_btn.click(fn=lambda wf: json.dumps(wf, indent=2), inputs=[workflow_state], outputs=[code_out])
+        run_btn.click(fn=lambda wf: "🚀 Running...\n" + "\n".join([f"  ▶️ {n.get('name')}" for n in wf.get("nodes", [])]) + "\n✅ Complete!", inputs=[workflow_state], outputs=[run_out])
     
     return ui
 
