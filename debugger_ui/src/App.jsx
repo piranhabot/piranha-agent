@@ -270,7 +270,9 @@ function App() {
               </div>
               <div className="stat">
                 <span className="stat-label">Est. Savings:</span>
-                <span className="stat-value">${costSummary.estimated_savings?.toFixed(6)}</span>
+                <span className="stat-value">
+                  ${costSummary.estimated_savings?.toFixed(6) || '0.000000'}
+                </span>
               </div>
             </div>
           ) : (
