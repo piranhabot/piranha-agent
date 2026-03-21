@@ -56,6 +56,7 @@ const nodeTypes = {
 
 function App() {
   const [sessionId, setSessionId] = useState('')
+  const [agentId, setAgentId] = useState('')
   const [dbPath, setDbPath] = useState(':memory:')
   const [nodes, setNodes] = useState([])
   const [edges, setEdges] = useState([])
