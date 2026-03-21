@@ -70,6 +70,15 @@ try:
     # Test events
     monitor.record_event("test.event", {"data": "test"})
     print(f"   ✓ Event recording works: {len(monitor.events)} events")
+
+    # Clean up monitor to avoid port conflicts in subsequent sections
+    try:
+        monitor.stop()
+    except AttributeError:
+        # If RealtimeMonitor has no explicit stop method, ignore;
+        # this preserves existing behavior while avoiding hard failure.
+        pass
+    monitor = None
     
 except Exception as e:
     print(f"   ✗ Monitor validation failed: {e}")
@@ -81,7 +90,7 @@ except Exception as e:
 print("\n3. Validating Agent-Monitor Integration...")
 try:
     # Create monitor
-    monitor = start_monitoring(port=8081)
+    integration_monitor = start_monitoring(port=8081)
     print("   ✓ Monitor started")
     
     # Create agent
@@ -93,7 +102,7 @@ try:
     print("   ✓ Agent monitoring enabled")
     
     # Verify agent is tracked
-    assert agent.id in monitor.agents
+    assert agent.id in integration_monitor.agents
     print("   ✓ Agent properly tracked in monitor")
     
 except Exception as e:
@@ -139,7 +148,16 @@ except Exception as e:
 print("\n5. Validating Multi-Agent Collaboration...")
 
 class MultiAgentCollaboration:
-    """Enhanced multi-agent collaboration system."""
+    """Enhanced multi-agent collaboration system.
+    
+    If no ``monitor`` is provided, the collaboration will automatically use
+    the default real-time monitor returned by :func:`get_monitor`. In most
+    environments this is the shared/global :class:`RealtimeMonitor` instance
+    used elsewhere in the system, so all collaboration activity will be
+    reported to that monitor. To disable or customize monitoring for a
+    collaboration, explicitly pass a ``RealtimeMonitor`` instance (or, where
+    supported, ``None``) via the ``monitor`` argument.
+    """
     
     def __init__(self, monitor: Optional[RealtimeMonitor] = None):
         self.agents = []
@@ -177,8 +195,16 @@ class MultiAgentCollaboration:
             "results": []
         })
         
+        # Determine initial responsible agent (first matching role with a registered agent)
+        first_agent_id = None
+        for role in agent_roles:
+            agent_data = next((a for a in self.agents if a["role"] == role), None)
+            if agent_data is not None:
+                first_agent_id = agent_data["agent"].id
+                break
+        
         # Register with monitor
-        self.monitor.register_task(task_id, description, agent_id=None)
+        self.monitor.register_task(task_id, description, agent_id=first_agent_id)
         self.collaboration_log.append(f"Created task chain: {description}")
         
         return task_id
