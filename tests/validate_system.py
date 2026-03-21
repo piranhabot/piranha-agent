@@ -293,24 +293,24 @@ print("\n6. Validating Complete Workflow...")
 try:
     # Start fresh monitor
     workflow_monitor = start_monitoring(port=8082)
-    
+
     # Create agents
     agent1 = Agent(name="workflow-agent-1", model="ollama/llama3:latest")
     agent2 = Agent(name="workflow-agent-2", model="ollama/llama3:latest")
-    
+
     # Monitor agents
     monitor_agent(agent1)
     monitor_agent(agent2)
-    
-    # Create tasks
-    task1 = Task(description="Task 1", agent=agent1)
-    task2 = Task(description="Task 2", agent=agent2)
-    
+
+    # Create and track tasks
+    _ = Task(description="Task 1", agent=agent1)
+    _ = Task(description="Task 2", agent=agent2)
+
     # Verify monitoring
     assert agent1.id in workflow_monitor.agents
     assert agent2.id in workflow_monitor.agents
     print("   ✓ Complete workflow validated")
-    
+
 except Exception as e:
     print(f"   ✗ Workflow validation failed: {e}")
     exit(1)
