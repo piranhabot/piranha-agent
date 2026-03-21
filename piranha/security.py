@@ -18,16 +18,19 @@ from fastapi.security import HTTPBearer
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 import secrets
+import warnings
 
 # Historical default development secret key retained only for detection.
 # This value SHOULD NOT be used for any new deployments.
 DEFAULT_DEV_SECRET_KEY = "dev-secret-key-change-me"
 
+# Minimum length for API keys to be considered valid.
+MIN_API_KEY_LENGTH = 32
+
 # Security configuration from environment
 _env_secret_key = os.getenv("SECRET_KEY")
 _env = os.getenv("ENV") or os.getenv("PYTHON_ENV") or "production"
 if not _env_secret_key:
-    import warnings
     if _env.lower() in ("dev", "development", "local"):
         # In development, auto-generate a strong random key if none is provided.
         # Fall back to the historical default only for explicit development envs.
@@ -53,7 +56,23 @@ ALLOWED_ORIGINS = os.getenv(
 ).split(",")
 RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
 _env_api_keys = os.getenv("API_KEYS")
-API_KEYS = [k.strip() for k in _env_api_keys.split(",") if k.strip()] if _env_api_keys else []
+API_KEYS = []
+if _env_api_keys:
+    _invalid_api_keys = []
+    for _raw_key in _env_api_keys.split(","):
+        _key = _raw_key.strip()
+        if not _key:
+            continue
+        if len(_key) < MIN_API_KEY_LENGTH:
+            _invalid_api_keys.append(_key)
+            continue
+        API_KEYS.append(_key)
+    if _invalid_api_keys:
+        warnings.warn(
+            f"Ignoring {len(_invalid_api_keys)} API key(s) from API_KEYS env var because they are "
+            f"shorter than the minimum length of {MIN_API_KEY_LENGTH} characters.",
+            UserWarning,
+        )
 
 # Initialize rate limiter.
 # Use this `limiter` instance to protect FastAPI routes, for example:
@@ -99,11 +118,17 @@ def verify_token(token: str) -> dict:
 
 
 async def verify_websocket_token(websocket: WebSocket) -> Optional[dict]:
-    """Verify WebSocket connection token."""
+    """Verify WebSocket connection token.
+
+    The authentication token is expected to be provided as the first WebSocket
+    message sent by the client, rather than via URL query parameters, to avoid
+    exposing credentials in logs, browser history, or referrer headers.
+    """
     try:
-        token = websocket.query_params.get("token")
+        # Receive the first message from the client, which should contain the token.
+        token = await websocket.receive_text()
         if not token:
-            await websocket.close(code=4001, reason="Missing authentication token in query parameters")
+            await websocket.close(code=4001, reason="Missing authentication token in initial message")
             return None
 
         payload = verify_token(token)
