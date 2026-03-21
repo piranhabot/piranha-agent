@@ -1,13 +1,11 @@
 """Piranha Agent - Next-generation autonomous agent framework."""
 
 from piranha_core import (
-    # Phase 6
     AgentOrchestrator,
     DistributedAgent,
     DynamicSkillCompiler,
     EventStore,
     GuardrailEngine,
-    # Phase 5
     PostgresEventStore,
     SemanticCache,
     SkillRegistry,
