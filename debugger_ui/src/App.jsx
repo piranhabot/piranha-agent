@@ -89,18 +89,18 @@ function App() {
           icon: getEventIcon(node.data.event_type),
         }
       }))
-      
+
       // Create edges connecting nodes in sequence
-      const edges = []
+      const computedEdges = []
       for (let i = 0; i < rawNodes.length - 1; i++) {
-        edges.push({
+        computedEdges.push({
           id: `edge-${i}-${i + 1}`,
           source: rawNodes[i].id,
           target: rawNodes[i + 1].id,
           type: 'bezier',
           animated: true,
-          style: { 
-            stroke: '#3b82f6', 
+          style: {
+            stroke: '#3b82f6',
             strokeWidth: 3,
             strokeDasharray: '5,5',
           },
@@ -112,9 +112,9 @@ function App() {
           },
         })
       }
-      
+
       setNodes(rawNodes)
-      setEdges(edges)
+      setEdges(computedEdges)
       
       // Load cost data
       const costResponse = await axios.get(`${API_BASE}/trace/${sessionId}/costs`, {
@@ -145,7 +145,7 @@ function App() {
       const response = await axios.post(`${API_BASE}/trace/rollback`, {
         session_id: sessionId,
         agent_id: agentId,
-        target_sequence: parseInt(targetSequence),
+        target_sequence: parseInt(targetSequence, 10),
         db_path: dbPath
       })
       setRollbackResult(response.data)
