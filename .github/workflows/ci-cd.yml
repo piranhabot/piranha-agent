@@ -1,0 +1,230 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ published ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_VERSION: '1.75'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # ============================================================================
+  # Test Job
+  # ============================================================================
+  test:
+    name: Test & Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install Rust
+      uses: dtolnay/rust-action@stable
+      with:
+        toolchain: ${{ env.RUST_VERSION }}
+    
+    - name: Cache Rust dependencies
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: rust_core
+    
+    - name: Cache Python dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/pip
+          .venv
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m venv .venv
+        source .venv/bin/activate
+        pip install --upgrade pip
+        pip install -e ".[dev]"
+        pip install pytest-cov codecov
+    
+    - name: Build Rust core
+      run: |
+        source .venv/bin/activate
+        source $HOME/.cargo/env
+        PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin develop --release
+    
+    - name: Run tests with coverage
+      run: |
+        source .venv/bin/activate
+        pytest --cov=piranha --cov=tests --cov-report=xml --cov-report=term-missing
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-piranha
+        fail_ci_if_error: false
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    
+    - name: Run benchmarks
+      run: |
+        source .venv/bin/activate
+        python tests/test_benchmarking.py > benchmark_results.txt
+        cat benchmark_results.txt
+    
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark-results
+        path: benchmark_results.txt
+
+  # ============================================================================
+  # Lint Job
+  # ============================================================================
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install Rust
+      uses: dtolnay/rust-action@stable
+      with:
+        toolchain: ${{ env.RUST_VERSION }}
+    
+    - name: Install linting tools
+      run: |
+        pip install ruff mypy
+        rustup component add rustfmt clippy
+    
+    - name: Run Ruff (Python linter)
+      run: ruff check piranha/ tests/ examples/
+    
+    - name: Run Mypy (Type checking)
+      run: mypy piranha/ --ignore-missing-imports
+    
+    - name: Run Rust fmt
+      run: cargo fmt --manifest-path rust_core/Cargo.toml -- --check
+    
+    - name: Run Clippy (Rust linter)
+      run: cargo clippy --manifest-path rust_core/Cargo.toml -- -D warnings
+
+  # ============================================================================
+  # Build Job
+  # ============================================================================
+  build:
+    name: Build Wheels
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.10', '3.11', '3.12']
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install Rust
+      uses: dtolnay/rust-action@stable
+      with:
+        toolchain: ${{ env.RUST_VERSION }}
+    
+    - name: Build wheels
+      run: |
+        pip install maturin
+        source $HOME/.cargo/env
+        PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin build --release
+    
+    - name: Upload wheels
+      uses: actions/upload-artifact@v4
+      with:
+        name: wheels-${{ matrix.os }}-${{ matrix.python-version }}
+        path: target/wheels/
+
+  # ============================================================================
+  # PyPI Publish Job (on release)
+  # ============================================================================
+  publish-pypi:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    needs: [test, lint, build]
+    if: github.event_name == 'release'
+    environment:
+      name: pypi
+      url: https://pypi.org/p/piranha-agent
+    permissions:
+      id-token: write
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install Rust
+      uses: dtolnay/rust-action@stable
+      with:
+        toolchain: ${{ env.RUST_VERSION }}
+    
+    - name: Install build tools
+      run: |
+        pip install maturin twine
+    
+    - name: Build source distribution
+      run: |
+        source $HOME/.cargo/env
+        PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 maturin build --release
+    
+    - name: Publish to PyPI
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+      run: |
+        twine upload target/wheels/*.whl dist/*
+
+  # ============================================================================
+  # GitHub Pages Deploy (Documentation)
+  # ============================================================================
+  deploy-docs:
+    name: Deploy Documentation
+    runs-on: ubuntu-latest
+    needs: [test]
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs
+        keep_files: true

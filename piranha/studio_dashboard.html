@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐟 Piranha Studio - Real-Time Agent Monitoring</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+            padding: 20px 30px;
+            border-bottom: 1px solid #334155;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .status-bar {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 20px;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .stat-card h3 {
+            font-size: 12px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .panel {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .panel h2 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: #94a3b8;
+        }
+
+        .agent-list, .task-list {
+            list-style: none;
+        }
+
+        .agent-item, .task-item {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+
+        .agent-item .name, .task-item .name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .agent-item .status, .task-item .status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .status-idle { background: #334155; color: #94a3b8; }
+        .status-busy { background: #3b82f6; color: white; }
+        .status-offline { background: #64748b; color: #cbd5e1; }
+        .status-pending { background: #f59e0b; color: white; }
+        .status-running { background: #3b82f6; color: white; }
+        .status-completed { background: #22c55e; color: white; }
+        .status-failed { background: #ef4444; color: white; }
+
+        .metrics {
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
+        .metrics span {
+            margin-right: 15px;
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .connected {
+            background: #22c55e;
+            color: white;
+        }
+
+        .disconnected {
+            background: #ef4444;
+            color: white;
+        }
+
+        .event-log {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .event-item {
+            padding: 5px 0;
+            border-bottom: 1px solid #334155;
+        }
+
+        .event-item:last-child {
+            border-bottom: none;
+        }
+
+        .event-time {
+            color: #64748b;
+            margin-right: 10px;
+        }
+
+        .event-type {
+            color: #3b82f6;
+            font-weight: bold;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #64748b;
+            padding: 40px;
+        }
+
+        .refresh-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .refresh-btn:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <div id="connection-status" class="connection-status disconnected">
+        ❌ Disconnected
+    </div>
+
+    <div class="header">
+        <h1>🐟 Piranha Studio</h1>
+        <p>Real-Time Agent Monitoring Dashboard</p>
+    </div>
+
+    <div class="container">
+        <button class="refresh-btn" onclick="fetchData()">🔄 Refresh Data</button>
+
+        <div class="status-bar">
+            <div class="stat-card">
+                <h3>Active Agents</h3>
+                <div class="value" id="active-agents">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Pending Tasks</h3>
+                <div class="value" id="pending-tasks">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Tokens</h3>
+                <div class="value" id="total-tokens">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Cost</h3>
+                <div class="value" id="total-cost">$0.00</div>
+            </div>
+            <div class="stat-card">
+                <h3>Cache Hits</h3>
+                <div class="value" id="cache-hits">0</div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="panel">
+                <h2>🤖 Agents</h2>
+                <ul class="agent-list" id="agent-list">
+                    <li class="no-data">No agents registered</li>
+                </ul>
+            </div>
+
+            <div class="panel">
+                <h2>📋 Tasks</h2>
+                <ul class="task-list" id="task-list">
+                    <li class="no-data">No tasks</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>📊 Event Log</h2>
+            <div class="event-log" id="event-log">
+                <div class="no-data">No events yet</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let ws = null;
+        let reconnectAttempts = 0;
+
+        function updateConnectionStatus(connected) {
+            const status = document.getElementById('connection-status');
+            status.className = 'connection-status ' + (connected ? 'connected' : 'disconnected');
+            status.textContent = connected ? '✅ Connected' : '❌ Disconnected';
+        }
+
+        function connectWebSocket() {
+            const wsUrl = `ws://${window.location.hostname}:8080/ws`;
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                console.log('Connected to Piranha Studio');
+                updateConnectionStatus(true);
+                reconnectAttempts = 0;
+            };
+
+            ws.onclose = () => {
+                console.log('Disconnected from Piranha Studio');
+                updateConnectionStatus(false);
+                
+                // Reconnect after delay
+                if (reconnectAttempts < 5) {
+                    setTimeout(() => {
+                        reconnectAttempts++;
+                        connectWebSocket();
+                    }, 2000 * reconnectAttempts);
+                }
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                updateConnectionStatus(false);
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleWebSocketMessage(data);
+            };
+        }
+
+        function handleWebSocketMessage(data) {
+            console.log('Received:', data);
+            
+            // Add to event log
+            addEventLog(data.type, data.data);
+            
+            // Update metrics if present
+            if (data.data.metrics) {
+                updateMetrics(data.data.metrics);
+            }
+        }
+
+        function addEventLog(type, data) {
+            const log = document.getElementById('event-log');
+            const now = new Date().toLocaleTimeString();
+            
+            const event = document.createElement('div');
+            event.className = 'event-item';
+            event.innerHTML = `
+                <span class="event-time">${now}</span>
+                <span class="event-type">${type}</span>
+                <span>${JSON.stringify(data).substring(0, 100)}...</span>
+            `;
+            
+            log.insertBefore(event, log.firstChild);
+            
+            // Keep only last 50 events
+            while (log.children.length > 50) {
+                log.removeChild(log.lastChild);
+            }
+        }
+
+        function updateMetrics(metrics) {
+            if (metrics.active_agents !== undefined) {
+                document.getElementById('active-agents').textContent = metrics.active_agents;
+            }
+            if (metrics.pending_tasks !== undefined) {
+                document.getElementById('pending-tasks').textContent = metrics.pending_tasks;
+            }
+            if (metrics.total_tokens !== undefined) {
+                document.getElementById('total-tokens').textContent = metrics.total_tokens.toLocaleString();
+            }
+            if (metrics.total_cost_usd !== undefined) {
+                document.getElementById('total-cost').textContent = '$' + metrics.total_cost_usd.toFixed(4);
+            }
+            if (metrics.cache_hits !== undefined) {
+                document.getElementById('cache-hits').textContent = metrics.cache_hits;
+            }
+        }
+
+        async function fetchData() {
+            try {
+                // Fetch agents
+                const agentsRes = await fetch(`${API_BASE}/api/agents`);
+                if (agentsRes.ok) {
+                    const agents = await agentsRes.json();
+                    updateAgentList(agents);
+                }
+
+                // Fetch tasks
+                const tasksRes = await fetch(`${API_BASE}/api/tasks`);
+                if (tasksRes.ok) {
+                    const tasks = await tasksRes.json();
+                    updateTaskList(tasks);
+                }
+
+                // Fetch metrics
+                const metricsRes = await fetch(`${API_BASE}/api/metrics`);
+                if (metricsRes.ok) {
+                    const metrics = await metricsRes.json();
+                    updateMetrics(metrics);
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        function updateAgentList(agents) {
+            const list = document.getElementById('agent-list');
+            
+            if (!agents || agents.length === 0) {
+                list.innerHTML = '<li class="no-data">No agents registered</li>';
+                return;
+            }
+            
+            list.innerHTML = agents.map(agent => `
+                <li class="agent-item">
+                    <div class="name">${agent.name || 'Unknown'}</div>
+                    <div class="status status-${agent.status || 'idle'}">${agent.status || 'idle'}</div>
+                    <div class="metrics">
+                        <span>Model: ${agent.model || 'N/A'}</span>
+                        <span>Tokens: ${agent.tokens_used || 0}</span>
+                        <span>Cost: $${(agent.cost_usd || 0).toFixed(4)}</span>
+                    </div>
+                </li>
+            `).join('');
+        }
+
+        function updateTaskList(tasks) {
+            const list = document.getElementById('task-list');
+            
+            if (!tasks || tasks.length === 0) {
+                list.innerHTML = '<li class="no-data">No tasks</li>';
+                return;
+            }
+            
+            list.innerHTML = tasks.map(task => `
+                <li class="task-item">
+                    <div class="name">${task.description || 'Unknown task'}</div>
+                    <div class="status status-${task.status || 'pending'}">${task.status || 'pending'}</div>
+                    <div class="metrics">
+                        <span>Agent: ${task.agent_id || 'Unassigned'}</span>
+                        <span>Tokens: ${task.tokens_used || 0}</span>
+                        <span>Cost: $${(task.cost_usd || 0).toFixed(4)}</span>
+                    </div>
+                </li>
+            `).join('');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchData();
+            connectWebSocket();
+            
+            // Refresh data every 5 seconds
+            setInterval(fetchData, 5000);
+        });
+    </script>
+</body>
+</html>

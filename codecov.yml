@@ -1,0 +1,42 @@
+codecov:
+  require_ci_to_pass: true
+  branch: main
+
+coverage:
+  precision: 2
+  round: down
+  range: "70...100"
+  
+  status:
+    project:
+      default:
+        target: 70%
+        threshold: 5%
+        base: auto
+    patch:
+      default:
+        target: 50%
+        threshold: 10%
+
+parsers:
+  gcov:
+    branch_detection:
+      conditional: true
+      loop: true
+      method: false
+      macro: false
+
+comment:
+  layout: "reach,diff,flags,files,footer"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
+
+ignore:
+  - "tests/"
+  - "examples/"
+  - "*/__pycache__/*"
+  - "*/.venv/*"
+  - "target/"
+  - "node_modules/"
