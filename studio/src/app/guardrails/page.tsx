@@ -70,9 +70,26 @@ export default function GuardrailsPage() {
     try {
       await axios.put(`${API_BASE}/guardrails`, config);
       alert('Guardrails configuration saved!');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Failed to save guardrails:', error);
-      alert('Failed to save configuration');
+      let detail = '';
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          const responseData: any = error.response.data;
+          const serverMessage =
+            (responseData && (responseData.message || responseData.error)) || '';
+          detail = serverMessage
+            ? ` Server responded with: ${serverMessage} (status ${error.response.status}).`
+            : ` Server responded with status ${error.response.status}.`;
+        } else if (error.request) {
+          detail = ' No response was received from the server. Please check your network connection.';
+        } else if (error.message) {
+          detail = ` ${error.message}`;
+        }
+      } else if (error instanceof Error) {
+        detail = ` ${error.message}`;
+      }
+      alert(`Failed to save configuration.${detail}`);
     } finally {
       setSaving(false);
     }
@@ -335,7 +352,7 @@ function StatCard({ icon: Icon, title, value, color }: {
   icon: LucideIcon;
   title: string;
   value: number | string;
-  color: string;
+  color: 'blue' | 'green' | 'red' | 'yellow';
 }) {
   const colorClasses = {
     blue: 'bg-blue-500/20 text-blue-400',
