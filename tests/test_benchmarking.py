@@ -19,7 +19,7 @@ import logging
 import asyncio
 from typing import Callable, Any
 from dataclasses import dataclass, field
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import pytest
 
 logger = logging.getLogger(__name__)
@@ -121,8 +121,9 @@ class BenchmarkRunner:
         median_time = statistics.median(times) if times else 0
         p95_time = self._percentile(times, 95)
         p99_time = self._percentile(times, 99)
-        throughput = iterations / total_time if total_time > 0 else 0
-        
+        # Use len(times) instead of iterations for accurate throughput calculation
+        throughput = len(times) / total_time if total_time > 0 else 0
+
         result = BenchmarkResult(
             name=name,
             iterations=iterations,
@@ -179,8 +180,9 @@ class BenchmarkRunner:
         median_time = statistics.median(times) if times else 0
         p95_time = self._percentile(times, 95)
         p99_time = self._percentile(times, 99)
-        throughput = iterations / total_time if total_time > 0 else 0
-        
+        # Use len(times) instead of iterations for accurate throughput calculation
+        throughput = len(times) / total_time if total_time > 0 else 0
+
         result = BenchmarkResult(
             name=name,
             iterations=iterations,
@@ -226,7 +228,8 @@ class BenchmarkRunner:
         # Run concurrent workers
         with ThreadPoolExecutor(max_workers=concurrent_users) as executor:
             futures = [executor.submit(worker) for _ in range(concurrent_users)]
-            for future in asyncio.as_completed(futures):
+            # Use concurrent.futures.as_completed instead of asyncio.as_completed
+            for future in as_completed(futures):
                 future.result()
         
         # Calculate statistics
@@ -258,12 +261,15 @@ class BenchmarkRunner:
         return result
     
     def _percentile(self, data: list, percentile: int) -> float:
-        """Calculate percentile."""
+        """Calculate percentile.
+        
+        Expects that `data` is already sorted in ascending order.
+        """
         if not data:
             return 0
-        sorted_data = sorted(data)
-        index = int(len(sorted_data) * percentile / 100)
-        return sorted_data[min(index, len(sorted_data) - 1)]
+        # Data is already sorted by caller, no need to sort again
+        index = int(len(data) * percentile / 100)
+        return data[min(index, len(data) - 1)]
     
     def generate_report(self) -> BenchmarkReport:
         """Generate complete benchmark report."""

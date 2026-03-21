@@ -711,7 +711,7 @@ def generate_code(workflow_data: dict) -> str:
         if node.get("type") == "trigger":
             lines.append(f'    results["{node_id}"] = run_{node_id}()')
         else:
-            lines.append(f'    results["{node_id}"] = run_{node_id}(results.get(list(results.keys())[-1], {}) if results else {{}})')
+            lines.append(f'    results["{node_id}"] = run_{node_id}(results.get(list(results.keys())[-1], {{}}) if results else {{}})')
         lines.append('')
     
     lines.append('    return results')
