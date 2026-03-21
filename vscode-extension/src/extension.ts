@@ -1,9 +1,5 @@
 // The module 'vscode' contains the VS Code extensibility API
 import * as vscode from 'vscode';
-import axios from 'axios';
-
-// Piranha Agent API client
-const PIRANHA_API_BASE = 'http://localhost:8000/api';
 
 // This method is called when your extension is activated
 export function activate(context: vscode.ExtensionContext) {

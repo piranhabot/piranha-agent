@@ -59,13 +59,9 @@ function App() {
   const [dbPath, setDbPath] = useState(':memory:')
   const [nodes, setNodes] = useState([])
   const [edges, setEdges] = useState([])
-  const [costData, setCostData] = useState([])
   const [costSummary, setCostSummary] = useState(null)
   const [status, setStatus] = useState('')
   const [selectedEvent, setSelectedEvent] = useState(null)
-  
-  // Rollback state
-  const [agentId, setAgentId] = useState('')
   const [targetSequence, setTargetSequence] = useState(0)
   const [rollbackResult, setRollbackResult] = useState(null)
 

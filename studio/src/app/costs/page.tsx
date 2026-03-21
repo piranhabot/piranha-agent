@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { DollarSign, TrendingUp, PieChart, BarChart3, Calendar, Download } from 'lucide-react';
+import { DollarSign, TrendingUp, BarChart3, Calendar, Download } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, PieChart as RechartsPie, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
 const API_BASE = 'http://localhost:8080/api';
@@ -23,7 +23,6 @@ export default function CostAnalyticsPage() {
   const [costData, setCostData] = useState<CostData | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('7d');
-  const [autoRefresh, setAutoRefresh] = useState(true);
 
   useEffect(() => {
     loadCostData();

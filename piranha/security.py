@@ -9,7 +9,7 @@ This module provides security utilities:
 """
 
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import jwt
@@ -19,7 +19,13 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 # Security configuration from environment
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
+_env_secret_key = os.getenv("SECRET_KEY")
+if not _env_secret_key:
+    raise RuntimeError(
+        "SECRET_KEY environment variable is not set. "
+        "Set a strong, random secret key before starting the application."
+    )
+SECRET_KEY = _env_secret_key
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 ALLOWED_ORIGINS = os.getenv(
@@ -39,12 +45,12 @@ security = HTTPBearer()
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Create JWT access token."""
     to_encode = data.copy()
-    
+
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -74,18 +80,27 @@ async def verify_websocket_token(websocket: WebSocket) -> Optional[dict]:
         if not token:
             await websocket.close(code=4001, reason="Missing authentication token")
             return None
-        
+
         payload = verify_token(token)
         return payload
+    except HTTPException as exc:
+        # Preserve specific authentication error details from token verification
+        await websocket.close(code=4002, reason=str(exc.detail))
+        return None
     except Exception:
-        await websocket.close(code=4002, reason="Invalid authentication token")
+        # Fallback for unexpected errors during authentication
+        await websocket.close(code=4002, reason="Authentication error")
         return None
 
 
 def verify_api_key(api_key: str) -> bool:
     """Verify API key."""
     if not API_KEYS:
-        return True  # No API keys configured, allow all
+        # Fail closed if no API keys are configured to avoid disabling authentication
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="API key authentication is not configured"
+        )
     
     return api_key in API_KEYS
 
@@ -105,34 +120,34 @@ def run_security_check() -> dict:
     issues = []
     warnings = []
     recommendations = []
-    
-    # Check SECRET_KEY
-    if SECRET_KEY == "your-secret-key-change-in-production":
-        issues.append("CRITICAL: SECRET_KEY is set to default value!")
-        recommendations.append("Set a strong SECRET_KEY in .env file")
-    
+
+    # Check SECRET_KEY (should never be default since we raise error)
+    if not SECRET_KEY or len(SECRET_KEY) < 32:
+        issues.append("CRITICAL: SECRET_KEY is too short or not set!")
+        recommendations.append("Set a strong SECRET_KEY (min 32 chars) in .env file")
+
     # Check ALLOWED_ORIGINS
     if "*" in ALLOWED_ORIGINS:
         issues.append("CRITICAL: CORS allows all origins (*)!")
         recommendations.append("Restrict ALLOWED_ORIGINS to specific domains")
     elif "http://localhost" in str(ALLOWED_ORIGINS):
         warnings.append("Development origins detected (localhost)")
-    
+
     # Check API_KEYS
     if not API_KEYS:
         warnings.append("No API_KEYS configured")
         recommendations.append("Configure API_KEYS for production use")
-    
+
     # Check rate limit
     if RATE_LIMIT_PER_MINUTE > 100:
         warnings.append(f"Rate limit is high ({RATE_LIMIT_PER_MINUTE}/min)")
         recommendations.append("Consider lowering RATE_LIMIT_PER_MINUTE for production")
-    
+
     # Check JWT expiration
     if ACCESS_TOKEN_EXPIRE_MINUTES > 1440:
         warnings.append(f"Token expiration is long ({ACCESS_TOKEN_EXPIRE_MINUTES} minutes)")
         recommendations.append("Consider shorter token expiration for security")
-    
+
     return {
         "status": "secure" if not issues else "issues_found",
         "issues": issues,
