@@ -11,6 +11,7 @@ This module provides security utilities:
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+from pathlib import Path
 
 import jwt
 from fastapi import WebSocket, HTTPException, status
@@ -33,13 +34,22 @@ _env = os.getenv("ENV") or os.getenv("PYTHON_ENV") or "production"
 if not _env_secret_key:
     if _env.lower() in ("dev", "development", "local"):
         # In development, auto-generate a strong random key if none is provided.
-        # Fall back to the historical default only for explicit development envs.
+        # Persist the generated key locally so it remains stable across restarts.
         warnings.warn(
-            "SECRET_KEY not set! Generating a random development key. "
+            "SECRET_KEY not set! Using a persisted random development key. "
             "Set a strong, random SECRET_KEY in .env for non-development environments.",
             UserWarning,
         )
-        SECRET_KEY = secrets.token_urlsafe(32)
+        _dev_key_path = Path(".dev_secret_key")
+        if _dev_key_path.is_file():
+            SECRET_KEY = _dev_key_path.read_text(encoding="utf-8").strip()
+            if len(SECRET_KEY) < MIN_API_KEY_LENGTH:
+                # Regenerate if the stored key is too short or otherwise invalid.
+                SECRET_KEY = secrets.token_urlsafe(32)
+                _dev_key_path.write_text(SECRET_KEY, encoding="utf-8")
+        else:
+            SECRET_KEY = secrets.token_urlsafe(32)
+            _dev_key_path.write_text(SECRET_KEY, encoding="utf-8")
     else:
         # In non-development environments, refuse to start without an explicit SECRET_KEY
         raise RuntimeError(
@@ -81,16 +91,24 @@ if _env_api_keys:
         )
 
 # Initialize rate limiter.
-# Use this `limiter` instance to protect FastAPI routes, for example:
+# Use the `get_limiter()` accessor to obtain the Limiter instance, for example:
 #     @app.get("/items")
-#     @limiter.limit(f"{RATE_LIMIT_PER_MINUTE}/minute")
+#     @get_limiter().limit(f"{RATE_LIMIT_PER_MINUTE}/minute")
 #     async def list_items():
 #         ...
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=[f"{RATE_LIMIT_PER_MINUTE}/minute"],
-    storage_uri=RATE_LIMIT_STORAGE_URI,
-)
+_limiter: Optional[Limiter] = None
+
+
+def get_limiter() -> Limiter:
+    """Return the global Limiter instance, creating it lazily on first use."""
+    global _limiter
+    if _limiter is None:
+        _limiter = Limiter(
+            key_func=get_remote_address,
+            default_limits=[f"{RATE_LIMIT_PER_MINUTE}/minute"],
+            storage_uri=RATE_LIMIT_STORAGE_URI,
+        )
+    return _limiter
 
 # Security bearer token
 security = HTTPBearer()
@@ -197,16 +215,24 @@ def run_security_check() -> dict:
     warnings = []
     recommendations = []
 
+    def _is_secret_key_properly_configured() -> bool:
+        """
+        A secret key is considered properly configured if it is present, sufficiently long,
+        and not equal to the built-in development key.
+        """
+        return bool(SECRET_KEY) and len(SECRET_KEY) >= 32 and SECRET_KEY != DEFAULT_DEV_SECRET_KEY
+
     # Check SECRET_KEY and report if it appears too weak
-    if len(SECRET_KEY) < 32:
-        issues.append("CRITICAL: SECRET_KEY is too short!")
-        recommendations.append("Set a strong SECRET_KEY (min 32 chars) in .env file")
-    elif SECRET_KEY == DEFAULT_DEV_SECRET_KEY:
-        issues.append("CRITICAL: DEFAULT_DEV_SECRET_KEY is in use!")
-        recommendations.append(
-            "Generate and set a strong, random SECRET_KEY in the environment; "
-            "do not use the built-in development key in production."
-        )
+    if not _is_secret_key_properly_configured():
+        if len(SECRET_KEY) < 32:
+            issues.append("CRITICAL: SECRET_KEY is too short!")
+            recommendations.append("Set a strong SECRET_KEY (min 32 chars) in .env file")
+        elif SECRET_KEY == DEFAULT_DEV_SECRET_KEY:
+            issues.append("CRITICAL: DEFAULT_DEV_SECRET_KEY is in use!")
+            recommendations.append(
+                "Generate and set a strong, random SECRET_KEY in the environment; "
+                "do not use the built-in development key in production."
+            )
 
     # Check ALLOWED_ORIGINS
     if "*" in ALLOWED_ORIGINS:
@@ -232,7 +258,7 @@ def run_security_check() -> dict:
 
     # A secret key is considered properly configured if it is present, sufficiently long,
     # and not equal to the built-in development key.
-    secret_key_configured = bool(SECRET_KEY) and len(SECRET_KEY) >= 32 and SECRET_KEY != DEFAULT_DEV_SECRET_KEY
+    secret_key_configured = _is_secret_key_properly_configured()
 
     return {
         "status": "secure" if not issues else "issues_found",
