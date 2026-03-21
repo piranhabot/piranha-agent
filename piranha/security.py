@@ -136,6 +136,12 @@ def run_security_check() -> dict:
     if not SECRET_KEY or len(SECRET_KEY) < 32:
         issues.append("CRITICAL: SECRET_KEY is too short or not set!")
         recommendations.append("Set a strong SECRET_KEY (min 32 chars) in .env file")
+    elif SECRET_KEY == DEFAULT_DEV_SECRET_KEY:
+        issues.append("CRITICAL: DEFAULT_DEV_SECRET_KEY is in use!")
+        recommendations.append(
+            "Generate and set a strong, random SECRET_KEY in the environment; "
+            "do not use the built-in development key in production."
+        )
 
     # Check ALLOWED_ORIGINS
     if "*" in ALLOWED_ORIGINS:
