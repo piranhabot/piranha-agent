@@ -163,13 +163,7 @@ def run_security_check() -> dict:
     if "*" in ALLOWED_ORIGINS:
         issues.append("CRITICAL: CORS allows all origins (*)!")
         recommendations.append("Restrict ALLOWED_ORIGINS to specific domains")
-    elif (
-        isinstance(ALLOWED_ORIGINS, str)
-        and "http://localhost" in ALLOWED_ORIGINS
-    ) or (
-        not isinstance(ALLOWED_ORIGINS, str)
-        and any("http://localhost" in origin for origin in ALLOWED_ORIGINS)
-    ):
+    elif any("http://localhost" in origin for origin in ALLOWED_ORIGINS):
         warnings.append("Development origins detected (localhost)")
 
     # Check API_KEYS
