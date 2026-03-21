@@ -139,7 +139,16 @@ except Exception as e:
 print("\n5. Validating Multi-Agent Collaboration...")
 
 class MultiAgentCollaboration:
-    """Enhanced multi-agent collaboration system."""
+    """Enhanced multi-agent collaboration system.
+    
+    If no ``monitor`` is provided, the collaboration will automatically use
+    the default real-time monitor returned by :func:`get_monitor`. In most
+    environments this is the shared/global :class:`RealtimeMonitor` instance
+    used elsewhere in the system, so all collaboration activity will be
+    reported to that monitor. To disable or customize monitoring for a
+    collaboration, explicitly pass a ``RealtimeMonitor`` instance (or, where
+    supported, ``None``) via the ``monitor`` argument.
+    """
     
     def __init__(self, monitor: Optional[RealtimeMonitor] = None):
         self.agents = []
