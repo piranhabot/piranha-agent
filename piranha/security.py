@@ -11,6 +11,7 @@ This module provides security utilities:
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+from pathlib import Path
 
 import jwt
 from fastapi import WebSocket, HTTPException, status
@@ -33,13 +34,22 @@ _env = os.getenv("ENV") or os.getenv("PYTHON_ENV") or "production"
 if not _env_secret_key:
     if _env.lower() in ("dev", "development", "local"):
         # In development, auto-generate a strong random key if none is provided.
-        # Fall back to the historical default only for explicit development envs.
+        # Persist the generated key locally so it remains stable across restarts.
         warnings.warn(
-            "SECRET_KEY not set! Generating a random development key. "
+            "SECRET_KEY not set! Using a persisted random development key. "
             "Set a strong, random SECRET_KEY in .env for non-development environments.",
             UserWarning,
         )
-        SECRET_KEY = secrets.token_urlsafe(32)
+        _dev_key_path = Path(".dev_secret_key")
+        if _dev_key_path.is_file():
+            SECRET_KEY = _dev_key_path.read_text(encoding="utf-8").strip()
+            if len(SECRET_KEY) < MIN_API_KEY_LENGTH:
+                # Regenerate if the stored key is too short or otherwise invalid.
+                SECRET_KEY = secrets.token_urlsafe(32)
+                _dev_key_path.write_text(SECRET_KEY, encoding="utf-8")
+        else:
+            SECRET_KEY = secrets.token_urlsafe(32)
+            _dev_key_path.write_text(SECRET_KEY, encoding="utf-8")
     else:
         # In non-development environments, refuse to start without an explicit SECRET_KEY
         raise RuntimeError(
