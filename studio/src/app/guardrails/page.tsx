@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Shield, AlertTriangle, CheckCircle, DollarSign, Clock, Save, RefreshCw } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, DollarSign, Clock, Save, RefreshCw, type LucideIcon } from 'lucide-react';
 
 const API_BASE = 'http://localhost:8080/api';
 
@@ -32,6 +32,7 @@ export default function GuardrailsPage() {
     warning_threshold: 80
   });
 
+  const [stats, setStats] = useState<GuardrailsStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
@@ -86,13 +87,14 @@ export default function GuardrailsPage() {
     }));
   };
 
-  const budgetPercentage = stats 
+  const budgetPercentage = stats
     ? ((stats.token_usage / config.token_budget) * 100).toFixed(1)
-    : 0;
+    : '0';
 
-  const budgetColor = budgetPercentage && parseFloat(budgetPercentage) > config.warning_threshold
-    ? 'text-red-400'
-    : 'text-green-400';
+  const budgetColor =
+    stats && parseFloat(budgetPercentage) > config.warning_threshold
+      ? 'text-red-400'
+      : 'text-green-400';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-piranha-900 via-piranha-800 to-piranha-900 p-8">
@@ -265,7 +267,7 @@ export default function GuardrailsPage() {
                     : 'bg-piranha-900/50 border-piranha-700 text-piranha-300 hover:border-piranha-500'
                 }`}
               >
-                {action.replace('_', ' ')}
+                {action.replaceAll('_', ' ')}
               </button>
             ))}
           </div>
@@ -330,7 +332,7 @@ export default function GuardrailsPage() {
 }
 
 function StatCard({ icon: Icon, title, value, color }: {
-  icon: any;
+  icon: LucideIcon;
   title: string;
   value: number | string;
   color: string;
