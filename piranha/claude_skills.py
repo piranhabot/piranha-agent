@@ -161,17 +161,17 @@ This code appears to be a {language} program that performs specific operations.
     lines = code.strip().split('\n')
     explanation += f"- Total lines: {len(lines)}\n"
     
-    # Count functions/classes
-    func_count = len(re.findall(r'\bdef\b|\bfunction\b|\bfunc\b', code))
-    class_count = len(re.findall(r'\bclass\b|\bstruct\b', code))
+    # Count functions/classes (safe regex patterns)
+    func_count = len(re.findall(r'\bdef\b', code))
+    class_count = len(re.findall(r'\bclass\b', code))
     
     explanation += f"- Functions/Methods: {func_count}\n"
     explanation += f"- Classes/Structs: {class_count}\n"
     
     explanation += "\n## Key Components\n"
     
-    # Extract function names
-    functions = re.findall(r'(?:def|function|func)\s+(\w+)', code)
+    # Extract function names (safe pattern)
+    functions = re.findall(r'\bdef\s+(\w+)', code)
     if functions:
         explanation += "\n### Functions\n"
         for func in functions:
@@ -389,7 +389,16 @@ def extract_information(text: str, information_type: str) -> str:
 """
     
     if information_type.lower() == "dates":
-        dates = re.findall(r'\b\d{1,2}/\d{1,2}/\d{2,4}\b|\b\d{1,2}-\d{1,2}-\d{2,4}\b|\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{1,2},? \d{4}\b', text, re.I)
+        # Safe date patterns (non-catastrophic)
+        date_patterns = [
+            r'\b\d{1,2}/\d{1,2}/\d{2,4}\b',
+            r'\b\d{1,2}-\d{1,2}-\d{2,4}\b',
+            r'\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},?\s+\d{4}\b',
+        ]
+        dates = []
+        for pattern in date_patterns:
+            dates.extend(re.findall(pattern, text, re.I))
+        dates = dates[:20]  # Limit results
         result += "\n### Dates Found\n"
         for date in dates[:10]:
             result += f"- {date}\n"
@@ -397,14 +406,15 @@ def extract_information(text: str, information_type: str) -> str:
             result += "No dates found\n"
     
     elif information_type.lower() == "numbers":
-        numbers = re.findall(r'\b\d+(?:,\d{3})*(?:\.\d+)?%?\b', text)
+        # Safe number pattern (avoid nested quantifiers)
+        numbers = re.findall(r'\b\d{1,3}(?:,\d{3})*(?:\.\d+)?%?\b', text)[:30]
         result += "\n### Numbers Found\n"
         for num in numbers[:20]:
             result += f"- {num}\n"
     
     elif information_type.lower() == "names":
-        # Simple pattern for capitalized words
-        names = re.findall(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+\b', text)
+        # Safe name pattern (limited repetition)
+        names = re.findall(r'\b[A-Z][a-z]{1,15}(?:\s+[A-Z][a-z]{1,15}){0,2}\b', text)[:20]
         result += "\n### Potential Names Found\n"
         for name in names[:10]:
             result += f"- {name}\n"

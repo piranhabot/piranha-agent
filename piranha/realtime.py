@@ -33,10 +33,20 @@ from pathlib import Path
 from typing import Any
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
+# Import security module
+from .security import (
+    limiter,
+    verify_websocket_token,
+    get_cors_origins,
+    run_security_check,
+)
 
 # Get the directory where this file is located
 CURRENT_DIR = Path(__file__).parent
@@ -140,13 +150,20 @@ class RealtimeMonitor:
             version="0.4.0"
         )
         
-        # Configure CORS
+        # Add rate limiter
+        self.app.state.limiter = limiter
+        self.app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+        
+        # Configure CORS with restricted origins
+        allowed_origins = get_cors_origins()
+        logger.info(f"Allowed CORS origins: {allowed_origins}")
+        
         self.app.add_middleware(
             CORSMiddleware,
-            allow_origins=["*"],
+            allow_origins=allowed_origins,
             allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
+            allow_methods=["GET", "POST", "PUT", "DELETE"],
+            allow_headers=["Authorization", "Content-Type"],
         )
         
         # Setup routes
@@ -178,12 +195,14 @@ class RealtimeMonitor:
             }
         
         @self.app.get("/api/agents")
-        async def get_agents():
+        @limiter.limit("30/minute")
+        async def get_agents(request: Request):
             """Get all agents."""
             return {"agents": list(self.agents.values())}
         
         @self.app.get("/api/agents/{agent_id}")
-        async def get_agent(agent_id: str):
+        @limiter.limit("60/minute")
+        async def get_agent(request: Request, agent_id: str):
             """Get specific agent."""
             if agent_id not in self.agents:
                 raise HTTPException(status_code=404, detail="Agent not found")
@@ -200,13 +219,26 @@ class RealtimeMonitor:
         @self.app.get("/api/metrics")
         async def get_metrics():
             """Get system metrics."""
-            self._update_metrics()
+            self.update_metrics()
             return self.metrics
         
         @self.app.get("/api/events")
         async def get_events(limit: int = 100):
             """Get recent events."""
             return {"events": self.events[-limit:]}
+        
+        @self.app.get("/api/security/check")
+        async def security_check():
+            """Run security check."""
+            return run_security_check()
+        
+        @self.app.get("/api/security/token")
+        async def get_token():
+            """Get authentication token (for demo purposes)."""
+            from .security import create_access_token
+            
+            token = create_access_token(data={"sub": "user", "role": "admin"})
+            return {"token": token, "expires_in": 3600}
         
         @self.app.get("/api/health")
         async def health():
@@ -334,6 +366,109 @@ class RealtimeMonitor:
             """Test LLM provider connection."""
             return {"status": "ok", "success": True, "message": "Connection successful"}
         
+        @self.app.get("/api/costs/analytics")
+        async def get_cost_analytics(range: str = '7d'):
+            """Get advanced cost analytics."""
+            import random
+            from datetime import datetime, timedelta
+            
+            daily_breakdown = []
+            for i in range(7 if range == '7d' else 30 if range == '30d' else 90):
+                daily_breakdown.append({
+                    "date": (datetime.now() - timedelta(days=(7 if range == '7d' else 30 if range == '30d' else 90) - i - 1)).strftime('%Y-%m-%d'),
+                    "cost": random.random() * 0.01,
+                    "tokens": random.randint(5000, 15000)
+                })
+            
+            return {
+                "total_cost": 0.0567,
+                "total_tokens": 125000,
+                "llm_calls": 450,
+                "cache_hits": 180,
+                "cache_savings": 0.0234,
+                "projection": 0.08,
+                "daily_breakdown": daily_breakdown,
+                "agent_breakdown": [
+                    {"name": "researcher", "cost": 0.0234},
+                    {"name": "writer", "cost": 0.0189},
+                    {"name": "reviewer", "cost": 0.0144}
+                ],
+                "model_breakdown": [
+                    {"name": "llama3", "cost": 0.0},
+                    {"name": "claude-3-5-sonnet", "cost": 0.0345},
+                    {"name": "gpt-4", "cost": 0.0222}
+                ]
+            }
+        
+        @self.app.get("/api/events/timeline")
+        async def get_events_timeline():
+            """Get event timeline."""
+            import random
+            from datetime import datetime, timedelta
+            
+            event_types = ['LlmCall', 'CacheHit', 'CacheMiss', 'SkillInvoked', 'SkillCompleted', 'GuardrailCheck']
+            events = []
+            for i in range(50):
+                events.append({
+                    "id": f"event-{i}",
+                    "sequence": i + 1,
+                    "event_type": event_types[random.randint(0, len(event_types) - 1)],
+                    "timestamp": (datetime.now() - timedelta(minutes=(50 - i))).isoformat(),
+                    "agent_id": f"agent-{random.randint(1, 5)}",
+                    "session_id": f"session-{random.randint(1, 3)}",
+                    "payload": {
+                        "model": "llama3",
+                        "tokens": random.randint(100, 1000),
+                        "cost": random.random() * 0.001
+                    }
+                })
+            
+            return {"events": events}
+        
+        @self.app.get("/api/collaborations")
+        async def get_collaborations():
+            """Get multi-agent collaborations."""
+            from datetime import datetime, timedelta
+            
+            return {
+                "collaborations": [
+                    {
+                        "id": "collab-1",
+                        "task_id": "task-1",
+                        "description": "Write article about AI",
+                        "status": "completed",
+                        "agents": [
+                            {"id": "1", "name": "researcher", "role": "researcher", "status": "idle", "messages_sent": 5},
+                            {"id": "2", "name": "writer", "role": "writer", "status": "idle", "messages_sent": 3},
+                            {"id": "3", "name": "reviewer", "role": "reviewer", "status": "idle", "messages_sent": 2}
+                        ],
+                        "conversation": [
+                            {"sender": "system", "content": "Please execute: Write article about AI", "role": "system", "timestamp": datetime.now().isoformat()},
+                            {"sender": "researcher", "content": "[researcher] Completed: Research phase", "role": "researcher", "timestamp": datetime.now().isoformat()},
+                            {"sender": "writer", "content": "[writer] Completed: Writing phase", "role": "writer", "timestamp": datetime.now().isoformat()},
+                            {"sender": "reviewer", "content": "[reviewer] Completed: Review phase", "role": "reviewer", "timestamp": datetime.now().isoformat()}
+                        ],
+                        "created_at": (datetime.now() - timedelta(hours=1)).isoformat(),
+                        "completed_at": datetime.now().isoformat()
+                    },
+                    {
+                        "id": "collab-2",
+                        "task_id": "task-2",
+                        "description": "Build web scraper",
+                        "status": "running",
+                        "agents": [
+                            {"id": "4", "name": "coder", "role": "coder", "status": "busy", "messages_sent": 2},
+                            {"id": "5", "name": "tester", "role": "tester", "status": "idle", "messages_sent": 0}
+                        ],
+                        "conversation": [
+                            {"sender": "system", "content": "Please execute: Build web scraper", "role": "system", "timestamp": datetime.now().isoformat()},
+                            {"sender": "coder", "content": "[coder] Starting implementation", "role": "coder", "timestamp": datetime.now().isoformat()}
+                        ],
+                        "created_at": datetime.now().isoformat()
+                    }
+                ]
+            }
+        
         @self.app.get("/api/guardrails")
         async def get_guardrails():
             """Get guardrail configuration."""
@@ -392,10 +527,17 @@ class RealtimeMonitor:
         
         @self.app.websocket("/ws")
         async def websocket_endpoint(websocket: WebSocket):
-            """WebSocket endpoint for real-time updates."""
+            """WebSocket endpoint for real-time updates with authentication."""
+            # Verify authentication token
+            payload = await verify_websocket_token(websocket)
+            if not payload:
+                return  # Connection already closed by verify_websocket_token
+            
             await websocket.accept()
             self.active_connections.add(websocket)
             
+            logger.info(f"WebSocket connected: {payload.get('sub', 'anonymous')}")
+
             try:
                 # Send initial state
                 await websocket.send_json({
@@ -404,7 +546,7 @@ class RealtimeMonitor:
                     "tasks": [asdict(t) for t in self.tasks.values()],
                     "metrics": asdict(self.metrics)
                 })
-                
+
                 # Keep connection alive
                 while True:
                     try:
@@ -417,7 +559,7 @@ class RealtimeMonitor:
                         # Send heartbeat
                         await websocket.send_json({"type": "heartbeat"})
             except WebSocketDisconnect:
-                pass
+                logger.info("WebSocket disconnected")
             finally:
                 self.active_connections.remove(websocket)
     

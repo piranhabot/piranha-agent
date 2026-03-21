@@ -130,6 +130,15 @@ export default function Dashboard() {
                 <a href="/llm-providers" className="text-piranha-300 hover:text-white transition-colors">
                   LLM Providers
                 </a>
+                <a href="/costs" className="text-piranha-300 hover:text-white transition-colors">
+                  Cost Analytics
+                </a>
+                <a href="/events" className="text-piranha-300 hover:text-white transition-colors">
+                  Events
+                </a>
+                <a href="/collaboration" className="text-piranha-300 hover:text-white transition-colors">
+                  Collaboration
+                </a>
               </nav>
               <div className="h-10 w-px bg-piranha-700"></div>
               <div className="text-right">
