@@ -630,7 +630,7 @@ def competitive_ads_extractor(competitors: list[str], platform: str = "all") -> 
 def domain_name_brainstormer(keywords: list[str], style: str = "all", 
                              tlds: list[str] | None = None) -> str:
     """Domain name brainstormer."""
-    tlds = tlds or ['.com', '.io', '.dev', '.ai']
+    _tlds = tlds or ['.com', '.io', '.dev', '.ai']
     
     return f"""
 # Domain Name Brainstormer

@@ -88,7 +88,7 @@ class TestPhase6DistributedAgents:
         """Test multiple agents with single orchestrator."""
         orchestrator = AgentOrchestrator(queue_size=10)
         
-        agents = []
+        _agents = []
         for i in range(5):
             agent = DistributedAgent(f"agent-{i}")
             agents.append(agent)

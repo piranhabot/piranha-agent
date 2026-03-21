@@ -65,7 +65,7 @@ def main():
     for i, (description, agent) in enumerate(tasks, 1):
         print(f"Task {i}: {description}")
         task = Task(description=description, agent=agent)
-        result = task.run()
+        _ = task.run()
         print(f"  ✓ Completed")
         
         # Small delay to see updates in dashboard
