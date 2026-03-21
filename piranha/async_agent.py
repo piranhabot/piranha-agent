@@ -17,6 +17,7 @@ from piranha_core import EventStore, GuardrailEngine, SemanticCache, SkillRegist
 from piranha.llm_provider import LLMMessage, LLMProvider, LLMResponse
 from piranha.session import Session
 from piranha.skill import Skill
+from piranha.memory import ContextManager, MemoryManager
 
 
 class AsyncAgent:
@@ -68,7 +69,11 @@ class AsyncAgent:
         
         # Session management
         self.session = Session.create(self._event_store)
-        
+
+        # Context and memory management
+        self._context = ContextManager(system_prompt=system_prompt)
+        self._memory = MemoryManager()
+
         # Conversation history
         self._messages: list[LLMMessage] = []
         if system_prompt:
@@ -93,6 +98,20 @@ class AsyncAgent:
         """Add a skill to the agent."""
         self.skills.append(skill)
         self._register_skills()
+
+    def add_to_memory(self, content: str, tags: list[str] | None = None) -> None:
+        """Add content to agent's memory."""
+        self._memory.add(content, tags=tags)
+
+    @property
+    def context(self) -> ContextManager:
+        """Get the context manager."""
+        return self._context
+
+    @property
+    def memory(self) -> MemoryManager:
+        """Get the memory manager."""
+        return self._memory
     
     async def run(
         self,
