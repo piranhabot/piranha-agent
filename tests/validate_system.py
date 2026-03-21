@@ -37,7 +37,7 @@ print()
 print("1. Validating Core Imports...")
 try:
     from piranha import (
-        Agent, Task, Session, Skill, skill,
+        Agent, Task, skill,
         SemanticCache, WasmRunner, EmbeddingModel,
         RealtimeMonitor, start_monitoring, monitor_agent, get_monitor,
     )
