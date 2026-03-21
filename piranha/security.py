@@ -81,16 +81,24 @@ if _env_api_keys:
         )
 
 # Initialize rate limiter.
-# Use this `limiter` instance to protect FastAPI routes, for example:
+# Use the `get_limiter()` accessor to obtain the Limiter instance, for example:
 #     @app.get("/items")
-#     @limiter.limit(f"{RATE_LIMIT_PER_MINUTE}/minute")
+#     @get_limiter().limit(f"{RATE_LIMIT_PER_MINUTE}/minute")
 #     async def list_items():
 #         ...
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=[f"{RATE_LIMIT_PER_MINUTE}/minute"],
-    storage_uri=RATE_LIMIT_STORAGE_URI,
-)
+_limiter: Optional[Limiter] = None
+
+
+def get_limiter() -> Limiter:
+    """Return the global Limiter instance, creating it lazily on first use."""
+    global _limiter
+    if _limiter is None:
+        _limiter = Limiter(
+            key_func=get_remote_address,
+            default_limits=[f"{RATE_LIMIT_PER_MINUTE}/minute"],
+            storage_uri=RATE_LIMIT_STORAGE_URI,
+        )
+    return _limiter
 
 # Security bearer token
 security = HTTPBearer()
