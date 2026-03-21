@@ -17,21 +17,34 @@ from fastapi import WebSocket, HTTPException, status
 from fastapi.security import HTTPBearer
 from slowapi import Limiter
 from slowapi.util import get_remote_address
+import secrets
 
 # Default development secret key (DO NOT USE IN PRODUCTION)
 DEFAULT_DEV_SECRET_KEY = "dev-secret-key-32-chars-long!!XX"
 
 # Security configuration from environment
 _env_secret_key = os.getenv("SECRET_KEY")
+_env = os.getenv("ENV") or os.getenv("PYTHON_ENV") or "production"
 if not _env_secret_key:
-    # Allow development without SECRET_KEY but warn
     import warnings
-    warnings.warn(
-        "⚠️  WARNING: SECRET_KEY not set! Using default for development. "
-        "Set a strong, random SECRET_KEY in .env for production.",
-        UserWarning
-    )
-    SECRET_KEY = DEFAULT_DEV_SECRET_KEY
+    if _env.lower() in ("dev", "development", "local"):
+        # In development, auto-generate a strong random key if none is provided.
+        # Fall back to the historical default only for explicit development envs.
+        warnings.warn(
+            "SECRET_KEY not set! Generating a random development key. "
+            "Set a strong, random SECRET_KEY in .env for non-development environments.",
+            UserWarning,
+        )
+        SECRET_KEY = secrets.token_urlsafe(32)
+        if not SECRET_KEY:
+            # Fallback for extremely constrained environments
+            SECRET_KEY = DEFAULT_DEV_SECRET_KEY
+    else:
+        # In non-development environments, refuse to start without an explicit SECRET_KEY
+        raise RuntimeError(
+            "SECRET_KEY environment variable is not set. "
+            "Refusing to start in non-development environment without a secure SECRET_KEY."
+        )
 else:
     SECRET_KEY = _env_secret_key
 ALGORITHM = "HS256"
