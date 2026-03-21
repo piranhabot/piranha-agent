@@ -42,7 +42,7 @@ from slowapi.errors import RateLimitExceeded
 
 # Import security module
 from .security import (
-    limiter,
+    get_limiter,
     verify_websocket_token,
     get_cors_origins,
     run_security_check,
@@ -195,13 +195,13 @@ class RealtimeMonitor:
             }
         
         @self.app.get("/api/agents")
-        @limiter.limit("30/minute")
+        @get_limiter().limit("30/minute")
         async def get_agents(request: Request):
             """Get all agents."""
             return {"agents": list(self.agents.values())}
         
         @self.app.get("/api/agents/{agent_id}")
-        @limiter.limit("60/minute")
+        @get_limiter().limit("60/minute")
         async def get_agent(request: Request, agent_id: str):
             """Get specific agent."""
             if agent_id not in self.agents:
