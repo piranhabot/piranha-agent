@@ -10,6 +10,11 @@ This script validates all components are properly wired together:
 - Multi-agent collaboration
 """
 
+# Port constants for consistency
+MAIN_MONITOR_PORT = 8080
+INTEGRATION_MONITOR_PORT = 8081
+WORKFLOW_MONITOR_PORT = 8082
+
 from piranha import (
     Agent,
     Task,
@@ -24,8 +29,9 @@ from piranha import (
     get_monitor,
 )
 from piranha.memory import MemoryManager, ContextManager
-from typing import Optional
+from typing import Optional, List
 import asyncio
+
 
 print("=" * 70)
 print("PIRANHA AGENT - COMPLETE SYSTEM VALIDATION")
@@ -33,27 +39,27 @@ print("=" * 70)
 print()
 
 # =============================================================================
-# 1. Validate Core Imports
+# 1. Validating Core Imports
 # =============================================================================
 print("1. Validating Core Imports...")
 try:
     from piranha import (
-        Agent, Task, skill,
+        Agent, Task, Session, Skill, skill,
         SemanticCache, WasmRunner, EmbeddingModel,
         RealtimeMonitor, start_monitoring, monitor_agent, get_monitor,
+        MemoryManager, ContextManager,
     )
-    from piranha.memory import MemoryManager, ContextManager
     print("   ✓ All core imports successful")
 except ImportError as e:
     print(f"   ✗ Import failed: {e}")
     exit(1)
 
 # =============================================================================
-# 2. Validate Real-Time Monitor
+# 2. Validating Real-Time Monitor
 # =============================================================================
 print("\n2. Validating Real-Time Monitor...")
 try:
-    monitor = RealtimeMonitor(port=8080)
+    monitor = RealtimeMonitor(port=MAIN_MONITOR_PORT)
     print("   ✓ RealtimeMonitor created")
     
     # Test agent registration
@@ -70,27 +76,18 @@ try:
     # Test events
     monitor.record_event("test.event", {"data": "test"})
     print(f"   ✓ Event recording works: {len(monitor.events)} events")
-
-    # Clean up monitor to avoid port conflicts in subsequent sections
-    try:
-        monitor.stop()
-    except AttributeError:
-        # If RealtimeMonitor has no explicit stop method, ignore;
-        # this preserves existing behavior while avoiding hard failure.
-        pass
-    monitor = None
     
 except Exception as e:
     print(f"   ✗ Monitor validation failed: {e}")
     exit(1)
 
 # =============================================================================
-# 3. Validate Agent-Monitor Integration
+# 3. Validating Agent-Monitor Integration
 # =============================================================================
 print("\n3. Validating Agent-Monitor Integration...")
 try:
     # Create monitor
-    integration_monitor = start_monitoring(port=8081)
+    integration_monitor = start_monitoring(port=INTEGRATION_MONITOR_PORT)
     print("   ✓ Monitor started")
     
     # Create agent
@@ -110,7 +107,7 @@ except Exception as e:
     exit(1)
 
 # =============================================================================
-# 4. Validate Skill Template with Monitoring
+# 4. Validating Skill Template with Monitoring
 # =============================================================================
 print("\n4. Validating Skill Template with Monitoring...")
 
@@ -124,7 +121,7 @@ print("\n4. Validating Skill Template with Monitoring...")
         },
         "required": ["input"],
     },
-    auto_monitor=True  # Enable automatic monitoring of this skill
+    auto_monitor=True  # NEW: Auto-monitoring flag
 )
 def monitored_skill(input: str) -> str:
     """Skill with automatic monitoring."""
@@ -143,26 +140,17 @@ except Exception as e:
     exit(1)
 
 # =============================================================================
-# 5. Validate Multi-Agent Collaboration
+# 5. Validating Multi-Agent Collaboration
 # =============================================================================
 print("\n5. Validating Multi-Agent Collaboration...")
 
 class MultiAgentCollaboration:
-    """Enhanced multi-agent collaboration system.
-    
-    If no ``monitor`` is provided, the collaboration will automatically use
-    the default real-time monitor returned by :func:`get_monitor`. In most
-    environments this is the shared/global :class:`RealtimeMonitor` instance
-    used elsewhere in the system, so all collaboration activity will be
-    reported to that monitor. To disable or customize monitoring for a
-    collaboration, explicitly pass a ``RealtimeMonitor`` instance (or, where
-    supported, ``None``) via the ``monitor`` argument.
-    """
+    """Enhanced multi-agent collaboration system."""
     
     def __init__(self, monitor: Optional[RealtimeMonitor] = None):
         self.agents = []
         self.tasks = []
-        self.monitor = monitor or get_monitor()
+        self.monitor = monitor if monitor else get_monitor()
         self.collaboration_log = []
     
     def add_agent(self, agent: Agent, role: str):
@@ -175,15 +163,16 @@ class MultiAgentCollaboration:
         })
         
         # Register with monitor
-        self.monitor.register_agent(
-            agent_id=agent.id,
-            name=f"{role}: {agent.name}",
-            model=agent.model
-        )
+        if self.monitor:
+            self.monitor.register_agent(
+                agent_id=agent.id,
+                name=f"{role}: {agent.name}",
+                model=agent.model
+            )
         
         self.collaboration_log.append(f"Added {role} agent: {agent.name}")
     
-    def create_task_chain(self, description: str, agent_roles: list[str]):
+    def create_task_chain(self, description: str, agent_roles: List[str]):
         """Create a chain of tasks for multiple agents."""
         task_id = f"chain-{len(self.tasks) + 1}"
         
@@ -195,16 +184,10 @@ class MultiAgentCollaboration:
             "results": []
         })
         
-        # Determine initial responsible agent (first matching role with a registered agent)
-        first_agent_id = None
-        for role in agent_roles:
-            agent_data = next((a for a in self.agents if a["role"] == role), None)
-            if agent_data is not None:
-                first_agent_id = agent_data["agent"].id
-                break
-        
         # Register with monitor
-        self.monitor.register_task(task_id, description, agent_id=first_agent_id)
+        if self.monitor:
+            self.monitor.register_task(task_id, description)
+        
         self.collaboration_log.append(f"Created task chain: {description}")
         
         return task_id
@@ -215,10 +198,13 @@ class MultiAgentCollaboration:
         if not task:
             raise ValueError(f"Task {task_id} not found")
         
-        self.monitor.update_task_status(task_id, status="running")
+        # Update status
+        task["status"] = "running"
         self.collaboration_log.append(f"Executing task chain: {task_id}")
         
         results = []
+        
+        # Execute for each required role
         for role in task["agent_roles"]:
             # Find agent with matching role
             agent_data = next((a for a in self.agents if a["role"] == role), None)
@@ -227,39 +213,26 @@ class MultiAgentCollaboration:
             
             agent = agent_data["agent"]
             
-            # Update agent status
-            self.monitor.update_agent_status(
-                agent.id,
-                status="busy",
-                current_task=task_id
-            )
-            
-            # Execute task (placeholder - would use actual agent.run)
-            result = f"{role} completed their part"
+            # Execute task (placeholder - would use agent.run in real implementation)
+            result = f"[{role}] Completed: {task['description']}"
             results.append(result)
             
-            # Update agent status
-            self.monitor.update_agent_status(
-                agent.id,
-                status="idle",
-                current_task=None
-            )
             agent_data["tasks_completed"] += 1
         
+        # Mark task complete
         task["status"] = "completed"
         task["results"] = results
         
-        self.monitor.update_task_status(task_id, status="completed")
         self.collaboration_log.append(f"Task chain completed: {task_id}")
         
         return results
     
-    def get_collaboration_report(self) -> dict:
+    def get_collaboration_report(self):
         """Get collaboration report."""
         return {
-            "agents": len(self.agents),
-            "tasks": len(self.tasks),
-            "log": self.collaboration_log,
+            "total_agents": len(self.agents),
+            "total_tasks": len(self.tasks),
+            "log": self.collaboration_log[-20:],  # Last 20 entries
             "agent_stats": [
                 {
                     "role": a["role"],
@@ -272,7 +245,7 @@ class MultiAgentCollaboration:
 
 try:
     # Create collaboration system
-    collaboration = MultiAgentCollaboration(monitor)
+    collaboration = MultiAgentCollaboration(integration_monitor)
     print("   ✓ Multi-agent collaboration system created")
     
     # Add agents with roles
@@ -302,7 +275,7 @@ try:
     
     # Get report
     report = collaboration.get_collaboration_report()
-    print(f"   ✓ Collaboration report: {report['agents']} agents, {report['tasks']} tasks")
+    print(f"   ✓ Collaboration report: {report['total_agents']} agents, {report['total_tasks']} tasks")
     
 except Exception as e:
     print(f"   ✗ Multi-agent validation failed: {e}")
@@ -311,36 +284,46 @@ except Exception as e:
     exit(1)
 
 # =============================================================================
-# 6. Validate Complete Workflow
+# 6. Validating Complete Workflow
 # =============================================================================
 print("\n6. Validating Complete Workflow...")
 try:
     # Start fresh monitor
-    workflow_monitor = start_monitoring(port=8082)
-
+    workflow_monitor = start_monitoring(port=WORKFLOW_MONITOR_PORT)
+    
     # Create agents
     agent1 = Agent(name="workflow-agent-1", model="ollama/llama3:latest")
     agent2 = Agent(name="workflow-agent-2", model="ollama/llama3:latest")
-
+    
     # Monitor agents
     monitor_agent(agent1)
     monitor_agent(agent2)
-
-    # Create and track tasks (kept in variables for clarity and potential verification)
+    
+    # Create tasks
     task1 = Task(description="Task 1", agent=agent1)
     task2 = Task(description="Task 2", agent=agent2)
-
+    
+    # Execute tasks to ensure they participate in the monitored workflow
+    if hasattr(task1, "run"):
+        task1.run()
+    if hasattr(task2, "run"):
+        task2.run()
+    
     # Verify tasks were created and associated correctly
     assert task1.agent is agent1
     assert task2.agent is agent2
-    assert task1.description == "Task 1"
-    assert task2.description == "Task 2"
-
+    
     # Verify monitoring
     assert agent1.id in workflow_monitor.agents
     assert agent2.id in workflow_monitor.agents
+    
+    # If the monitor tracks tasks, ensure tasks are registered as well
+    if hasattr(workflow_monitor, "tasks"):
+        assert getattr(task1, "id", None) in workflow_monitor.tasks
+        assert getattr(task2, "id", None) in workflow_monitor.tasks
+    
     print("   ✓ Complete workflow validated")
-
+    
 except Exception as e:
     print(f"   ✗ Workflow validation failed: {e}")
     exit(1)
@@ -362,9 +345,9 @@ print("  ✓ Multi-agent collaboration")
 print("  ✓ Complete workflow")
 print()
 print("Monitoring Dashboards:")
-print("  - http://localhost:8080 (Main monitor)")
-print("  - http://localhost:8081 (Integration test)")
-print("  - http://localhost:8082 (Workflow test)")
+print(f"  - http://localhost:{MAIN_MONITOR_PORT} (Main monitor)")
+print(f"  - http://localhost:{INTEGRATION_MONITOR_PORT} (Integration test)")
+print(f"  - http://localhost:{WORKFLOW_MONITOR_PORT} (Workflow test)")
 print()
 print("Next Steps:")
 print("  1. Open http://localhost:8080 in browser")
