@@ -197,16 +197,24 @@ def run_security_check() -> dict:
     warnings = []
     recommendations = []
 
+    def _is_secret_key_properly_configured() -> bool:
+        """
+        A secret key is considered properly configured if it is present, sufficiently long,
+        and not equal to the built-in development key.
+        """
+        return bool(SECRET_KEY) and len(SECRET_KEY) >= 32 and SECRET_KEY != DEFAULT_DEV_SECRET_KEY
+
     # Check SECRET_KEY and report if it appears too weak
-    if len(SECRET_KEY) < 32:
-        issues.append("CRITICAL: SECRET_KEY is too short!")
-        recommendations.append("Set a strong SECRET_KEY (min 32 chars) in .env file")
-    elif SECRET_KEY == DEFAULT_DEV_SECRET_KEY:
-        issues.append("CRITICAL: DEFAULT_DEV_SECRET_KEY is in use!")
-        recommendations.append(
-            "Generate and set a strong, random SECRET_KEY in the environment; "
-            "do not use the built-in development key in production."
-        )
+    if not _is_secret_key_properly_configured():
+        if len(SECRET_KEY) < 32:
+            issues.append("CRITICAL: SECRET_KEY is too short!")
+            recommendations.append("Set a strong SECRET_KEY (min 32 chars) in .env file")
+        elif SECRET_KEY == DEFAULT_DEV_SECRET_KEY:
+            issues.append("CRITICAL: DEFAULT_DEV_SECRET_KEY is in use!")
+            recommendations.append(
+                "Generate and set a strong, random SECRET_KEY in the environment; "
+                "do not use the built-in development key in production."
+            )
 
     # Check ALLOWED_ORIGINS
     if "*" in ALLOWED_ORIGINS:
@@ -232,7 +240,7 @@ def run_security_check() -> dict:
 
     # A secret key is considered properly configured if it is present, sufficiently long,
     # and not equal to the built-in development key.
-    secret_key_configured = bool(SECRET_KEY) and len(SECRET_KEY) >= 32 and SECRET_KEY != DEFAULT_DEV_SECRET_KEY
+    secret_key_configured = _is_secret_key_properly_configured()
 
     return {
         "status": "secure" if not issues else "issues_found",
