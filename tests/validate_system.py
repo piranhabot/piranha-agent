@@ -178,7 +178,7 @@ class MultiAgentCollaboration:
         })
         
         # Register with monitor
-        self.monitor.register_task(task_id, description)
+        self.monitor.register_task(task_id, description, agent_id=None)
         self.collaboration_log.append(f"Created task chain: {description}")
         
         return task_id
@@ -303,6 +303,12 @@ try:
     # Create and track tasks (kept in variables for clarity and potential verification)
     task1 = Task(description="Task 1", agent=agent1)
     task2 = Task(description="Task 2", agent=agent2)
+
+    # Verify tasks were created and associated correctly
+    assert task1.agent is agent1
+    assert task2.agent is agent2
+    assert task1.description == "Task 1"
+    assert task2.description == "Task 2"
 
     # Verify monitoring
     assert agent1.id in workflow_monitor.agents
