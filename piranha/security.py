@@ -165,11 +165,10 @@ def verify_api_key(api_key: str) -> bool:
         # This aligns with the security check, which only warns in this case.
         return True
     
-    is_valid = False
     for valid_key in API_KEYS:
         if secrets.compare_digest(api_key, valid_key):
-            is_valid = True
-    return is_valid
+            return True
+    return False
 
 
 def get_cors_origins() -> list[str]:
