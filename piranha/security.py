@@ -99,11 +99,17 @@ def verify_token(token: str) -> dict:
 
 
 async def verify_websocket_token(websocket: WebSocket) -> Optional[dict]:
-    """Verify WebSocket connection token."""
+    """Verify WebSocket connection token.
+
+    The authentication token is expected to be provided as the first WebSocket
+    message sent by the client, rather than via URL query parameters, to avoid
+    exposing credentials in logs, browser history, or referrer headers.
+    """
     try:
-        token = websocket.query_params.get("token")
+        # Receive the first message from the client, which should contain the token.
+        token = await websocket.receive_text()
         if not token:
-            await websocket.close(code=4001, reason="Missing authentication token in query parameters")
+            await websocket.close(code=4001, reason="Missing authentication token in initial message")
             return None
 
         payload = verify_token(token)
