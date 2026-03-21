@@ -15,9 +15,12 @@ Usage:
 
 import time
 import statistics
+import logging
 from typing import Callable, Any
 from dataclasses import dataclass, field
 import pytest
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -93,8 +96,9 @@ class BenchmarkRunner:
         for _ in range(self.warmup_iterations):
             try:
                 func(*args, **kwargs)
-            except Exception:
-                pass
+            except Exception as e:
+                # Ignore errors during warmup
+                logger.debug(f"Warmup error (ignored): {e}")
         
         # Benchmark
         for i in range(iterations):
@@ -150,8 +154,9 @@ class BenchmarkRunner:
         for _ in range(self.warmup_iterations):
             try:
                 await func(*args, **kwargs)
-            except Exception:
-                pass
+            except Exception as e:
+                # Ignore errors during warmup
+                logger.debug(f"Warmup error (ignored): {e}")
         
         # Benchmark
         for i in range(iterations):

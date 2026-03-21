@@ -89,8 +89,9 @@ def main():
         response = httpx.get("http://localhost:11434/api/tags", timeout=5.0)
         models = response.json().get("models", [])
         print(f"✓ Available models: {[m['name'] for m in models]}")
-    except Exception:
-        pass
+    except Exception as e:
+        # Silently ignore if Ollama is not running or unavailable
+        print(f"Note: Could not fetch available models: {e}")
     
     print()
     
