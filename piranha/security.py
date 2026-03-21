@@ -52,7 +52,8 @@ ALLOWED_ORIGINS = os.getenv(
     "http://localhost:3000,http://localhost:3001"
 ).split(",")
 RATE_LIMIT_PER_MINUTE = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
-API_KEYS = os.getenv("API_KEYS", "").split(",") if os.getenv("API_KEYS") else []
+_env_api_keys = os.getenv("API_KEYS")
+API_KEYS = _env_api_keys.split(",") if _env_api_keys else []
 
 # Initialize rate limiter.
 # Use this `limiter` instance to protect FastAPI routes, for example:
@@ -163,13 +164,7 @@ def run_security_check() -> dict:
     if "*" in ALLOWED_ORIGINS:
         issues.append("CRITICAL: CORS allows all origins (*)!")
         recommendations.append("Restrict ALLOWED_ORIGINS to specific domains")
-    elif (
-        isinstance(ALLOWED_ORIGINS, str)
-        and "http://localhost" in ALLOWED_ORIGINS
-    ) or (
-        not isinstance(ALLOWED_ORIGINS, str)
-        and any("http://localhost" in origin for origin in ALLOWED_ORIGINS)
-    ):
+    elif any("http://localhost" in origin for origin in ALLOWED_ORIGINS):
         warnings.append("Development origins detected (localhost)")
 
     # Check API_KEYS
