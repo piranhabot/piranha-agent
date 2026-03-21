@@ -147,9 +147,9 @@ def run_security_check() -> dict:
     warnings = []
     recommendations = []
 
-    # Check SECRET_KEY and report if it is unset or appears too weak
-    if not SECRET_KEY or len(SECRET_KEY) < 32:
-        issues.append("CRITICAL: SECRET_KEY is too short or not set!")
+    # Check SECRET_KEY and report if it appears too weak
+    if len(SECRET_KEY) < 32:
+        issues.append("CRITICAL: SECRET_KEY is too short!")
         recommendations.append("Set a strong SECRET_KEY (min 32 chars) in .env file")
     elif SECRET_KEY == DEFAULT_DEV_SECRET_KEY:
         issues.append("CRITICAL: DEFAULT_DEV_SECRET_KEY is in use!")
