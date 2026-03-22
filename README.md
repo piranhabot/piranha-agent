@@ -73,7 +73,10 @@ python examples/01_basic_agent.py
 | Feature | Piranha | DeepAgents | AgentGen | MAF | AutoGen | LangGraph | CrewAI |
 |---------|---------|------------|----------|-----|---------|-----------|--------|
 | **Performance** | ⚡⚡⚡⚡⚡ Rust core | ⚡⚡⚡ Python | ⚡⚡ Python | ⚡⚡⚡ Python | ⚡⚡ Python | ⚡⚡ Python | ⚡⚡ Python |
-| **Security** | ✅ Wasm sandbox | ⚠️ Process | ⚠️ Process | ❌ None | ❌ None | ❌ None | ❌ None |
+| **Security** | ✅ Wasmtime (Strict) | ⚠️ Process | ⚠️ Process | ❌ None | ❌ None | ❌ None | ❌ None |
+| **Data Privacy** | ✅ Auto-Redaction | ❌ None | ❌ None | ❌ None | ❌ None | ❌ None | ❌ None |
+| **Network Safety**| ✅ Egress Whitelist | ❌ Open access | ❌ Open | ❌ Open | ❌ Open | ❌ Open | ❌ Open |
+| **Tool Safety** | ✅ Enforced Perms | ⚠️ Unchecked | ❌ None | ⚠️ Limited | ❌ None | ⚠️ Basic | ❌ None |
 | **Claude Skills** | ✅ 46+ pre-built | ⚠️ 14 basic | ⚠️ Limited | ❌ None | ❌ None | ❌ None | ❌ None |
 | **Accountability** | ✅ Radical Transparency | ⚠️ Limited | ❌ None | ⚠️ Limited | ❌ None | ✅ Basic | ❌ None |
 | **Semantic Cache** | ✅ Fuzzy matching | ⚠️ Exact only | ❌ None | ⚠️ Exact only | ❌ None | ❌ None | ❌ None |
