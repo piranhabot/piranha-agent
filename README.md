@@ -17,9 +17,35 @@
 
 Piranha is designed for **Supervised Autonomy**. We believe that while agents should be fast, they must never be "black boxes." 
 
-- **The Autonomy Speed Gap**: Piranha can execute core operations at 51K+ ops/sec. Without oversight, a logic error can scale instantly. We provide the infrastructure to stop, audit, and intercept these actions before they cause real-world harm.
-- **Accountability Engine**: Our "Time-Travel Debugger" isn't just for fixing bugs; it's a cryptographic-ready audit trail. Every decision made by an LLM is recorded in our Rust-backed EventStore, allowing for full post-action forensic analysis.
-- **Sandboxing vs. Network**: While our **Wasm Sandbox** isolates the agent from your host machine, it does not automatically restrict the agent's "intent" on the network. Developers must apply their own context-aware guardrails for external API interactions.
+- **The Autonomy Speed Gap**: Piranha executes core operations at 51K+ ops/sec. Without oversight, errors can scale instantly. We provide the infrastructure to stop, audit, and intercept actions.
+- **Accountability Engine**: Our "Time-Travel Debugger" provides a cryptographic-ready audit trail. Every LLM decision is recorded in our Rust-backed EventStore for full forensic analysis.
+- **Enterprise-Grade Hardening**: Built-in protection against credential leaks, unauthorized network access, and unsafe code execution.
+
+---
+
+## 🔒 Security Hardening (v0.4.0 Update)
+
+We have implemented multiple layers of defense to make Piranha safe for production deployment:
+
+### 1. Production-Grade Wasm Sandbox
+Unlike competitors who run generated code directly on the host, Piranha uses **Wasmtime** to execute code in a strictly isolated environment.
+- **Enforced Limits**: Memory, CPU (fuel), and execution time are strictly capped.
+- **No Host Access**: Isolated from the file system and environment by default.
+
+### 2. Fine-Grained Permission Enforcement
+Skills now verify agent permissions before execution using Python `contextvars`.
+- **Authoritative Validation**: Even if an LLM tries to call a sensitive tool, the skill itself will refuse to run if the agent lacks the specific permission tag.
+- **Wildcard Support**: Simple `*` permission for development, restrictive tags for production.
+
+### 3. Egress Hardening (Network Protection)
+Prevent data exfiltration with built-in network guardrails.
+- **Allowed Hosts Whitelist**: Restrict agents to communicating only with trusted domains (e.g., `github.com`, `internal-api.company.com`).
+- **Validated Skills**: Core skills use the `validate_url()` helper to intercept and block unauthorized outbound requests.
+
+### 4. Automated Secret Masking
+Protect your credentials from ending up in logs or UIs.
+- **Regex Scrubbing**: Automatically detects and redacts OpenAI keys (`sk-...`), GitHub tokens, and Bearer tokens.
+- **Keyword Masking**: Dictionary keys like `password`, `secret`, and `api_key` are scrubbed before storage.
 
 ---
 
@@ -190,63 +216,45 @@ python -c "from piranha import Agent; print('✓ Piranha installed!')"
 ```python
 from piranha import Agent, Task
 
-# Create agent with Ollama
+# Create agent with Ollama and strict security
 agent = Agent(
     name="assistant",
     model="ollama/llama3:latest",
+    permissions=["basic_math", "knowledge_base"],
+    allowed_hosts=["localhost", "wikipedia.org"]
 )
 
 # Run a task
-task = Task(
-    description="Explain quantum computing in simple terms",
-    agent=agent
-)
-result = task.run()
-print(result)
+result = agent.run("Explain quantum computing in simple terms")
+print(result.content)
 ```
 
 **Full example:** [`examples/01_basic_agent.py`](examples/01_basic_agent.py)
 
-### 2. Agent with Claude Skills
+### 2. Async Agent with Claude Skills
 
 ```python
-from piranha import Agent
+import asyncio
+from piranha import AsyncAgent as Agent
 from piranha.complete_claude_skills import register_complete_claude_skills
 
-# Create agent
-agent = Agent(
-    name="skilled_assistant",
-    model="ollama/llama3:latest",
-    description="AI assistant with 46+ Claude Skills"
-)
+async def main():
+    # Create async agent
+    agent = Agent(
+        name="skilled_assistant",
+        model="ollama/llama3:latest",
+        permissions=["*"], # Wildcard for full access in development
+    )
 
-# Register ALL 46+ skills
-register_complete_claude_skills(agent)
+    # Register ALL 46+ skills
+    register_complete_claude_skills(agent)
 
-# Use skills directly
-from piranha.complete_claude_skills import (
-    deep_research,
-    frontend_design,
-    code_review
-)
+    # Run research autonomously
+    result = await agent.run("Research the latest in AI safety")
+    print(result.content)
 
-# Research
-research = deep_research(
-    topic="AI agent frameworks",
-    depth="deep"
-)
-
-# Design
-design = frontend_design(
-    type="landing-page",
-    style="Modern SaaS"
-)
-
-# Review code
-review = code_review(
-    code=my_code,
-    focus_areas=["Security", "Performance"]
-)
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
 **Full example:** [`examples/10_official_claude_skills.py`](examples/10_official_claude_skills.py)
