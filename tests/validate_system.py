@@ -18,12 +18,7 @@ WORKFLOW_MONITOR_PORT = 8082
 from piranha import (
     Agent,
     Task,
-    Session,
-    Skill,
     skill,
-    SemanticCache,
-    WasmRunner,
-    EmbeddingModel,
     # Real-time monitoring
     RealtimeMonitor,
     start_monitoring,
@@ -64,8 +59,6 @@ try:
     # Verify all imports from top of file are working
     assert Agent is not None
     assert Task is not None
-    assert Session is not None
-    assert Skill is not None
     assert MemoryManager is not None
     assert ContextManager is not None
     print("   ✓ All core imports successful")

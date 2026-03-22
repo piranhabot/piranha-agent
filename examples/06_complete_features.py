@@ -12,7 +12,6 @@ This example shows:
 from piranha import (
     Agent,
     AsyncAgent,
-    skill,
 )
 
 

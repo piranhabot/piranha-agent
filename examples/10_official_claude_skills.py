@@ -9,7 +9,6 @@ Usage:
 
 from piranha import Agent
 from piranha.official_claude_skills import (
-    register_official_claude_skills,
     get_all_official_claude_skills,
 )
 

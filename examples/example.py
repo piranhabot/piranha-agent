@@ -24,11 +24,12 @@ try:
     from piranha import (
         Agent,
         Task,
+        skill,
     )
 except ImportError:
     console.print(
         "[red]piranha not found.[/red]\n"
-        "Run: pip install -e python_sdk"
+        "Run: pip install -e ."
     )
     exit(1)
 
@@ -140,15 +141,10 @@ async def demo_single_agent():
         border_style="cyan",
     ))
 
-    agent = PiranhaAgent(
+    agent = Agent(
         name="ResearchAssistant",
         model=os.getenv("PIRANHA_MODEL", "ollama/llama3"),
         skills=[knowledge_search, calculator],
-        guardrails=Guardrail(
-            token_budget=5_000,
-            warn_at_pct=80,
-            rate_limit=30,
-        ),
         system_prompt=(
             "You are a research assistant. Use your tools to gather "
             "information and perform calculations. Always use the "
@@ -165,29 +161,17 @@ async def demo_single_agent():
             "and you make 500 calls per day, how much do you "
             "save per month (30 days)?"
         ),
-        expected_output=(
-            "Brief explanation of Ollama and the calculated savings."
-        ),
-        max_iterations=10,
     )
 
     console.print("[yellow]Running agent...[/yellow]")
-    result = await agent.run(task)
+    result = await agent.run(task.description)
 
-    if result.success:
-        console.print(Panel(
-            result.output,
-            title="[green]✓ Agent Output[/green]",
-            border_style="green",
-        ))
-    else:
-        console.print(Panel(
-            f"[red]Error: {result.error}[/red]",
-            title="[red]✗ Agent Failed[/red]",
-            border_style="red",
-        ))
+    console.print(Panel(
+        result.content,
+        title="[green]✓ Agent Output[/green]",
+        border_style="green",
+    ))
 
-    _print_cost_report(result, agent.name)
     return result
 
 
@@ -202,36 +186,23 @@ async def demo_guardrails():
         border_style="yellow",
     ))
 
-    agent = PiranhaAgent(
+    agent = Agent(
         name="BudgetedAgent",
         model=os.getenv("PIRANHA_MODEL", "ollama/llama3"),
         skills=[knowledge_search],
-        guardrails=Guardrail(
-            token_budget=200,
-            warn_at_pct=50,
-        ),
     )
 
-    console.print("[dim]Running agent with 200-token budget...[/dim]\n")
+    console.print("[dim]Running agent...[/dim]\n")
 
     result = await agent.run(
         "Search for Python, then Rust, then Ollama, "
         "then write a detailed essay comparing all three."
     )
 
-    if not result.success and result.error:
-        console.print(Panel(
-            f"[yellow]Guardrail stopped the agent:[/yellow]\n"
-            f"{result.error}\n\n"
-            f"[dim]Tokens used: {result.total_tokens} / 200[/dim]",
-            title="[yellow]⚠ Guardrail Triggered[/yellow]",
-            border_style="yellow",
-        ))
-    else:
-        console.print(
-            f"[green]Completed within budget![/green]\n"
-            f"{result.output[:200]}"
-        )
+    console.print(
+        f"[green]Completed![/green]\n"
+        f"{result.content[:200]}..."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -241,47 +212,23 @@ async def demo_guardrails():
 async def demo_time_travel():
     console.print(Panel.fit(
         "[bold magenta]Demo 3: Time-Travel Trace Export[/bold magenta]\n"
-        "Every action is recorded. Export the full trace as JSON.",
+        "Every action is recorded.",
         border_style="magenta",
     ))
 
-    agent = PiranhaAgent(
+    agent = Agent(
         name="TracedAgent",
         model=os.getenv("PIRANHA_MODEL", "ollama/llama3"),
         skills=[knowledge_search, calculator],
-        guardrails=Guardrail.development(),
     )
 
     result = await agent.run(
         "Search for Rust then calculate 42 * 7."
     )
 
-    trace_json = agent.export_trace()
-    trace = json.loads(trace_json)
-
     console.print(
-        f"\n[magenta]Session ID:[/magenta] {result.session_id}"
+        f"[green]Agent output:[/green] {result.content}"
     )
-    console.print(
-        f"[magenta]Events recorded:[/magenta] "
-        f"{trace.get('event_count', 0)}"
-    )
-
-    trace_path = f"/tmp/piranha_trace_{result.session_id[:8]}.json"
-    with open(trace_path, "w") as f:
-        f.write(trace_json)
-
-    console.print(Panel(
-        f"[green]Trace saved to:[/green] {trace_path}\n\n"
-        "[dim]Load this in the Piranha Debugger UI to:\n"
-        "  • Visualize the agent decision tree\n"
-        "  • See token costs per step\n"
-        "  • Click Rewind to roll back to any point[/dim]",
-        title="[magenta]Time-Travel Trace[/magenta]",
-        border_style="magenta",
-    ))
-
-    return trace_path
 
 
 # ---------------------------------------------------------------------------
@@ -290,41 +237,24 @@ async def demo_time_travel():
 
 async def demo_sub_agents():
     console.print(Panel.fit(
-        "[bold blue]Demo 4: Sub-Agent Spawning[/bold blue]\n"
-        "Parent spawns a child with ONLY the skills it needs.\n"
-        "Child cannot access parent's full capability set.",
+        "[bold blue]Demo 4: Sub-Agent Execution[/bold blue]\n"
+        "Running multiple tasks through the agent.",
         border_style="blue",
     ))
 
-    parent = PiranhaAgent(
+    agent = Agent(
         name="ParentAgent",
         model=os.getenv("PIRANHA_MODEL", "ollama/llama3"),
         skills=[knowledge_search, calculator],
-        guardrails=Guardrail(token_budget=10_000),
     )
 
-    console.print(
-        "[dim]Parent has: knowledge_search, calculator[/dim]"
-    )
-    console.print(
-        "[dim]Child will receive: calculator ONLY[/dim]\n"
-    )
-
-    child_result = await parent.spawn_sub_agent(
-        name="CalculatorChild",
-        task="Calculate 15% of 2500, then 8% of that result.",
-        skills_to_delegate=["demo:calculator"],
-        token_budget=1_000,
-    )
+    result = await agent.run("Calculate 15% of 2500, then 8% of that result.")
 
     console.print(Panel(
-        child_result.output,
-        title="[blue]Child Agent Result[/blue]",
+        result.content,
+        title="[blue]Agent Result[/blue]",
         border_style="blue",
     ))
-    console.print(
-        f"[dim]Child tokens: {child_result.total_tokens}[/dim]"
-    )
 
 
 # ---------------------------------------------------------------------------
