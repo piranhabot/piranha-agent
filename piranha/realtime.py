@@ -104,6 +104,24 @@ class SystemMetrics(BaseModel):
     uptime_seconds: float = 0.0
 
 
+class WasmExecutionRequest(BaseModel):
+    """Request model for tracking Wasm execution."""
+    function_name: str = "unknown"
+    execution_time_ms: int = 0
+    success: bool = False
+    error: str | None = None
+
+
+class LLMProviderRequest(BaseModel):
+    """Request model for creating an LLM provider.
+    Extra fields are allowed to avoid breaking existing clients while
+    still providing validation for known fields.
+    """
+    name: str
+    class Config:
+        extra = "allow"
+
+
 class Event(BaseModel):
     """Event for real-time streaming."""
     id: str
@@ -212,7 +230,8 @@ class RealtimeMonitor:
             return self.agents[agent_id]
         
         @self.app.get("/api/tasks")
-        async def get_tasks(status: str | None = None):
+        @get_limiter().limit("30/minute")
+        async def get_tasks(request: Request, status: str | None = None):
             """Get all tasks, optionally filtered by status."""
             tasks = list(self.tasks.values())
             if status:
@@ -220,23 +239,27 @@ class RealtimeMonitor:
             return {"tasks": tasks}
         
         @self.app.get("/api/metrics")
-        async def get_metrics():
+        @get_limiter().limit("60/minute")
+        async def get_metrics(request: Request):
             """Get system metrics."""
             self.update_metrics()
             return self.metrics
         
         @self.app.get("/api/events")
-        async def get_events(limit: int = 100):
+        @get_limiter().limit("30/minute")
+        async def get_events(request: Request, limit: int = 100):
             """Get recent events."""
             return {"events": self.events[-limit:]}
         
         @self.app.get("/api/security/check")
-        async def security_check():
+        @get_limiter().limit("10/minute")
+        async def security_check(request: Request):
             """Run security check."""
             return run_security_check()
         
         @self.app.get("/api/security/token")
-        async def get_token():
+        @get_limiter().limit("5/minute")
+        async def get_token(request: Request):
             """Get authentication token (for demo purposes)."""
             from .security import create_access_token
             
@@ -252,7 +275,8 @@ class RealtimeMonitor:
             }
         
         @self.app.get("/api/wasm")
-        async def get_wasm_executions():
+        @get_limiter().limit("30/minute")
+        async def get_wasm_executions(request: Request):
             """Get Wasm execution history."""
             # Filter events for Wasm-related events
             wasm_events = [
@@ -262,22 +286,24 @@ class RealtimeMonitor:
             return {"executions": wasm_events[-50:]}  # Last 50 executions
         
         @self.app.post("/api/wasm/execute")
-        async def execute_wasm(request: dict):
+        @get_limiter().limit("60/minute")
+        async def execute_wasm(request_data: WasmExecutionRequest, request: Request):
             """Track Wasm execution."""
             # Record Wasm execution event
             self.record_event(
                 "wasm.executed",
                 {
-                    "function_name": request.get("function_name", "unknown"),
-                    "execution_time_ms": request.get("execution_time_ms", 0),
-                    "success": request.get("success", False),
-                    "error": request.get("error"),
+                    "function_name": request_data.function_name,
+                    "execution_time_ms": request_data.execution_time_ms,
+                    "success": request_data.success,
+                    "error": request_data.error,
                 }
             )
             return {"status": "ok"}
         
         @self.app.get("/api/skills")
-        async def get_skills():
+        @get_limiter().limit("30/minute")
+        async def get_skills(request: Request):
             """Get all available skills."""
             # Mock data for demo
             return {
@@ -290,17 +316,20 @@ class RealtimeMonitor:
             }
         
         @self.app.post("/api/skills/{skill_id}/install")
-        async def install_skill(skill_id: str):
+        @get_limiter().limit("10/minute")
+        async def install_skill(request: Request, skill_id: str):
             """Install a skill."""
             return {"status": "ok", "message": f"Skill {skill_id} installed"}
         
         @self.app.delete("/api/skills/{skill_id}/uninstall")
-        async def uninstall_skill(skill_id: str):
+        @get_limiter().limit("10/minute")
+        async def uninstall_skill(request: Request, skill_id: str):
             """Uninstall a skill."""
             return {"status": "ok", "message": f"Skill {skill_id} uninstalled"}
         
         @self.app.get("/api/cache/stats")
-        async def get_cache_stats():
+        @get_limiter().limit("30/minute")
+        async def get_cache_stats(request: Request):
             """Get cache statistics."""
             return {
                 "entry_count": 156,
@@ -313,7 +342,8 @@ class RealtimeMonitor:
             }
         
         @self.app.get("/api/cache/entries")
-        async def get_cache_entries():
+        @get_limiter().limit("10/minute")
+        async def get_cache_entries(request: Request):
             """Get cache entries."""
             import random
             from datetime import datetime, timedelta
@@ -332,12 +362,14 @@ class RealtimeMonitor:
             return {"entries": entries}
         
         @self.app.delete("/api/cache/clear")
-        async def clear_cache():
+        @get_limiter().limit("5/minute")
+        async def clear_cache(request: Request):
             """Clear cache."""
             return {"status": "ok", "message": "Cache cleared"}
         
         @self.app.get("/api/llm/providers")
-        async def get_llm_providers():
+        @get_limiter().limit("30/minute")
+        async def get_llm_providers(request: Request):
             """Get all LLM providers."""
             return {
                 "providers": [
@@ -350,35 +382,42 @@ class RealtimeMonitor:
             }
         
         @self.app.post("/api/llm/providers")
-        async def add_llm_provider(provider: dict):
+        @get_limiter().limit("10/minute")
+        async def add_llm_provider(provider: LLMProviderRequest, request: Request):
             """Add LLM provider."""
-            return {"status": "ok", "message": f"Provider {provider.get('name')} added"}
+            return {"status": "ok", "message": f"Provider {provider.name} added"}
         
         @self.app.delete("/api/llm/providers/{provider_id}")
-        async def delete_llm_provider(provider_id: str):
+        @get_limiter().limit("10/minute")
+        async def delete_llm_provider(request: Request, provider_id: str):
             """Delete LLM provider."""
             return {"status": "ok", "message": f"Provider {provider_id} deleted"}
         
         @self.app.put("/api/llm/providers/{provider_id}/default")
-        async def set_default_provider(provider_id: str):
+        @get_limiter().limit("10/minute")
+        async def set_default_provider(request: Request, provider_id: str):
             """Set default provider."""
             return {"status": "ok", "message": f"Provider {provider_id} set as default"}
         
         @self.app.post("/api/llm/providers/{provider_id}/test")
-        async def test_llm_provider(provider_id: str):
+        @get_limiter().limit("10/minute")
+        async def test_llm_provider(request: Request, provider_id: str):
             """Test LLM provider connection."""
             return {"status": "ok", "success": True, "message": "Connection successful"}
         
         @self.app.get("/api/costs/analytics")
-        async def get_cost_analytics(range: str = '7d'):
+        @get_limiter().limit("30/minute")
+        async def get_cost_analytics(request: Request, range: str = '7d'):
             """Get advanced cost analytics."""
             import random
             from datetime import datetime, timedelta
             
+            days_map = {'7d': 7, '30d': 30, '90d': 90}
+            days = days_map.get(range, 90)
             daily_breakdown = []
-            for i in range(7 if range == '7d' else 30 if range == '30d' else 90):
+            for i in range(days):
                 daily_breakdown.append({
-                    "date": (datetime.now() - timedelta(days=(7 if range == '7d' else 30 if range == '30d' else 90) - i - 1)).strftime('%Y-%m-%d'),
+                    "date": (datetime.now() - timedelta(days=days - i - 1)).strftime('%Y-%m-%d'),
                     "cost": random.random() * 0.01,
                     "tokens": random.randint(5000, 15000)
                 })
@@ -404,7 +443,8 @@ class RealtimeMonitor:
             }
         
         @self.app.get("/api/events/timeline")
-        async def get_events_timeline():
+        @get_limiter().limit("30/minute")
+        async def get_events_timeline(request: Request):
             """Get event timeline."""
             import random
             from datetime import datetime, timedelta
@@ -429,7 +469,8 @@ class RealtimeMonitor:
             return {"events": events}
         
         @self.app.get("/api/collaborations")
-        async def get_collaborations():
+        @get_limiter().limit("30/minute")
+        async def get_collaborations(request: Request):
             """Get multi-agent collaborations."""
             from datetime import datetime, timedelta
             
@@ -473,7 +514,8 @@ class RealtimeMonitor:
             }
         
         @self.app.get("/api/guardrails")
-        async def get_guardrails():
+        @get_limiter().limit("30/minute")
+        async def get_guardrails(request: Request):
             """Get guardrail configuration."""
             return {
                 "token_budget": 100000,
@@ -484,12 +526,14 @@ class RealtimeMonitor:
             }
         
         @self.app.put("/api/guardrails")
-        async def update_guardrails(config: dict):
+        @get_limiter().limit("10/minute")
+        async def update_guardrails(config: dict, request: Request):
             """Update guardrail configuration."""
             return {"status": "ok", "message": "Guardrails updated"}
         
         @self.app.get("/api/guardrails/stats")
-        async def get_guardrails_stats():
+        @get_limiter().limit("30/minute")
+        async def get_guardrails_stats(request: Request):
             """Get guardrails statistics."""
             return {
                 "total_checks": 1250,
@@ -501,30 +545,35 @@ class RealtimeMonitor:
             }
         
         @self.app.get("/api/memory")
-        async def get_memory():
+        @get_limiter().limit("30/minute")
+        async def get_memory(request: Request):
             """Get all memories (placeholder)."""
             return {"memories": []}
         
         @self.app.post("/api/memory/search")
-        async def search_memory(request: dict):
+        @get_limiter().limit("60/minute")
+        async def search_memory(search_request: dict, request: Request):
             """Search memories (placeholder)."""
-            query = request.get("query", "")
-            top_k = request.get("top_k", 10)
+            query = search_request.get("query", "")
+            top_k = search_request.get("top_k", 10)
             # Placeholder - would integrate with MemoryManager
             return {"results": [], "query": query, "top_k": top_k}
         
         @self.app.post("/api/memory")
-        async def add_memory(request: dict):
+        @get_limiter().limit("30/minute")
+        async def add_memory(memory_request: dict, request: Request):
             """Add memory (placeholder)."""
             return {"status": "ok"}
         
         @self.app.delete("/api/memory/{memory_id}")
-        async def delete_memory(memory_id: str):
+        @get_limiter().limit("30/minute")
+        async def delete_memory(request: Request, memory_id: str):
             """Delete memory (placeholder)."""
             return {"status": "ok"}
         
         @self.app.delete("/api/memory/clear")
-        async def clear_memory():
+        @get_limiter().limit("5/minute")
+        async def clear_memory(request: Request):
             """Clear all memories (placeholder)."""
             return {"status": "ok"}
         
