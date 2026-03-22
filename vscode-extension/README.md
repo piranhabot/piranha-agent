@@ -1,113 +1,55 @@
 # Piranha Agent VS Code Extension
 
-AI Agent development with Piranha - Build, debug, and deploy autonomous agents directly from VS Code.
+Develop, debug, and monitor autonomous Piranha agents directly from your IDE.
 
 ## Features
 
-- 🤖 **Agent Management** - Create and manage AI agents
-- 📋 **Task Creation** - Define and run tasks for your agents
-- 🛠️ **Skills Browser** - Browse 46+ Claude Skills
-- 💬 **Agent Chat** - Chat with your AI agents
-- 🔍 **Time-Travel Debugger** - Debug agent decisions step-by-step
-- ▶️ **Quick Run** - Execute agents and tasks with one click
+### 1. 👻 Ghost Text (Inline Completions)
+Boost your productivity with context-aware SDK suggestions. Type `agent.` or `task.` in any Python file to see Piranha-specific methods like `run()`, `add_skill()`, and `export_trace()` as inline ghost text.
+
+### 2. 💬 Integrated Agent Chat
+Communicate with your local Piranha agents through a built-in chat interface.
+- **Server Detection**: Automatically detects if the Piranha monitor is running on `localhost:8080`.
+- **Local Context**: The agent has access to your workspace context for better assistance.
+
+### 3. 🛡️ HITL (Human-in-the-Loop) Panel
+Found in the Piranha Activity Bar, the **Approvals** view displays actions that require your consent.
+- **Security First**: Review and approve file writes or network requests before the agent executes them.
+- **Full Control**: Never let an autonomous agent make critical changes without your oversight.
+
+### 4. 📊 Multi-View Monitoring
+Monitor your entire agent ecosystem from the sidebar:
+- **Agents**: Real-time status and token/cost tracking.
+- **Tasks**: Progress of current and historical tasks.
+- **Skills**: List of installed capabilities.
 
 ## Getting Started
 
-1. **Install Piranha Agent**:
+1. **Install Dependencies**:
    ```bash
-   pip install piranha-agent
+   cd vscode-extension
+   npm install
    ```
 
-2. **Start Ollama** (for local LLM):
+2. **Compile**:
    ```bash
-   ollama serve
+   npm run compile
    ```
 
-3. **Open Command Palette** (`Ctrl+Shift+P` / `Cmd+Shift+P`)
+3. **Launch**:
+   Press `F5` in VS Code to open a new window with the Piranha extension enabled.
 
-4. **Search for Piranha commands**:
-   - `Piranha: Create New Agent`
-   - `Piranha: Create Task`
-   - `Piranha: Open Time-Travel Debugger`
-   - `Piranha: Chat with Agent`
-   - `Piranha: Show Available Skills`
-
-## Usage
-
-### Create an Agent
-
-1. Click the **+** icon in the Agents view
-2. Enter agent name
-3. Select LLM model (Ollama, Anthropic, OpenAI)
-4. Agent configuration file is created automatically
-
-### Run a Task
-
-1. Open a Python file with Piranha code
-2. Click the **Play** icon in the editor title
-3. Task executes in the integrated terminal
-
-### Chat with Agent
-
-1. Run `Piranha: Chat with Agent` command
-2. Chat panel opens in sidebar
-3. Type your message and get AI responses
-
-### Debug Agents
-
-1. Run `Piranha: Open Time-Travel Debugger`
-2. Debugger opens in browser at `http://localhost:7860`
-3. Step through agent decisions and state changes
-
-## Commands
-
-| Command | Description |
-|---------|-------------|
-| `Piranha: Create New Agent` | Create a new AI agent configuration |
-| `Piranha: Run Agent` | Execute the current agent |
-| `Piranha: Debug Agent` | Open debugger for the agent |
-| `Piranha: Create Task` | Create a new task for an agent |
-| `Piranha: Run Task` | Execute the current task |
-| `Piranha: Open Time-Travel Debugger` | Launch the time-travel debugger |
-| `Piranha: Show Available Skills` | Browse 46+ Claude Skills |
-| `Piranha: Chat with Agent` | Open chat panel to talk with agent |
+4. **Connect**:
+   Ensure you have started the Piranha monitor in your terminal:
+   ```bash
+   piranha monitor
+   ```
 
 ## Requirements
 
-- Python 3.10+
-- Piranha Agent (`pip install piranha-agent`)
-- Ollama (optional, for local LLM)
-
-## Extension Settings
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `piranha.apiBase` | `http://localhost:8000` | Piranha API base URL |
-| `piranha.defaultModel` | `ollama/llama3:latest` | Default LLM model |
-| `piranha.debuggerPort` | `7860` | Time-travel debugger port |
-
-## Known Issues
-
-- Debugger requires `piranha debug` to be running
-- Chat panel requires agent to be initialized
-
-## Release Notes
-
-### 0.3.0
-- Initial release of Piranha Agent VS Code extension
-- Agent and task management
-- Chat panel integration
-- Time-travel debugger integration
-- Skills browser
-
-## Contributing
-
-Contributions are welcome! Please visit our [GitHub repository](https://github.com/piranha-agent/piranha-agent).
-
-## License
-
-MIT OR Apache-2.0
+- **Piranha Agent SDK** installed in your environment.
+- **Ollama** or other LLM provider configured.
 
 ---
 
-**Enjoy building AI agents with Piranha!** 🐟
+**Built for Supervised Autonomy** 🐟
