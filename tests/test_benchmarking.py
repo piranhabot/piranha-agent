@@ -250,7 +250,13 @@ class BenchmarkRunner:
             futures = [executor.submit(worker) for _ in range(concurrent_users)]
             # Use concurrent.futures.as_completed instead of asyncio.as_completed
             for future in as_completed(futures):
-                future.result()
+                try:
+                    future.result()
+                except Exception:
+                    # Ensure any unexpected worker exceptions are recorded and logged
+                    with lock:
+                        errors += 1
+                    logger.exception("Unhandled exception in benchmark worker future")
         wall_end = time.perf_counter()
         wall_clock_time = wall_end - wall_start
         
