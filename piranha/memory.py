@@ -114,42 +114,89 @@ class VectorStore:
         return len(self.items)
 
 
+class EmbeddingProvider:
+    """Base interface for embedding providers."""
+    def embed(self, text: str) -> list[float]:
+        raise NotImplementedError
+    def dimension(self) -> int:
+        raise NotImplementedError
+
+
+class HashEmbeddingProvider(EmbeddingProvider):
+    """Simple hash-based pseudo-embeddings (for development)."""
+    def __init__(self, dim: int = 384):
+        self._dim = dim
+    def embed(self, text: str) -> list[float]:
+        import hashlib
+        hash_bytes = hashlib.sha256(text.encode()).digest()
+        vector = []
+        for i in range(self._dim):
+            byte_idx = i % len(hash_bytes)
+            vector.append((hash_bytes[byte_idx] / 127.5) - 1.0)
+        return vector
+    def dimension(self) -> int:
+        return self._dim
+
+
+class OllamaEmbeddingProvider(EmbeddingProvider):
+    """Semantic embeddings using Ollama (e.g., nomic-embed-text)."""
+    def __init__(self, model: str = "nomic-embed-text", base_url: str = "http://localhost:11434"):
+        self.model = model
+        self.base_url = base_url
+    def embed(self, text: str) -> list[float]:
+        import requests
+        try:
+            res = requests.post(
+                f"{self.base_url}/api/embeddings",
+                json={"model": self.model, "prompt": text}
+            )
+            return res.json()["embedding"]
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"Ollama embedding failed: {e}")
+            return [0.0] * 768 # Fallback
+    def dimension(self) -> int:
+        return 768 # Standard for nomic-embed-text
+
+
+class SentenceTransformerProvider(EmbeddingProvider):
+    """Semantic embeddings using local sentence-transformers."""
+    def __init__(self, model: str = "all-MiniLM-L6-v2"):
+        from sentence_transformers import SentenceTransformer
+        self._model = SentenceTransformer(model)
+    def embed(self, text: str) -> list[float]:
+        return self._model.encode(text).tolist()
+    def dimension(self) -> int:
+        return self._model.get_sentence_embedding_dimension()
+
+
 class EmbeddingModel:
-    """Simple embedding model interface.
+    """Entry point for generating text embeddings.
     
-    For production, use:
-    - sentence-transformers
-    - OpenAI embeddings
-    - Ollama embeddings
+    Supports:
+    - hash (default)
+    - ollama (nomic-embed-text)
+    - sentence-transformers (local)
+    - openai (cloud)
     """
     
-    def __init__(self, model: str = "default"):
-        self.model = model
-        self.dimension = 384  # Default dimension
-    
+    def __init__(self, provider: str = "hash", model: str | None = None, **kwargs):
+        if provider == "ollama":
+            self._impl = OllamaEmbeddingProvider(model or "nomic-embed-text", **kwargs)
+        elif provider == "sentence-transformers":
+            self._impl = SentenceTransformerProvider(model or "all-MiniLM-L6-v2")
+        else:
+            self._impl = HashEmbeddingProvider(dim=384)
+            
     def embed(self, text: str) -> list[float]:
-        """Generate embedding for text.
-        
-        Uses a simple hash-based embedding for demo.
-        Replace with real embeddings for production.
-        """
-        # Simple deterministic pseudo-embedding
-        # In production, use real embeddings
-        hash_bytes = hashlib.sha256(text.encode()).digest()
-        
-        # Convert to float vector
-        vector = []
-        for i in range(self.dimension):
-            byte_idx = i % len(hash_bytes)
-            # Normalize to [-1, 1]
-            value = (hash_bytes[byte_idx] / 127.5) - 1.0
-            vector.append(value)
-        
-        return vector
+        return self._impl.embed(text)
     
     def embed_batch(self, texts: list[str]) -> list[list[float]]:
-        """Generate embeddings for multiple texts."""
         return [self.embed(text) for text in texts]
+    
+    @property
+    def dimension(self) -> int:
+        return self._impl.dimension()
 
 
 class MemoryManager:

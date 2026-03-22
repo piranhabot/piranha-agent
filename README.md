@@ -73,6 +73,7 @@ python examples/01_basic_agent.py
 | Feature | Piranha | DeepAgents | AgentGen | MAF | AutoGen | LangGraph | CrewAI |
 |---------|---------|------------|----------|-----|---------|-----------|--------|
 | **Performance** | ⚡⚡⚡⚡⚡ Rust core | ⚡⚡⚡ Python | ⚡⚡ Python | ⚡⚡⚡ Python | ⚡⚡ Python | ⚡⚡ Python | ⚡⚡ Python |
+| **Collaboration**| ✅ Shared Msg Bus | ❌ Linear only | ❌ Linear | ⚠️ Basic | ✅ Yes | ✅ Yes | ⚠️ Basic |
 | **Security** | ✅ Wasmtime (Strict) | ⚠️ Process | ⚠️ Process | ❌ None | ❌ None | ❌ None | ❌ None |
 | **Data Privacy** | ✅ Auto-Redaction | ❌ None | ❌ None | ❌ None | ❌ None | ❌ None | ❌ None |
 | **Network Safety**| ✅ Egress Whitelist | ❌ Open access | ❌ Open | ❌ Open | ❌ Open | ❌ Open | ❌ Open |
@@ -106,9 +107,9 @@ python examples/01_basic_agent.py
 | **Phase 6** | Distributed Agents | ✅ | 9/9 | Multi-process |
 | **Phase 7** | 46+ Claude Skills | ✅ | - | Full catalog |
 | **Phase 8** | Observability + No-Code | ✅ | 53/53 | OpenTelemetry |
-| **Phase 9** | **Benchmarking Suite** | ✅ | 10/10 | Comprehensive |
+| Phase 9 | **Benchmarking Suite & Dashboard** | ✅ | 12/12 | Visual Charts |
 | **Code Quality** | **96 Findings Fixed** | ✅ | - | 100% resolved |
-| **TOTAL** | **169 tests** | **169 passing** | **Industry-leading** |
+| **TOTAL** | **175 tests** | **175 passing** | **Industry-leading** |
 
 ---
 
@@ -285,30 +286,19 @@ print(f"Success: {result['success']}, Time: {result['execution_time_ms']}ms")
 
 **Full example:** [`examples/07_wasm_sandbox.py`](examples/07_wasm_sandbox.py)
 
-### 4. Semantic Cache with Fuzzy Matching
+### 4. Semantic Memory with Real Embeddings
 
 ```python
-from piranha import SemanticCache
+from piranha import MemoryManager, EmbeddingModel
 
-# Create cache
-cache = SemanticCache(ttl_hours=24, max_entries=10000)
+# Use real semantic embeddings via Ollama or Sentence-Transformers
+model = EmbeddingModel(provider="ollama", model="nomic-embed-text")
+memory = MemoryManager(embedding_model=model)
 
-# Store with embedding
-cache.put_with_embedding(
-    key="python_intro",
-    prompt_text="What is Python?",
-    response="Python is a programming language...",
-    model="llama3",
-    prompt_tokens=10,
-    completion_tokens=25,
-    cost_usd=0.0003
-)
-
-# Fuzzy match - finds similar prompts
-result = cache.get_fuzzy("Tell me about Python", "llama3")
-if result:
-    print(f"Cache hit! Similarity: {result['similarity']:.2f}")
-    print(f"Response: {result['response']}")
+# Accurate semantic retrieval
+memory.add("Piranha uses a Rust core for extreme speed")
+results = memory.search("Is this framework fast?")
+print(results[0].memory.content) # Found via semantic similarity!
 ```
 
 **Full example:** [`examples/08_semantic_cache_fuzzy.py`](examples/08_semantic_cache_fuzzy.py)
@@ -326,48 +316,38 @@ piranha debug
 - **State Rollback**: Revert the agent to a pre-error state for safe intervention.
 - **Audit Reports**: High-speed export of all system events for compliance.
 
-### 6. Distributed Agents
+### 6. Multi-Agent Collaboration (Shared Message Bus)
 
 ```python
-from piranha import AgentOrchestrator, DistributedAgent
+from piranha import Agent
+from piranha.collaboration import MultiAgentCollaboration, AgentRole
 
-# Create orchestrator
-orchestrator = AgentOrchestrator(queue_size=100)
+# Create collaboration with Shared Message Bus
+collab = MultiAgentCollaboration()
 
-# Create workers
-agent1 = DistributedAgent("worker-1")
-agent2 = DistributedAgent("worker-2")
+# Add agents
+collab.add_agent(Agent(name="researcher"), AgentRole.RESEARCHER)
+collab.add_agent(Agent(name="writer"), AgentRole.WRITER)
 
-# Submit tasks
-task_id = orchestrator.submit_task(
-    "Process data",
-    priority=5
-)
+# Agents communicate asynchronously via the bus
+collab.message_bus.publish("research.start", "manager", "Starting market analysis")
 
-# Get cluster status
-status = orchestrator.get_cluster_status()
-print(f"Active workers: {len(status)}")
+# Run complex tasks with shared state (whiteboard)
+await collab.execute_task("Build a comprehensive market report")
 ```
 
-### 7. Real-Time Monitoring (Piranha Studio)
+### 7. Real-Time Monitoring & Benchmarking (Piranha Studio)
 
-```python
-from piranha import start_monitoring, monitor_agent, Agent
-
-# Start monitoring server
-monitor = start_monitoring(port=8080)
-
-# Create and monitor agents
-agent = Agent(name="my-agent", model="ollama/llama3:latest")
-monitor_agent(agent)
-
-# Open dashboard at http://localhost:8080
-# See real-time:
-# - Agent status
-# - Task progress
-# - Token usage
-# - Cost tracking
+```bash
+# Launch Studio with Benchmarking Dashboard
+piranha monitor
 ```
+
+**Features:**
+- **Shared State**: All agents access a common "whiteboard" for complex coordination.
+- **Message Bus**: Topic-based Pub/Sub for asynchronous multi-agent communication.
+- **Visual Benchmarks**: Real-time charts for Throughput and Latency (P95/P99).
+- **Performance Tracking**: Compare different LLM models and detect regressions visually.
 
 **Full example:** [`examples/11_piranha_studio.py`](examples/11_piranha_studio.py)
 
