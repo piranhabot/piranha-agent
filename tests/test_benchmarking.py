@@ -11,6 +11,11 @@ Provides:
 Usage:
     python tests/test_benchmarking.py
     pytest tests/test_benchmarking.py -v --benchmark
+
+Environment variables:
+- AGENT_CREATION_MAX_AVG_TIME_S: Maximum allowed average agent creation time in
+  seconds for the agent creation benchmark. Defaults to 0.01 (10ms). Increase
+  this value if running on slower hardware or under constrained environments.
 """
 
 import time
@@ -26,6 +31,8 @@ import pytest
 
 logger = logging.getLogger(__name__)
 
+# Default model used across Piranha benchmarks
+DEFAULT_BENCHMARK_MODEL = "ollama/llama3:latest"
 
 @dataclass
 class BenchmarkResult:
@@ -231,11 +238,14 @@ class BenchmarkRunner:
                         errors += 1
         
         # Run concurrent workers
+        wall_start = time.perf_counter()
         with ThreadPoolExecutor(max_workers=concurrent_users) as executor:
             futures = [executor.submit(worker) for _ in range(concurrent_users)]
             # Use concurrent.futures.as_completed instead of asyncio.as_completed
             for future in as_completed(futures):
                 future.result()
+        wall_end = time.perf_counter()
+        wall_clock_time = wall_end - wall_start
         
         # Calculate statistics
         times.sort()
@@ -246,7 +256,7 @@ class BenchmarkRunner:
         median_time = statistics.median(times) if times else 0
         p95_time = self._percentile(times, 95)
         p99_time = self._percentile(times, 99)
-        throughput = len(times) / total_time if total_time > 0 else 0
+        throughput = total_requests / wall_clock_time if wall_clock_time > 0 else 0
         
         result = BenchmarkResult(
             name=f"{name} (concurrent={concurrent_users})",
@@ -266,15 +276,32 @@ class BenchmarkRunner:
         return result
     
     def _percentile(self, data: list, percentile: int) -> float:
-        """Calculate percentile.
+        """Calculate percentile using linear interpolation.
         
         Expects that `data` is already sorted in ascending order.
         """
         if not data:
             return 0
-        # Data is already sorted by caller, no need to sort again
-        index = int(len(data) * percentile / 100)
-        return data[min(index, len(data) - 1)]
+        
+        # Clamp percentile to [0, 100] to avoid unexpected values
+        if percentile <= 0:
+            return data[0]
+        if percentile >= 100:
+            return data[-1]
+            
+        n = len(data)
+        # Convert percentile to a fraction in [0, 1]
+        p = percentile / 100.0
+        # Linear interpolation between closest ranks (0-based indexing)
+        h = (n - 1) * p
+        lower_index = int(h)
+        upper_index = min(lower_index + 1, n - 1)
+        fraction = h - lower_index
+        
+        lower_value = data[lower_index]
+        upper_value = data[upper_index]
+        
+        return lower_value + fraction * (upper_value - lower_value)
     
     def generate_report(self) -> BenchmarkReport:
         """Generate complete benchmark report."""
@@ -311,7 +338,7 @@ class TestPiranhaBenchmarks:
     @pytest.fixture
     def agent(self):
         from piranha import Agent
-        return Agent(name="benchmark-agent", model="ollama/llama3:latest")
+        return Agent(name="benchmark-agent", model=DEFAULT_BENCHMARK_MODEL)
     
     @pytest.fixture
     def semantic_cache(self):
@@ -324,11 +351,15 @@ class TestPiranhaBenchmarks:
         return EventStore()
     
     def test_agent_creation_benchmark(self, runner):
-        """Benchmark: Agent creation speed."""
+        """Benchmark: Agent creation speed.
+        
+        The acceptable average agent creation time threshold is configurable via
+        the AGENT_CREATION_MAX_AVG_TIME_S environment variable (in seconds).
+        """
         from piranha import Agent
         
         def create_agent():
-            return Agent(name="test", model="ollama/llama3:latest")
+            return Agent(name="test", model=DEFAULT_BENCHMARK_MODEL)
         
         result = runner.run("Agent Creation", create_agent, iterations=50)
 
@@ -465,7 +496,7 @@ class TestPiranhaBenchmarks:
     
     def test_memory_vector_search_benchmark(self, runner):
         """Benchmark: Memory vector search performance."""
-        from piranha.memory import MemoryManager, VectorStore
+        from piranha.memory import VectorStore
         
         store = VectorStore()
         
@@ -523,7 +554,7 @@ class TestPiranhaBenchmarks:
         from piranha import Agent
         
         def create_and_run():
-            agent = Agent(name="test", model="ollama/llama3:latest")
+            agent = Agent(name="test", model=DEFAULT_BENCHMARK_MODEL)
             return agent.id
         
         result = runner.run_concurrent(
