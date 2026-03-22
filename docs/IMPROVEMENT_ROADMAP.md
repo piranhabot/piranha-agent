@@ -26,7 +26,7 @@ Analysis of improvement areas based on framework comparisons and competitive ana
 - [ ] **Plugin Marketplace**: Centralized hub for sharing Claude Skills.
 
 ### 2. Intelligent Memory (Medium Priority)
-- [ ] **FAISS/ChromaDB Integration**: Move from in-memory to persistent vector DBs.
+- [ ] **FAISS/ChromaDB Integration**: Move from in-memory to persistent vector databases.
 - [ ] **Automated Re-ranking**: Use Cross-Encoders for even more accurate memory retrieval.
 
 ### 3. Distributed Orchestration (Medium Priority)
@@ -38,7 +38,7 @@ Analysis of improvement areas based on framework comparisons and competitive ana
 ## 🏁 Completed in v0.4.0
 
 - [x] **Production-grade Wasmtime integration**: Secure, resource-capped code execution.
-- [x] **Real Semantic Embeddings**: native support for Ollama (nomic) and Sentence-Transformers.
+- [x] **Real Semantic Embeddings**: Native support for Ollama (nomic) and Sentence-Transformers.
 - [x] **Visual Benchmarking Dashboard**: Real-time charts in Piranha Studio for regression tracking.
 - [x] **Enterprise Hardening**: Egress whitelisting, automated secret masking, and context-aware permissions.
 - [x] **Shared Message Bus**: Asynchronous communication for complex multi-agent workflows.
@@ -58,4 +58,4 @@ Let us know! 🐟
 
 *Last updated: March 2026*  
 *Version: 0.4.0*  
-*Next Review: Q2 2026*
+*Next Review: Q3 2026*
