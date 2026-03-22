@@ -637,7 +637,14 @@ class RealtimeMonitor:
             # Verify authentication token
             payload = await verify_websocket_token(websocket)
             if not payload:
-                return  # Connection already closed by verify_websocket_token
+                # Inform client about authentication failure before closing
+                try:
+                    await websocket.send_json({"error": "Authentication failed"})
+                except Exception:
+                    pass
+                finally:
+                    await websocket.close(code=1008)
+                return
             
             await websocket.accept()
             self.active_connections.add(websocket)
@@ -721,6 +728,23 @@ class RealtimeMonitor:
         self.metrics.total_tokens = sum(a.tokens_used for a in self.agents.values())
         self.metrics.total_cost_usd = sum(a.cost_usd for a in self.agents.values())
         self.metrics.uptime_seconds = (datetime.now() - self.start_time).total_seconds()
+
+    def _ensure_background_loop(self):
+        """Ensure there is a background event loop running in a dedicated thread."""
+        # Lazy initialization to avoid changing __init__ signature/behavior.
+        if getattr(self, "_background_loop", None) is not None:
+            return
+        
+        loop = asyncio.new_event_loop()
+        self._background_loop = loop
+        
+        def _run_loop():
+            asyncio.set_event_loop(loop)
+            loop.run_forever()
+        
+        thread = threading.Thread(target=_run_loop, name="realtime-broadcast-loop", daemon=True)
+        self._background_loop_thread = thread
+        thread.start()
     
     async def _broadcast(self, message: dict):
         """Broadcast message to all connected clients."""
@@ -742,11 +766,12 @@ class RealtimeMonitor:
     def _broadcast_sync(self, message: dict):
         """Broadcast message (sync wrapper)."""
         try:
-            asyncio.get_running_loop()
-            asyncio.create_task(self._broadcast(message))
+            loop = asyncio.get_running_loop()
+            loop.create_task(self._broadcast(message))
         except RuntimeError:
-            # No running loop, create one
-            asyncio.run(self._broadcast(message))
+            # No running loop in this thread; use a dedicated background loop.
+            self._ensure_background_loop()
+            asyncio.run_coroutine_threadsafe(self._broadcast(message), self._background_loop)
     
     def register_agent(self, agent_id: str, name: str, model: str, session_id: str | None = None):
         """Register an agent for monitoring."""
