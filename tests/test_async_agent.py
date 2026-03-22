@@ -76,6 +76,28 @@ class TestAsyncAgent:
         assert agent.skills[0].name == "new_skill"
 
     @pytest.mark.asyncio
+    async def test_create_async_agent_with_invalid_model(self):
+        """Test creating an async agent with an invalid/unsupported model."""
+        agent = AsyncAgent(name="invalid-agent", model="invalid-model")
+        # Ensure the model attribute reflects the provided invalid value
+        assert agent.model == "invalid-model"
+        
+        # Mock the underlying LLM call to avoid real network/model interactions
+        mock_response = LLMResponse(
+            content="Mocked response for invalid model",
+            model="invalid-model",
+            prompt_tokens=1,
+            completion_tokens=1,
+            cost_usd=0.0,
+            finish_reason="stop",
+        )
+        with patch.object(agent._llm, "chat_async", new_callable=AsyncMock) as mock_chat:
+            mock_chat.return_value = mock_response
+            response = await agent.chat("Hello")
+            # Current behavior: the agent should still return the mocked response
+            assert response == "Mocked response for invalid model"
+
+    @pytest.mark.asyncio
     async def test_chat_basic(self):
         """Test basic chat functionality."""
         agent = AsyncAgent(name="test-agent", model="ollama/llama3:latest")
@@ -149,12 +171,12 @@ class TestAsyncAgent:
     async def test_run_with_memory_context(self):
         """Test run with memory context."""
         agent = AsyncAgent(name="test-agent", model="ollama/llama3:latest")
-        
+
         # Add memory
         agent.add_to_memory("User prefers Python", tags=["preference"])
-        
+
         with patch.object(agent._llm, 'chat_async', new_callable=AsyncMock) as mock_chat:
-            mock_chat.return_value = MagicMock(
+            mock_chat.return_value = LLMResponse(
                 content="Response with context",
                 model="ollama/llama3:latest",
                 prompt_tokens=30,
@@ -162,10 +184,17 @@ class TestAsyncAgent:
                 cost_usd=0.002,
                 finish_reason="stop",
             )
-            
+
             response = await agent.run("Help me code")
-            
+
             assert response.content == "Response with context"
+            
+            # Verify that the added memory is actually used to build the LLM input.
+            # We don't rely on a specific interface; instead, we check that the
+            # memory text appears somewhere in the arguments passed to chat_async.
+            _, kwargs = mock_chat.call_args
+            args_str = repr(kwargs)
+            assert "User prefers Python" in args_str, "Memory content should be passed to LLM"
 
     @pytest.mark.asyncio
     async def test_run_streaming(self):
@@ -180,7 +209,7 @@ class TestAsyncAgent:
         # Create async mock that returns the stream generator
         mock_chat = AsyncMock()
         mock_chat.return_value = mock_stream()
-        
+
         with patch.object(agent._llm, 'chat_async', mock_chat):
             # Don't await when streaming - get the async generator
             response = agent.run("Test", stream=True)
@@ -191,6 +220,14 @@ class TestAsyncAgent:
                 chunks.append(chunk)
 
             assert chunks == ["Hello", " ", "World"]
+
+            # Verify that the full streamed response is recorded in history
+            full_response = "".join(chunks)
+            history = agent.get_history()
+            # Find the last assistant message in the history
+            assistant_messages = [m for m in history if m.get("role") == "assistant"]
+            assert assistant_messages, "Expected at least one assistant message in history"
+            assert assistant_messages[-1].get("content") == full_response
 
     def test_get_history(self):
         """Test getting conversation history."""

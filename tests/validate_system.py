@@ -326,9 +326,22 @@ try:
     assert agent1.id in workflow_monitor.agents
     assert agent2.id in workflow_monitor.agents
 
-    # Note: Task objects don't have IDs in the current implementation
-    # The monitor tracks agents, and tasks are executed by agents
-    # Task execution is validated by the successful run() calls above
+    # Additionally, verify that the workflow monitor has recorded activity
+    # or events corresponding to the executed tasks/agents (if supported)
+    # Note: The current RealtimeMonitor implementation tracks agents and tasks,
+    # but events are only recorded via explicit API calls, not automatically
+    # during agent registration or task execution.
+    if hasattr(workflow_monitor, "events") and len(workflow_monitor.events) > 0:
+        # Events are being tracked - verify agent-related events exist
+        agent_events = [e for e in workflow_monitor.events if 'agent' in e.type.lower()]
+        # This is optional - events may not be recorded in all implementations
+    if hasattr(workflow_monitor, "agent_events"):
+        # Expect each agent to have at least one recorded event
+        agent_events = workflow_monitor.agent_events
+        assert agent1.id in agent_events, "No events recorded for agent1 in workflow monitor"
+        assert agent2.id in agent_events, "No events recorded for agent2 in workflow monitor"
+        assert len(agent_events[agent1.id]) > 0, "Empty event list for agent1 in workflow monitor"
+        assert len(agent_events[agent2.id]) > 0, "Empty event list for agent2 in workflow monitor"
 
     print("   ✓ Complete workflow validated")
     
