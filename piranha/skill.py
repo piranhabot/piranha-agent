@@ -10,6 +10,14 @@ import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
+import contextvars
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Context variable to track current agent permissions
+# This allows skills to verify if they are authorized to run by the calling agent
+agent_permissions: contextvars.ContextVar[list[str]] = contextvars.ContextVar("agent_permissions", default=[])
 
 
 @dataclass
@@ -37,9 +45,17 @@ class Skill:
     auto_monitor: bool = False
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        """Execute the skill."""
+        """Execute the skill with permission enforcement."""
         if self.function is None:
             raise RuntimeError(f"Skill '{self.name}' has no function")
+        
+        # Permission Enforcement
+        current_perms = agent_permissions.get()
+        for perm in self.required_permissions:
+            if perm not in current_perms and "*" not in current_perms:
+                error_msg = f"Security Error: Skill '{self.name}' requires permission '{perm}', but agent only has {current_perms}"
+                logger.error(error_msg)
+                raise PermissionError(error_msg)
         
         # Auto-monitoring if enabled
         if self.auto_monitor:

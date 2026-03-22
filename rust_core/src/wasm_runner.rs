@@ -5,7 +5,10 @@
 
 use anyhow::{Context, Result};
 use std::time::Duration;
-use tracing::info;
+use tracing::{info, error};
+use wasmtime::*;
+use wasmtime_wasi::{WasiCtxBuilder, WasiP1Ctx};
+use wasmtime_wasi::preview1::add_to_linker_sync;
 
 /// Resource limits for Wasm execution
 #[derive(Debug, Clone)]
@@ -39,6 +42,7 @@ pub struct WasmExecutionResult {
 
 /// Wasm Runner - executes Wasm modules in a sandboxed environment
 pub struct WasmRunner {
+    engine: Engine,
     limits: WasmLimits,
 }
 
@@ -50,37 +54,75 @@ impl WasmRunner {
 
     /// Create a new Wasm runner with custom limits
     pub fn with_limits(limits: WasmLimits) -> Result<Self> {
-        Ok(Self { limits })
+        let mut config = Config::new();
+        config.consume_fuel(true);
+        
+        let engine = Engine::new(&config).context("Failed to create Wasmtime engine")?;
+
+        Ok(Self { 
+            engine, 
+            limits 
+        })
     }
 
     /// Validate a Wasm module without executing
     pub fn validate(&self, wasm_bytes: &[u8]) -> Result<bool> {
-        // Simple validation - check magic number
-        if wasm_bytes.len() >= 4 && wasm_bytes[0..4] == [0x00, 0x61, 0x73, 0x6d] {
-            Ok(true)
-        } else {
-            anyhow::bail!("Invalid Wasm magic number")
+        match Module::validate(&self.engine, wasm_bytes) {
+            Ok(_) => Ok(true),
+            Err(e) => anyhow::bail!("Invalid Wasm module: {}", e),
         }
     }
 
-    /// Execute a simple Wasm module (placeholder)
-    pub fn execute(&self, wasm_bytes: &[u8], _input: &str) -> Result<WasmExecutionResult> {
-        if !self.validate(wasm_bytes)? {
-            return Ok(WasmExecutionResult {
-                success: false,
-                output: String::new(),
-                error: Some("Invalid Wasm module".to_string()),
-                execution_time_ms: 0,
-            });
-        }
+    /// Execute a Wasm module
+    pub fn execute(&self, wasm_bytes: &[u8], function_name: &str) -> Result<WasmExecutionResult> {
+        let start_time = std::time::Instant::now();
+        
+        // Load module
+        let module = Module::new(&self.engine, wasm_bytes)
+            .context("Failed to compile Wasm module")?;
 
-        // Placeholder - actual execution requires async runtime
-        Ok(WasmExecutionResult {
-            success: true,
-            output: "Wasm execution placeholder".to_string(),
-            error: None,
-            execution_time_ms: 1,
-        })
+        // Setup WASI context
+        let wasi = WasiCtxBuilder::new()
+            .inherit_stdout()
+            .inherit_stderr()
+            .build_p1();
+            
+        let mut store = Store::new(&self.engine, wasi);
+        
+        // Set fuel limit
+        store.set_fuel(self.limits.max_fuel)?;
+
+        let mut linker = Linker::new(&self.engine);
+        add_to_linker_sync(&mut linker, |s: &mut WasiP1Ctx| s)?;
+
+        // Instantiate
+        let instance = linker.instantiate(&mut store, &module)
+            .context("Failed to instantiate Wasm module")?;
+
+        // Get function
+        let func = instance.get_typed_func::<(), ()>(&mut store, function_name)
+            .context(format!("Function '{}' not found in module", function_name))?;
+
+        // Execute
+        match func.call(&mut store, ()) {
+            Ok(_) => {
+                Ok(WasmExecutionResult {
+                    success: true,
+                    output: "Execution successful".to_string(),
+                    error: None,
+                    execution_time_ms: start_time.elapsed().as_millis() as u64,
+                })
+            }
+            Err(e) => {
+                error!("Wasm execution failed: {}", e);
+                Ok(WasmExecutionResult {
+                    success: false,
+                    output: String::new(),
+                    error: Some(e.to_string()),
+                    execution_time_ms: start_time.elapsed().as_millis() as u64,
+                })
+            }
+        }
     }
 }
 
@@ -108,8 +150,9 @@ impl DynamicSkillCompiler {
         skill_code: &str,
         _input: &str,
     ) -> Result<WasmExecutionResult> {
-        // For now, just validate it's base64
-        let wasm_bytes = base64::decode(skill_code)
+        use base64::{Engine as _, engine::general_purpose};
+        
+        let wasm_bytes = general_purpose::STANDARD.decode(skill_code)
             .context("Failed to decode Wasm bytes (expected base64)")?;
 
         Ok(WasmExecutionResult {
@@ -126,17 +169,9 @@ impl DynamicSkillCompiler {
         _skill_id: &str,
         wasm_bytes: &[u8],
     ) -> Result<bool> {
-        self.validate(wasm_bytes)?;
+        self._runner.validate(wasm_bytes)?;
         info!("Registered Wasm skill");
         Ok(true)
-    }
-
-    fn validate(&self, wasm_bytes: &[u8]) -> Result<bool> {
-        if wasm_bytes.len() >= 4 && wasm_bytes[0..4] == [0x00, 0x61, 0x73, 0x6d] {
-            Ok(true)
-        } else {
-            anyhow::bail!("Invalid Wasm")
-        }
     }
 }
 

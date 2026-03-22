@@ -40,6 +40,7 @@ class AsyncAgent:
         description: str = "",
         system_prompt: str = "",
         skills: list[Skill] | None = None,
+        permissions: list[str] | None = None,
         api_base: str | None = None,
         api_key: str | None = None,
     ):
@@ -51,6 +52,7 @@ class AsyncAgent:
             description: Agent description
             system_prompt: System prompt for the agent
             skills: List of skills
+            permissions: List of agent permissions
             api_base: API base URL (for Ollama)
             api_key: API key (for cloud providers)
         """
@@ -59,6 +61,7 @@ class AsyncAgent:
         self.description = description
         self.system_prompt = system_prompt
         self.skills = skills or []
+        self.permissions = permissions or []
         
         # Initialize components
         self._event_store = EventStore()
@@ -130,7 +133,7 @@ class AsyncAgent:
         task: str,
         stream: bool = False,
     ) -> LLMResponse | AsyncGenerator[str, None]:
-        """Run a task asynchronously.
+        """Run a task asynchronously with permission enforcement.
         
         Args:
             task: Task description
@@ -139,62 +142,71 @@ class AsyncAgent:
         Returns:
             LLMResponse or async generator for streaming
         """
-        # Add user message
-        self._messages.append(LLMMessage(role="user", content=task))
-        self._context.add_message("user", task)
+        from piranha.skill import agent_permissions
         
-        # Check cache
-        cache_key = self._semantic_cache.compute_key(
-            self.model,
-            [m.to_dict() for m in self._messages],
-        )
-        cached = self._semantic_cache.get(cache_key)
-        if cached:
-            return LLMResponse(
-                content=cached["response"],
-                model=cached["model"],
-                prompt_tokens=cached["prompt_tokens"],
-                completion_tokens=cached["completion_tokens"],
-                cost_usd=0.0,
-                finish_reason="cache_hit",
-            )
+        # Set agent permissions for this execution context
+        token = agent_permissions.set(self.permissions)
         
-        # Get relevant memories for context
-        memory_context = self._memory.get_context(task, max_tokens=500)
-        
-        # Call LLM
-        if stream:
-            return self._stream_response(task, memory_context)
-        
-        # Build messages with context if available
-        messages = self._messages
-        if memory_context:
-            context_msg = LLMMessage(
-                role="system",
-                content=f"Relevant context from memory:\n{memory_context}"
-            )
-            messages = [context_msg] + self._messages
+        try:
+            # Add user message
+            self._messages.append(LLMMessage(role="user", content=task))
+            self._context.add_message("user", task)
             
-        response = await self._llm.chat_async(messages)
-        
-        # Store response
-        self._messages.append(LLMMessage(role="assistant", content=response.content))
-        self._context.add_message("assistant", response.content)
-        
-        # Record in event store
-        self._record_llm_event(response)
-        
-        # Cache response
-        self._semantic_cache.put(
-            key=cache_key,
-            response=response.content,
-            model=response.model,
-            prompt_tokens=response.prompt_tokens,
-            completion_tokens=response.completion_tokens,
-            cost_usd=response.cost_usd,
-        )
-        
-        return response
+            # Check cache
+            cache_key = self._semantic_cache.compute_key(
+                self.model,
+                [m.to_dict() for m in self._messages],
+            )
+            cached = self._semantic_cache.get(cache_key)
+            if cached:
+                return LLMResponse(
+                    content=cached["response"],
+                    model=cached["model"],
+                    prompt_tokens=cached["prompt_tokens"],
+                    completion_tokens=cached["completion_tokens"],
+                    cost_usd=0.0,
+                    finish_reason="cache_hit",
+                )
+            
+            # Get relevant memories for context
+            memory_context = self._memory.get_context(task, max_tokens=500)
+            
+            # Call LLM
+            if stream:
+                return self._stream_response(task, memory_context)
+            
+            # Build messages with context if available
+            messages = self._messages
+            if memory_context:
+                context_msg = LLMMessage(
+                    role="system",
+                    content=f"Relevant context from memory:\n{memory_context}"
+                )
+                messages = [context_msg] + self._messages
+                
+            response = await self._llm.chat_async(messages)
+            
+            # Store response
+            self._messages.append(LLMMessage(role="assistant", content=response.content))
+            self._context.add_message("assistant", response.content)
+            
+            # Record in event store
+            self._record_llm_event(response)
+            
+            # Cache response
+            self._semantic_cache.put(
+                key=cache_key,
+                response=response.content,
+                model=response.model,
+                prompt_tokens=response.prompt_tokens,
+                completion_tokens=response.completion_tokens,
+                cost_usd=response.cost_usd,
+            )
+            
+            return response
+        finally:
+            # Reset permissions after execution
+            agent_permissions.reset(token)
     
     async def _stream_response(
         self,

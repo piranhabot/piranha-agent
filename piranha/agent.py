@@ -44,6 +44,7 @@ class Agent:
     description: str = ""
     system_prompt: str = ""
     skills: list[Skill] = field(default_factory=list)
+    permissions: list[str] = field(default_factory=list)
     session: Session | None = None
     api_base: str | None = None
     api_key: str | None = None
@@ -122,65 +123,74 @@ class Agent:
         Returns:
             LLMResponse with result and metadata
         """
-        # Add user message
-        self._messages.append(LLMMessage(role="user", content=task))
-        self._context.add_message("user", task)
+        from piranha.skill import agent_permissions
         
-        # Check semantic cache
-        cache_key = self._semantic_cache.compute_key(
-            self.model,
-            [m.to_dict() for m in self._messages],
-        )
-        cached = self._semantic_cache.get(cache_key)
-        if cached:
-            return LLMResponse(
-                content=cached["response"],
-                model=cached["model"],
-                cache_hit=True,
-                prompt_tokens=cached["prompt_tokens"],
-                completion_tokens=cached["completion_tokens"],
-                cost_usd=0.0,
-                finish_reason="cache_hit",
+        # Set agent permissions for this execution context
+        token = agent_permissions.set(self.permissions)
+        
+        try:
+            # Add user message
+            self._messages.append(LLMMessage(role="user", content=task))
+            self._context.add_message("user", task)
+            
+            # Check semantic cache
+            cache_key = self._semantic_cache.compute_key(
+                self.model,
+                [m.to_dict() for m in self._messages],
             )
-        
-        # Get relevant memories for context
-        memory_context = self._memory.get_context(task, max_tokens=500)
-        
-        # Build full prompt with context
-        if memory_context:
-            enhanced_task = f"{task}\n\nRelevant context:\n{memory_context}"
-            messages = self._messages.copy()
-            messages[-1] = LLMMessage(role="user", content=enhanced_task)
-        else:
-            messages = self._messages
-        
-        # Call LLM
-        response = self._llm.chat(messages)
-        
-        # Store response
-        self._messages.append(LLMMessage(role="assistant", content=response.content))
-        self._context.add_message("assistant", response.content)
-        
-        # Record in event store
-        self._record_llm_event(response)
-        
-        # Cache response
-        self._semantic_cache.put(
-            key=cache_key,
-            response=response.content,
-            model=response.model,
-            prompt_tokens=response.prompt_tokens,
-            completion_tokens=response.completion_tokens,
-            cost_usd=response.cost_usd,
-        )
-        
-        # Store in memory
-        self._memory.add(
-            content=f"User: {task}\nAssistant: {response.content}",
-            tags=["conversation"],
-        )
-        
-        return response
+            cached = self._semantic_cache.get(cache_key)
+            if cached:
+                return LLMResponse(
+                    content=cached["response"],
+                    model=cached["model"],
+                    cache_hit=True,
+                    prompt_tokens=cached["prompt_tokens"],
+                    completion_tokens=cached["completion_tokens"],
+                    cost_usd=0.0,
+                    finish_reason="cache_hit",
+                )
+            
+            # Get relevant memories for context
+            memory_context = self._memory.get_context(task, max_tokens=500)
+            
+            # Build full prompt with context
+            if memory_context:
+                enhanced_task = f"{task}\n\nRelevant context:\n{memory_context}"
+                messages = self._messages.copy()
+                messages[-1] = LLMMessage(role="user", content=enhanced_task)
+            else:
+                messages = self._messages
+            
+            # Call LLM
+            response = self._llm.chat(messages)
+            
+            # Store response
+            self._messages.append(LLMMessage(role="assistant", content=response.content))
+            self._context.add_message("assistant", response.content)
+            
+            # Record in event store
+            self._record_llm_event(response)
+            
+            # Cache response
+            self._semantic_cache.put(
+                key=cache_key,
+                response=response.content,
+                model=response.model,
+                prompt_tokens=response.prompt_tokens,
+                completion_tokens=response.completion_tokens,
+                cost_usd=response.cost_usd,
+            )
+            
+            # Store in memory
+            self._memory.add(
+                content=f"User: {task}\nAssistant: {response.content}",
+                tags=["conversation"],
+            )
+            
+            return response
+        finally:
+            # Reset permissions after execution
+            agent_permissions.reset(token)
     
     def add_to_memory(self, content: str, tags: list[str] | None = None) -> None:
         """Add content to agent's long-term memory.
