@@ -105,7 +105,7 @@ class VectorStore:
         if len(a) != len(b):
             return 0.0
         
-        dot_product = sum(x * y for x, y in zip(a, b, strict=False))
+        dot_product = sum(x * y for x, y in zip(a, b))
         norm_a = sum(x * x for x in a) ** 0.5
         norm_b = sum(x * x for x in b) ** 0.5
         
@@ -155,6 +155,14 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self._dim = dim if dim is not None else 768
 
     def embed(self, text: str) -> list[float]:
+        """
+        Generate an embedding for the given text using the configured Ollama model.
+        This method calls the Ollama `/api/embeddings` endpoint and returns the
+        embedding vector from the response. If any error occurs while making the
+        request or parsing the response (for example, network issues, timeouts,
+        or non-success HTTP status codes), the error is logged and a zero vector
+        of length `self._dim` is returned as a fallback.
+        """
         try:
             res = requests.post(
                 f"{self.base_url}/api/embeddings",
@@ -359,7 +367,7 @@ class MemoryManager:
         """Remove oldest/least important memories if over limit."""
         while len(self._memories) > self._max_memories:
             # Find least important memory
-            oldest_id = min(
+            eviction_candidate_id = min(
                 self._memories.keys(),
                 key=lambda x: (
                     self._memories[x].importance,
@@ -367,7 +375,7 @@ class MemoryManager:
                     self._memories[x].created_at,
                 ),
             )
-            self.remove(oldest_id)
+            self.remove(eviction_candidate_id)
     
     def get_context(
         self,
@@ -394,7 +402,7 @@ class MemoryManager:
             # Approximate token count assuming ~4 characters per token.
             # This is a heuristic and may differ from the true count
             # produced by a specific tokenizer (e.g., GPT-3/4).
-            tokens = len(memory.content) // 4
+            tokens = len(memory.content) // 4  # ~4 chars per token heuristic
             
             if total_tokens + tokens > max_tokens:
                 break
