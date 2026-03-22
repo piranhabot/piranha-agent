@@ -26,6 +26,7 @@ from dataclasses import dataclass, field
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 import os
+import requests
 import pytest
 
 logger = logging.getLogger(__name__)
@@ -336,7 +337,6 @@ class BenchmarkRunner:
 
     def report_to_monitor(self, url: str):
         """Send benchmark results to Piranha Studio."""
-        import requests
         print(f"\nReporting {len(self.results)} results to monitor at {url}...")
         
         for result in self.results:

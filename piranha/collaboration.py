@@ -16,8 +16,10 @@ Features:
 from __future__ import annotations
 
 import uuid
+import inspect
 from collections import defaultdict
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
 from typing import Any, Callable
 
@@ -43,7 +45,7 @@ class ConversationMessage:
     sender: str
     content: str
     role: str
-    timestamp: str = field(default_factory=lambda: "")
+    timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
@@ -277,7 +279,6 @@ class MultiAgentCollaboration:
             task.conversation.append(message)
             
             # Execute task
-            import inspect
             raw_result = agent.run(task.description)
             
             # Handle both sync and async agents
@@ -342,7 +343,6 @@ class MultiAgentCollaboration:
         self._update_agent_status(speaker.id, "busy", task_id)
         
         # Generate response using the agent
-        import inspect
         
         # Build prompt from conversation history
         history = "\n".join([f"{msg.sender}: {msg.content}" for msg in task.conversation[-5:]])

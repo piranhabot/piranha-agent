@@ -11,9 +11,13 @@ from __future__ import annotations
 
 import hashlib
 import uuid
+import requests
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -127,7 +131,6 @@ class HashEmbeddingProvider(EmbeddingProvider):
     def __init__(self, dim: int = 384):
         self._dim = dim
     def embed(self, text: str) -> list[float]:
-        import hashlib
         hash_bytes = hashlib.sha256(text.encode()).digest()
         vector = []
         for i in range(self._dim):
@@ -144,7 +147,6 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self.model = model
         self.base_url = base_url
     def embed(self, text: str) -> list[float]:
-        import requests
         try:
             res = requests.post(
                 f"{self.base_url}/api/embeddings",
@@ -152,8 +154,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
             )
             return res.json()["embedding"]
         except Exception as e:
-            import logging
-            logging.getLogger(__name__).error(f"Ollama embedding failed: {e}")
+            logger.error(f"Ollama embedding failed: {e}")
             return [0.0] * 768 # Fallback
     def dimension(self) -> int:
         return 768 # Standard for nomic-embed-text

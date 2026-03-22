@@ -28,8 +28,10 @@ import json
 import logging
 import threading
 import uuid
+import random
+import argparse
 from dataclasses import asdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -383,8 +385,6 @@ class RealtimeMonitor:
         @get_limiter().limit("10/minute")
         async def get_cache_entries(request: Request):
             """Get cache entries."""
-            import random
-            from datetime import datetime, timedelta
             entries = []
             for i in range(50):
                 entries.append({
@@ -447,9 +447,6 @@ class RealtimeMonitor:
         @get_limiter().limit("30/minute")
         async def get_cost_analytics(request: Request, range: str = '7d'):
             """Get advanced cost analytics."""
-            import random
-            from datetime import datetime, timedelta
-            
             days_map = {'7d': 7, '30d': 30, '90d': 90}
             days = days_map.get(range, 90)
             daily_breakdown = []
@@ -484,9 +481,6 @@ class RealtimeMonitor:
         @get_limiter().limit("30/minute")
         async def get_events_timeline(request: Request):
             """Get event timeline."""
-            import random
-            from datetime import datetime, timedelta
-            
             event_types = ['LlmCall', 'CacheHit', 'CacheMiss', 'SkillInvoked', 'SkillCompleted', 'GuardrailCheck']
             events = []
             for i in range(50):
@@ -686,14 +680,13 @@ class RealtimeMonitor:
         }
         
         try:
-            import time
-            start = time.time()
+            start = datetime.now().timestamp()
             
             # Execute Wasm (placeholder - would use actual Wasm execution)
             # In production, this would call the actual WasmRunner
             output = f"Executed {function_name} with input: {input_data}"
             
-            end = time.time()
+            end = datetime.now().timestamp()
             result["execution_time_ms"] = int((end - start) * 1000)
             result["output"] = output
             
@@ -984,8 +977,6 @@ def monitor_agent(agent):
 
 def main():
     """Run Piranha Studio as standalone server."""
-    import argparse
-    
     parser = argparse.ArgumentParser(description="Piranha Studio - Real-Time Monitoring")
     parser.add_argument("--host", default="127.0.0.1", help="Host to bind to")
     parser.add_argument("--port", type=int, default=8080, help="Port to listen on")

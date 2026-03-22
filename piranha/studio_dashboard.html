@@ -202,10 +202,10 @@
     </div>
 
     <div class="nav-tabs">
-        <div class="nav-tab active" onclick="showTab('dashboard')">🏠 Dashboard</div>
-        <div class="nav-tab" onclick="showTab('benchmarks')">📈 Benchmarks</div>
-        <div class="nav-tab" onclick="showTab('collaboration')">🤝 Collaboration</div>
-        <div class="nav-tab" onclick="showTab('events')">📜 Event Log</div>
+        <div class="nav-tab active" onclick="showTab('dashboard', this)">🏠 Dashboard</div>
+        <div class="nav-tab" onclick="showTab('benchmarks', this)">📈 Benchmarks</div>
+        <div class="nav-tab" onclick="showTab('collaboration', this)">🤝 Collaboration</div>
+        <div class="nav-tab" onclick="showTab('events', this)">📜 Event Log</div>
     </div>
 
     <div class="container">
@@ -302,11 +302,11 @@
         const API_BASE = window.location.origin;
         let ws = null;
 
-        function showTab(tabId) {
+        function showTab(tabId, tabElement) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
-            event.target.classList.add('active');
+            tabElement.classList.add('active');
             
             if (tabId === 'benchmarks') initCharts();
         }
