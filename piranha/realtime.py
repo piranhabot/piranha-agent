@@ -141,19 +141,23 @@ class RealtimeMonitor:
         self,
         host: str = "127.0.0.1",
         port: int = 8080,
-        dashboard_path: str | None = None
+        dashboard_path: str | None = None,
+        memory_manager: MemoryManager | None = None
     ):
         """Initialize real-time monitor.
-        
+
         Args:
             host: Host to bind to
             port: Port to listen on
             dashboard_path: Path to static dashboard files (optional)
+            memory_manager: Optional MemoryManager instance
         """
+        from piranha.memory import MemoryManager
         self.host = host
         self.port = port
         self.dashboard_path = dashboard_path
-        
+        self.memory_manager = memory_manager or MemoryManager()
+        self.app = FastAPI(title="Piranha Studio API")
         # State
         self.agents: dict[str, AgentStatus] = {}
         self.tasks: dict[str, TaskStatus] = {}
@@ -547,34 +551,56 @@ class RealtimeMonitor:
         @self.app.get("/api/memory")
         @get_limiter().limit("30/minute")
         async def get_memory(request: Request):
-            """Get all memories (placeholder)."""
-            return {"memories": []}
+            """Get all memories."""
+            memories = [m.to_dict() for m in self.memory_manager._memories.values()]
+            return {"memories": memories}
         
         @self.app.post("/api/memory/search")
         @get_limiter().limit("60/minute")
         async def search_memory(search_request: dict, request: Request):
-            """Search memories (placeholder)."""
+            """Search memories."""
             query = search_request.get("query", "")
-            top_k = search_request.get("top_k", 10)
-            # Placeholder - would integrate with MemoryManager
-            return {"results": [], "query": query, "top_k": top_k}
+            top_k = search_request.get("top_k", 5)
+            results = self.memory_manager.search(query, top_k=top_k)
+            
+            # Format results
+            formatted_results = []
+            for memory, score in results:
+                formatted_results.append({
+                    "memory": memory.to_dict(),
+                    "score": float(score)
+                })
+                
+            return {"results": formatted_results, "query": query, "top_k": top_k}
         
         @self.app.post("/api/memory")
         @get_limiter().limit("30/minute")
         async def add_memory(memory_request: dict, request: Request):
-            """Add memory (placeholder)."""
-            return {"status": "ok"}
+            """Add memory."""
+            content = memory_request.get("content", "")
+            if not content:
+                raise HTTPException(status_code=400, detail="Content is required")
+                
+            tags = memory_request.get("tags", [])
+            importance = memory_request.get("importance", 1.0)
+            
+            memory = self.memory_manager.add(content, tags=tags, importance=importance)
+            return {"status": "ok", "memory_id": memory.id}
         
         @self.app.delete("/api/memory/{memory_id}")
         @get_limiter().limit("30/minute")
         async def delete_memory(request: Request, memory_id: str):
-            """Delete memory (placeholder)."""
+            """Delete memory."""
+            success = self.memory_manager.remove(memory_id)
+            if not success:
+                raise HTTPException(status_code=404, detail="Memory not found")
             return {"status": "ok"}
         
         @self.app.delete("/api/memory/clear")
         @get_limiter().limit("5/minute")
         async def clear_memory(request: Request):
-            """Clear all memories (placeholder)."""
+            """Clear all memories."""
+            self.memory_manager.clear()
             return {"status": "ok"}
         
         @self.app.websocket("/ws")

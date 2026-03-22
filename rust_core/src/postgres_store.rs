@@ -37,7 +37,7 @@ impl Default for PostgresConfig {
 /// PostgreSQL Event Store marker (Phase 5)
 /// 
 /// Note: Full async implementation requires running PostgreSQL.
-/// This is a placeholder for the production-ready implementation.
+/// This is an experimental feature for production-ready implementations.
 pub struct PostgresEventStore {
     config: PostgresConfig,
     connected: bool,
@@ -84,7 +84,7 @@ impl PostgresEventStore {
         )
     }
 
-    /// Check if connected (placeholder)
+    /// Check if connected
     pub fn is_connected(&self) -> bool {
         self.connected
     }

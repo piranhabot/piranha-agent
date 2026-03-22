@@ -22,7 +22,7 @@ console = Console()
 
 try:
     from piranha import (
-        Agent,
+        AsyncAgent as Agent,
         Task,
         skill,
     )
@@ -44,7 +44,6 @@ except ImportError:
         "Use for factual questions and research."
     ),
     permissions=["network_read"],
-    skill_id="demo:knowledge_search",
     inheritable=True,
 )
 async def knowledge_search(query: str, max_results: int = 3) -> str:
@@ -107,7 +106,6 @@ async def knowledge_search(query: str, max_results: int = 3) -> str:
         "More reliable than asking the LLM to compute directly."
     ),
     permissions=[],
-    skill_id="demo:calculator",
     inheritable=True,
 )
 async def calculator(expression: str) -> str:
@@ -154,17 +152,15 @@ async def demo_single_agent():
 
     console.print(f"\n[dim]Agent: {agent}[/dim]\n")
 
-    task = Task(
-        description=(
-            "Search for what Ollama is, then calculate: "
-            "if running a model locally saves $0.002 per call "
-            "and you make 500 calls per day, how much do you "
-            "save per month (30 days)?"
-        ),
+    description = (
+        "Search for what Ollama is, then calculate: "
+        "if running a model locally saves $0.002 per call "
+        "and you make 500 calls per day, how much do you "
+        "save per month (30 days)?"
     )
 
     console.print("[yellow]Running agent...[/yellow]")
-    result = await agent.run(task.description)
+    result = await agent.run(description)
 
     console.print(Panel(
         result.content,

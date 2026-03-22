@@ -144,7 +144,8 @@ impl DynamicSkillCompiler {
         })
     }
 
-    /// Compile and execute a skill (placeholder)
+    /// Compile and execute a skill (Experimental)
+    /// Note: This feature is under active development.
     pub fn compile_and_execute(
         &self,
         skill_code: &str,

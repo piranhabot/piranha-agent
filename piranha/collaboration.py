@@ -216,9 +216,18 @@ class MultiAgentCollaboration:
             )
             task.conversation.append(message)
             
-            # Execute task (placeholder - would use agent.run in real implementation)
-            # In production, this would call agent.run() with the task
-            result = f"[{agent_data['role']}] Completed: {task.description}"
+            # Execute task
+            import inspect
+            raw_result = agent.run(task.description)
+            
+            # Handle both sync and async agents
+            if inspect.iscoroutine(raw_result):
+                response = await raw_result
+            else:
+                response = raw_result
+                
+            # Extract content from LLMResponse
+            result = response.content if hasattr(response, 'content') else str(response)
             results.append(result)
             
             # Add result to conversation
@@ -269,10 +278,28 @@ class MultiAgentCollaboration:
         # Update status
         self._update_agent_status(speaker.id, "busy", task_id)
         
-        # Create message (placeholder - would use LLM in production)
+        # Generate response using the agent
+        import inspect
+        
+        # Build prompt from conversation history
+        history = "\n".join([f"{msg.sender}: {msg.content}" for msg in task.conversation[-5:]])
+        prompt = f"Previous conversation:\n{history}\n\nTask: {task.description}\n\nPlease provide your input as the {speaker_data['role']}."
+        
+        raw_result = speaker.run(prompt)
+        
+        # Handle both sync and async agents
+        if inspect.iscoroutine(raw_result):
+            response = await raw_result
+        else:
+            response = raw_result
+            
+        # Extract content
+        content = response.content if hasattr(response, 'content') else str(response)
+        
+        # Create message
         message = ConversationMessage(
             sender=speaker.name,
-            content=f"[{speaker_data['role']}] My input on: {task.description}",
+            content=content,
             role=speaker_data["role"]
         )
         
