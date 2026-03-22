@@ -31,6 +31,13 @@ import pytest
 
 logger = logging.getLogger(__name__)
 
+# Default configuration values for benchmarking fixtures
+DEFAULT_SEMANTIC_CACHE_TTL_HOURS = 24
+DEFAULT_SEMANTIC_CACHE_MAX_ENTRIES = 10000
+DEFAULT_GUARDRAIL_TOKEN_BUDGET = 100000
+DEFAULT_ANOMALY_WINDOW_SIZE = 100
+EMBEDDING_DIMENSION = 384
+
 # Default model used across Piranha benchmarks
 DEFAULT_BENCHMARK_MODEL = "ollama/llama3:latest"
 
@@ -343,7 +350,10 @@ class TestPiranhaBenchmarks:
     @pytest.fixture
     def semantic_cache(self):
         from piranha_core import SemanticCache
-        return SemanticCache(ttl_hours=24, max_entries=10000)
+        return SemanticCache(
+            ttl_hours=DEFAULT_SEMANTIC_CACHE_TTL_HOURS,
+            max_entries=DEFAULT_SEMANTIC_CACHE_MAX_ENTRIES,
+        )
     
     @pytest.fixture
     def event_store(self):
@@ -458,17 +468,17 @@ class TestPiranhaBenchmarks:
         """Benchmark: Guardrail check performance."""
         from piranha_core import GuardrailEngine
         import uuid
-        
-        engine = GuardrailEngine(token_budget=100000)
+
+        engine = GuardrailEngine(token_budget=DEFAULT_GUARDRAIL_TOKEN_BUDGET)
         agent_id = str(uuid.uuid4())
         session_id = str(uuid.uuid4())
-        
+
         def check_guardrail():
             return engine.check(
                 agent_id=agent_id,
                 session_id=session_id,
                 tokens_used=100,
-                token_budget=100000,
+                token_budget=DEFAULT_GUARDRAIL_TOKEN_BUDGET,
                 pending_action=None,
             )
         
@@ -497,15 +507,15 @@ class TestPiranhaBenchmarks:
     def test_memory_vector_search_benchmark(self, runner):
         """Benchmark: Memory vector search performance."""
         from piranha.memory import VectorStore
-        
+
         store = VectorStore()
-        
+
         # Pre-populate with vectors
         for i in range(1000):
-            vector = [float(i % 100) / 100 for _ in range(384)]  # 384-dim embedding
+            vector = [float(i % 100) / 100 for _ in range(EMBEDDING_DIMENSION)]  # 384-dim embedding
             store.add(f"item_{i}", vector, {"content": f"Item {i}"})
-        
-        query_vector = [0.5] * 384
+
+        query_vector = [0.5] * EMBEDDING_DIMENSION
         
         def search():
             return store.similarity_search(query_vector, top_k=5)
@@ -534,11 +544,11 @@ class TestPiranhaBenchmarks:
     def test_cost_anomaly_detection_benchmark(self, runner):
         """Benchmark: Cost anomaly detection performance."""
         from piranha.observability import CostAnomalyDetector
-        
-        detector = CostAnomalyDetector(window_size=100)
-        
+
+        detector = CostAnomalyDetector(window_size=DEFAULT_ANOMALY_WINDOW_SIZE)
+
         # Pre-populate with normal costs
-        for _ in range(100):
+        for _ in range(DEFAULT_ANOMALY_WINDOW_SIZE):
             detector.record_cost(0.001)
         
         def detect_anomaly():
@@ -593,14 +603,17 @@ def run_all_benchmarks():
     print("PIRANHA AGENT - COMPREHENSIVE BENCHMARK SUITE")
     print("=" * 70)
     print()
-    
+
     runner = BenchmarkRunner()
     test_class = TestPiranhaBenchmarks()
-    
+
     # Create fixtures manually
-    from piranha_core import SemanticCache, EventStore, SkillRegistry, GuardrailEngine, WasmRunner
-    
-    semantic_cache = SemanticCache(ttl_hours=24, max_entries=10000)
+    from piranha_core import SemanticCache, EventStore
+
+    semantic_cache = SemanticCache(
+        ttl_hours=DEFAULT_SEMANTIC_CACHE_TTL_HOURS,
+        max_entries=DEFAULT_SEMANTIC_CACHE_MAX_ENTRIES,
+    )
     event_store = EventStore()
     
     # Run benchmarks
