@@ -48,6 +48,17 @@ export function activate(context: vscode.ExtensionContext) {
 	const skillProvider = new SkillProvider();
 	vscode.window.registerTreeDataProvider('piranhaSkills', skillProvider);
 
+	const hitlProvider = new HITLProvider();
+	vscode.window.registerTreeDataProvider('piranhaHITL', hitlProvider);
+
+	// Register Inline Completion Provider
+	context.subscriptions.push(
+		vscode.languages.registerInlineCompletionItemProvider(
+			{ language: 'python' },
+			new PiranhaInlineCompletionProvider()
+		)
+	);
+
 	// Create status bar item
 	const statusBarItem = vscode.window.createStatusBarItem(
 		vscode.StatusBarAlignment.Right,
@@ -388,13 +399,17 @@ class ChatPanel {
             margin-bottom: 16px;
             padding: 12px;
             border-radius: 8px;
+            word-wrap: break-word;
         }
         .user-message {
             background-color: var(--vscode-button-background);
             color: var(--vscode-button-foreground);
+            align-self: flex-end;
+            margin-left: 20%;
         }
         .agent-message {
             background-color: var(--vscode-editor-inactiveSelectionBackground);
+            margin-right: 20%;
         }
         .input-container {
             display: flex;
@@ -419,6 +434,11 @@ class ChatPanel {
         button:hover {
             opacity: 0.9;
         }
+        .status-bar {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            margin-top: 8px;
+        }
     </style>
 </head>
 <body>
@@ -430,13 +450,32 @@ class ChatPanel {
             </div>
         </div>
         <div class="input-container">
-            <input type="text" id="userInput" placeholder="Type your message..." />
-            <button onclick="sendMessage()">Send</button>
+            <input type="text" id="userInput" placeholder="Ask me to code, search, or automate..." />
+            <button id="sendBtn">Send</button>
         </div>
+        <div class="status-bar" id="status">Server: Checking connection...</div>
     </div>
     <script>
         const messagesDiv = document.getElementById('messages');
         const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const statusDiv = document.getElementById('status');
+
+        async function checkServer() {
+            try {
+                const response = await fetch('http://localhost:8080/api/health');
+                if (response.ok) {
+                    statusDiv.innerHTML = '🟢 Server: Online (localhost:8080)';
+                    statusDiv.style.color = 'var(--vscode-testing-iconPassedColor)';
+                } else {
+                    throw new Error();
+                }
+            } catch (e) {
+                statusDiv.innerHTML = '🔴 Server: Offline (Start piranha monitor first)';
+                statusDiv.style.color = 'var(--vscode-testing-iconFailedColor)';
+            }
+        }
+        checkServer();
 
         userInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
@@ -444,31 +483,123 @@ class ChatPanel {
             }
         });
 
-        function sendMessage() {
+        sendBtn.addEventListener('click', sendMessage);
+
+        function addMessage(sender, text, type) {
+            const msg = document.createElement('div');
+            msg.className = 'message ' + type + '-message';
+            msg.innerHTML = '<strong>' + sender + ':</strong> ' + text;
+            messagesDiv.appendChild(msg);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        async function sendMessage() {
             const message = userInput.value.trim();
             if (!message) return;
 
-            // Add user message
-            const userMsg = document.createElement('div');
-            userMsg.className = 'message user-message';
-            userMsg.innerHTML = '<strong>You:</strong> ' + message;
-            messagesDiv.appendChild(userMsg);
-
+            addMessage('You', message, 'user');
             userInput.value = '';
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
-            // Simulate agent response (would connect to actual API)
-            setTimeout(() => {
-                const agentMsg = document.createElement('div');
-                agentMsg.className = 'message agent-message';
-                agentMsg.innerHTML = '<strong>Agent:</strong> I received your message: "' + message + '". In a full implementation, I would process this with Piranha Agent and respond intelligently!';
-                messagesDiv.appendChild(agentMsg);
-                messagesDiv.scrollTop = messagesDiv.scrollHeight;
-            }, 500);
+            const loadingMsg = document.createElement('div');
+            loadingMsg.className = 'message agent-message';
+            loadingMsg.id = 'loading';
+            loadingMsg.innerHTML = '<em>Agent is thinking...</em>';
+            messagesDiv.appendChild(loadingMsg);
+
+            try {
+                const response = await fetch('http://localhost:8080/api/agents/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                }).catch(() => null);
+
+                const loading = document.getElementById('loading');
+                if (loading) loading.remove();
+
+                if (response && response.ok) {
+                    const data = await response.json();
+                    addMessage('Agent', data.response, 'agent');
+                } else {
+                    setTimeout(() => {
+                        addMessage('Agent', 'I detected your server is offline, but I can still help with local context! To enable full autonomy, run "piranha monitor" in your terminal.', 'agent');
+                    }, 800);
+                }
+            } catch (e) {
+                const loading = document.getElementById('loading');
+                if (loading) loading.remove();
+                addMessage('System', 'Connection error. Please ensure Piranha monitor is running.', 'agent');
+            }
         }
     </script>
 </body>
 </html>`;
+	}
+}
+
+// Inline Completion Provider for "Ghost Text"
+class PiranhaInlineCompletionProvider implements vscode.InlineCompletionItemProvider {
+	async provideInlineCompletionItems(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		context: vscode.InlineCompletionContext,
+		token: vscode.CancellationToken
+	): Promise<vscode.InlineCompletionList | vscode.InlineCompletionItem[]> {
+		
+		const linePrefix = document.lineAt(position).text.substr(0, position.character);
+		
+		// Only trigger after "agent." or "task." or at start of line
+		if (!linePrefix.endsWith('agent.') && !linePrefix.endsWith('task.') && linePrefix.trim() !== '') {
+			return [];
+		}
+
+		// Simple ghost text suggestions for Piranha SDK
+		const items: vscode.InlineCompletionItem[] = [];
+		
+		if (linePrefix.endsWith('agent.')) {
+			items.push(new vscode.InlineCompletionItem('run("Task description")'));
+			items.push(new vscode.InlineCompletionItem('add_skill(my_skill)'));
+			items.push(new vscode.InlineCompletionItem('export_trace()'));
+		} else if (linePrefix.endsWith('task.')) {
+			items.push(new vscode.InlineCompletionItem('run()'));
+			items.push(new vscode.InlineCompletionItem('add_subtask("Description")'));
+		}
+
+		return items;
+	}
+}
+
+// HITL Approval Provider
+class HITLProvider implements vscode.TreeDataProvider<ApprovalItem> {
+	private _onDidChangeTreeData: vscode.EventEmitter<ApprovalItem | undefined | void> = new vscode.EventEmitter<ApprovalItem | undefined | void>();
+	readonly onDidChangeTreeData: vscode.Event<ApprovalItem | undefined | void> = this._onDidChangeTreeData.event;
+
+	getTreeItem(element: ApprovalItem): vscode.TreeItem {
+		return element;
+	}
+
+	getChildren(element?: ApprovalItem): Thenable<ApprovalItem[]> {
+		if (element) {
+			return Promise.resolve([]);
+		}
+		return Promise.resolve([
+			new ApprovalItem('Approve: File Write', 'agent-1', 'write to config.yaml', vscode.TreeItemCollapsibleState.None),
+			new ApprovalItem('Approve: Network Request', 'agent-2', 'GET https://api.github.com', vscode.TreeItemCollapsibleState.None)
+		]);
+	}
+}
+
+class ApprovalItem extends vscode.TreeItem {
+	constructor(
+		public readonly label: string,
+		public agentId: string,
+		public action: string,
+		public readonly collapsibleState: vscode.TreeItemCollapsibleState
+	) {
+		super(label, collapsibleState);
+		this.tooltip = `Agent ${agentId} wants to: ${action}`;
+		this.description = agentId;
+		this.contextValue = 'approval';
+		this.iconPath = new vscode.ThemeIcon('shield');
 	}
 }
 
