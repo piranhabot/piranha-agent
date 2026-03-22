@@ -41,6 +41,7 @@ class AsyncAgent:
         system_prompt: str = "",
         skills: list[Skill] | None = None,
         permissions: list[str] | None = None,
+        allowed_hosts: list[str] | None = None,
         api_base: str | None = None,
         api_key: str | None = None,
     ):
@@ -53,6 +54,7 @@ class AsyncAgent:
             system_prompt: System prompt for the agent
             skills: List of skills
             permissions: List of agent permissions
+            allowed_hosts: List of allowed network hosts
             api_base: API base URL (for Ollama)
             api_key: API key (for cloud providers)
         """
@@ -62,6 +64,7 @@ class AsyncAgent:
         self.system_prompt = system_prompt
         self.skills = skills or []
         self.permissions = permissions or []
+        self.allowed_hosts = allowed_hosts or []
         
         # Initialize components
         self._event_store = EventStore()
@@ -142,10 +145,11 @@ class AsyncAgent:
         Returns:
             LLMResponse or async generator for streaming
         """
-        from piranha.skill import agent_permissions
+        from piranha.skill import agent_permissions, agent_allowed_hosts
         
-        # Set agent permissions for this execution context
-        token = agent_permissions.set(self.permissions)
+        # Set agent permissions and allowed hosts for this execution context
+        token_perms = agent_permissions.set(self.permissions)
+        token_hosts = agent_allowed_hosts.set(self.allowed_hosts)
         
         try:
             # Add user message
@@ -205,8 +209,9 @@ class AsyncAgent:
             
             return response
         finally:
-            # Reset permissions after execution
-            agent_permissions.reset(token)
+            # Reset context after execution
+            agent_permissions.reset(token_perms)
+            agent_allowed_hosts.reset(token_hosts)
     
     async def _stream_response(
         self,

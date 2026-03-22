@@ -45,6 +45,7 @@ class Agent:
     system_prompt: str = ""
     skills: list[Skill] = field(default_factory=list)
     permissions: list[str] = field(default_factory=list)
+    allowed_hosts: list[str] = field(default_factory=list)
     session: Session | None = None
     api_base: str | None = None
     api_key: str | None = None
@@ -123,10 +124,11 @@ class Agent:
         Returns:
             LLMResponse with result and metadata
         """
-        from piranha.skill import agent_permissions
+        from piranha.skill import agent_permissions, agent_allowed_hosts
         
-        # Set agent permissions for this execution context
-        token = agent_permissions.set(self.permissions)
+        # Set agent permissions and allowed hosts for this execution context
+        token_perms = agent_permissions.set(self.permissions)
+        token_hosts = agent_allowed_hosts.set(self.allowed_hosts)
         
         try:
             # Add user message
@@ -189,8 +191,9 @@ class Agent:
             
             return response
         finally:
-            # Reset permissions after execution
-            agent_permissions.reset(token)
+            # Reset context after execution
+            agent_permissions.reset(token_perms)
+            agent_allowed_hosts.reset(token_hosts)
     
     def add_to_memory(self, content: str, tags: list[str] | None = None) -> None:
         """Add content to agent's long-term memory.

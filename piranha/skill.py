@@ -18,6 +18,31 @@ logger = logging.getLogger(__name__)
 # Context variable to track current agent permissions
 # This allows skills to verify if they are authorized to run by the calling agent
 agent_permissions: contextvars.ContextVar[list[str]] = contextvars.ContextVar("agent_permissions", default=[])
+agent_allowed_hosts: contextvars.ContextVar[list[str]] = contextvars.ContextVar("agent_allowed_hosts", default=[])
+
+
+def validate_url(url: str) -> None:
+    """Validate that a URL is allowed by the current agent's policy.
+    
+    Args:
+        url: URL to validate
+        
+    Raises:
+        PermissionError: If host is not in allowed_hosts
+    """
+    from urllib.parse import urlparse
+    
+    allowed = agent_allowed_hosts.get()
+    if not allowed or "*" in allowed:
+        return
+        
+    parsed = urlparse(url)
+    host = parsed.netloc.lower()
+    
+    if host not in [h.lower() for h in allowed]:
+        error_msg = f"Security Error: Egress blocked. Host '{host}' is not in allowed_hosts: {allowed}"
+        logger.error(error_msg)
+        raise PermissionError(error_msg)
 
 
 @dataclass

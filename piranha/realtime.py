@@ -826,12 +826,17 @@ class RealtimeMonitor:
         })
     
     def record_event(self, event_type: str, data: dict[str, Any]):
-        """Record and broadcast an event."""
+        """Record an event and broadcast to clients."""
+        from piranha.observability import SecretMasker
+
+        # Scrub sensitive data before recording/broadcasting
+        masked_data = SecretMasker.mask(data)
+
         event = Event(
             id=str(uuid.uuid4()),
             type=event_type,
             timestamp=datetime.now().isoformat(),
-            data=data
+            data=masked_data
         )
         self.events.append(event)
         

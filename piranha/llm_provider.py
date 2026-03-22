@@ -87,6 +87,7 @@ class LLMProvider:
         
         # Set LiteLLM defaults
         litellm.set_verbose = False
+        litellm.suppress_debug_info = True
     
     def chat(
         self,

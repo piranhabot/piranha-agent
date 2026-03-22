@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import statistics
 import time
+import re
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -40,6 +41,42 @@ class AlertConfig:
     comparison: str  # "gt", "lt", "eq"
     cooldown_seconds: int = 300
     channels: list[str] = field(default_factory=list)
+
+
+class SecretMasker:
+    """Utility to mask sensitive information in logs and metrics."""
+    
+    # Common sensitive patterns
+    PATTERNS = [
+        # Generic API keys
+        (r'(?i)(api[_-]?key|secret|password|token|auth|credential)["\']?\s*[:=]\s*["\']?([^"\'\s,]{4,})["\']?', r'\1: "[REDACTED]"'),
+        # OpenAI keys
+        (r'sk-[a-zA-Z0-9]{32,}', '[REDACTED]'),
+        # GitHub tokens
+        (r'ghp_[a-zA-Z0-9]{36}', '[REDACTED]'),
+        # Bearer tokens
+        (r'(?i)Bearer\s+[a-zA-Z0-9\._\-]{10,}', 'Bearer [REDACTED]'),
+    ]
+    
+    @classmethod
+    def mask(cls, data: Any) -> Any:
+        """Mask sensitive data in strings, dicts, or lists."""
+        if isinstance(data, str):
+            masked = data
+            for pattern, replacement in cls.PATTERNS:
+                masked = re.sub(pattern, replacement, masked)
+            return masked
+        elif isinstance(data, dict):
+            new_dict = {}
+            for k, v in data.items():
+                if k.lower() in ("password", "api_key", "secret", "token"):
+                    new_dict[k] = "[REDACTED]"
+                else:
+                    new_dict[k] = cls.mask(v)
+            return new_dict
+        elif isinstance(data, list):
+            return [cls.mask(item) for item in data]
+        return data
 
 
 class MetricsCollector:
