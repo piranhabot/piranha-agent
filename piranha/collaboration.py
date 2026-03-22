@@ -21,10 +21,21 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable
+from typing import Any, Callable, Protocol, runtime_checkable, cast
 
 from piranha import Agent
 from piranha.realtime import RealtimeMonitor, get_monitor
+
+
+@runtime_checkable
+class SupportsCollaboration(Protocol):
+    """Protocol for agents that can participate in collaboration.
+    
+    Agents implementing this protocol are expected to expose shared
+    communication and state attributes used by the collaboration system.
+    """
+    message_bus: MessageBus
+    shared_state: SharedState
 
 
 class AgentRole(Enum):
@@ -73,7 +84,7 @@ class MessageBus:
             "topic": topic,
             "sender": sender,
             "message": message,
-            "timestamp": uuid.uuid4().hex
+            "timestamp": datetime.now().isoformat()
         }
         self._history.append(event)
         
@@ -179,10 +190,11 @@ class MultiAgentCollaboration:
         """
         role_str = role.value if isinstance(role, AgentRole) else role
         
-        # Inject shared components into agent (if they support it)
-        # This is a loose coupling approach
-        setattr(agent, "message_bus", self.message_bus)
-        setattr(agent, "shared_state", self.shared_state)
+        # Inject shared components into agent using a typed protocol.
+        # This maintains loose coupling while preserving type safety.
+        collab_agent = cast(SupportsCollaboration, agent)
+        collab_agent.message_bus = self.message_bus
+        collab_agent.shared_state = self.shared_state
         
         self.agents[agent.id] = {
             "agent": agent,
@@ -331,12 +343,29 @@ class MultiAgentCollaboration:
             raise ValueError(f"Task {task_id} not found")
         
         # Find next agent to speak (round-robin)
-        agents_list = list(self.agents.values())
-        if not agents_list:
+        all_agents_list = list(self.agents.values())
+        if not all_agents_list:
             raise ValueError("No agents in collaboration")
         
-        # Simple round-robin for now
-        speaker_data = agents_list[len(task.conversation) % len(agents_list)]
+        # If the task specifies assigned_roles, only consider agents with those roles.
+        # Otherwise, fall back to all agents.
+        assigned_roles = getattr(task, "assigned_roles", None)
+        if assigned_roles:
+            eligible_agents = [
+                agent_data
+                for agent_data in all_agents_list
+                if agent_data.get("role") in assigned_roles
+            ]
+        else:
+            eligible_agents = all_agents_list
+        
+        if not eligible_agents:
+            raise ValueError(
+                f"No agents available with assigned roles for task {task_id}"
+            )
+        
+        # Simple round-robin among eligible agents
+        speaker_data = eligible_agents[len(task.conversation) % len(eligible_agents)]
         speaker = speaker_data["agent"]
         
         # Update status

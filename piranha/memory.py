@@ -158,8 +158,10 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         try:
             res = requests.post(
                 f"{self.base_url}/api/embeddings",
-                json={"model": self.model, "prompt": text}
+                json={"model": self.model, "prompt": text},
+                timeout=30
             )
+            res.raise_for_status()
             return res.json()["embedding"]
         except Exception as e:
             logger.error(f"Ollama embedding failed: {e}")
@@ -169,15 +171,36 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         return self._dim
 
 
-class SentenceTransformerProvider(EmbeddingProvider):
-    """Semantic embeddings using local sentence-transformers."""
-    def __init__(self, model: str = "all-MiniLM-L6-v2"):
-        from sentence_transformers import SentenceTransformer
-        self._model = SentenceTransformer(model)
+class _SentenceTransformerWrapper(EmbeddingProvider):
+    """Adapter that wraps a SentenceTransformer instance to match EmbeddingProvider."""
+    def __init__(self, model) -> None:
+        self._model = model
     def embed(self, text: str) -> list[float]:
         return self._model.encode(text).tolist()
     def dimension(self) -> int:
         return self._model.get_sentence_embedding_dimension()
+
+
+class SentenceTransformerProvider(EmbeddingProvider):
+    """Semantic embeddings using local sentence-transformers."""
+    def __init__(self, model: str = "all-MiniLM-L6-v2"):
+        try:
+            from sentence_transformers import SentenceTransformer
+            self._impl: EmbeddingProvider = _SentenceTransformerWrapper(SentenceTransformer(model))
+        except Exception as e:
+            logger.error(
+                "Failed to initialize SentenceTransformer model '%s': %s. "
+                "Falling back to hash-based embeddings.",
+                model,
+                e,
+            )
+            # Fallback to a simple hash-based provider to avoid crashing the application.
+            self._impl = HashEmbeddingProvider()
+            
+    def embed(self, text: str) -> list[float]:
+        return self._impl.embed(text)
+    def dimension(self) -> int:
+        return self._impl.dimension()
 
 
 class EmbeddingModel:
@@ -353,7 +376,14 @@ class MemoryManager:
     ) -> str:
         """Get relevant context for a query.
         
-        Builds context from relevant memories up to token limit.
+        Builds context from relevant memories up to a token limit.
+        
+        Note:
+            Token counts are estimated using a simple character-based
+            heuristic (approximately 4 characters per token). Actual
+            tokenization depends on the model/tokenizer in use (e.g.,
+            GPT-style tokenizers) and may differ significantly. This
+            method should not be relied on for strict token budgeting.
         """
         results = self.search(query, top_k=10)
         
@@ -361,7 +391,9 @@ class MemoryManager:
         total_tokens = 0
         
         for memory, _score in results:
-            # Rough token estimation
+            # Approximate token count assuming ~4 characters per token.
+            # This is a heuristic and may differ from the true count
+            # produced by a specific tokenizer (e.g., GPT-3/4).
             tokens = len(memory.content) // 4
             
             if total_tokens + tokens > max_tokens:
