@@ -141,6 +141,7 @@ class AsyncAgent:
         """
         # Add user message
         self._messages.append(LLMMessage(role="user", content=task))
+        self._context.add_message("user", task)
         
         # Check cache
         cache_key = self._semantic_cache.compute_key(
@@ -158,14 +159,27 @@ class AsyncAgent:
                 finish_reason="cache_hit",
             )
         
+        # Get relevant memories for context
+        memory_context = self._memory.get_context(task, max_tokens=500)
+        
         # Call LLM
         if stream:
-            return self._stream_response(task)
+            return self._stream_response(task, memory_context)
         
-        response = await self._llm.chat_async(self._messages)
+        # Build messages with context if available
+        messages = self._messages
+        if memory_context:
+            context_msg = LLMMessage(
+                role="system",
+                content=f"Relevant context from memory:\n{memory_context}"
+            )
+            messages = [context_msg] + self._messages
+            
+        response = await self._llm.chat_async(messages)
         
         # Store response
         self._messages.append(LLMMessage(role="assistant", content=response.content))
+        self._context.add_message("assistant", response.content)
         
         # Record in event store
         self._record_llm_event(response)
@@ -185,16 +199,27 @@ class AsyncAgent:
     async def _stream_response(
         self,
         task: str,
+        memory_context: str | None = None,
     ) -> AsyncGenerator[str, None]:
         """Stream response token by token."""
         full_response = ""
         
-        async for chunk in self._llm.chat_async(self._messages, stream=True):
+        # Build messages with context if available
+        messages = self._messages
+        if memory_context:
+            context_msg = LLMMessage(
+                role="system",
+                content=f"Relevant context from memory:\n{memory_context}"
+            )
+            messages = [context_msg] + self._messages
+        
+        async for chunk in self._llm.chat_async(messages, stream=True):
             full_response += chunk
             yield chunk
         
         # Store complete response
         self._messages.append(LLMMessage(role="assistant", content=full_response))
+        self._context.add_message("assistant", full_response)
 
         # Record event with complete token and cost information
         response = LLMResponse(
@@ -210,9 +235,13 @@ class AsyncAgent:
     def _record_llm_event(self, response: LLMResponse) -> None:
         """Record LLM call in event store."""
         try:
+            # The EventStore requires a UUID for agent_id. Since the agent's name
+            # may not be a valid UUID, we use the session ID for now, as the 
+            # cost reporting and debugging suite relies on valid UUIDs.
+            # In a production environment, this should be the agent's unique UUID.
             self._event_store.record_llm_call(
                 session_id=self.session.id,
-                agent_id=self.name,  # Use agent name as identifier
+                agent_id=self.session.id,  # Use session ID which is a valid UUID
                 model=response.model,
                 prompt_tokens=response.prompt_tokens,
                 completion_tokens=response.completion_tokens,

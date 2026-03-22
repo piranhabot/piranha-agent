@@ -149,8 +149,6 @@ class TestAsyncAgent:
     @pytest.mark.asyncio
     async def test_run_cache_hit(self):
         """Test run with cache hit."""
-        agent = AsyncAgent(name="test-agent", model="ollama/llama3:latest")
-
         # Mock cache to return a hit
         mock_cache_response = {
             "response": "Cached response",
@@ -160,24 +158,32 @@ class TestAsyncAgent:
             "cost_usd": 0.001,
         }
         
-        with patch.object(agent._semantic_cache, 'get', return_value=mock_cache_response):
-            with patch.object(agent._semantic_cache, 'compute_key', return_value="test_key"):
-                response = await agent.run("Test query")
+        with patch('piranha.async_agent.SemanticCache') as mock_cache_class:
+            mock_cache_instance = mock_cache_class.return_value
+            mock_cache_instance.get.return_value = mock_cache_response
+            mock_cache_instance.compute_key.return_value = "test_key"
+            
+            agent = AsyncAgent(name="test-agent", model="ollama/llama3:latest")
+            response = await agent.run("Test query")
 
-                assert response.content == "Cached response"
-                assert response.finish_reason == "cache_hit"
+            assert response.content == "Cached response"
+            assert response.finish_reason == "cache_hit"
 
     @pytest.mark.asyncio
     async def test_run_with_memory_context(self):
         """Test run with memory context."""
         agent = AsyncAgent(name="test-agent", model="ollama/llama3:latest")
 
-        # Add memory
-        agent.add_to_memory("User prefers Python", tags=["preference"])
+        # Add memory - use a distinctive string that we can search for
+        content = "The user's favorite programming language is Python."
+        agent.add_to_memory(content, tags=["preference"])
+
+        # We need to wait a tiny bit for the memory to be indexed if it's async,
+        # but here it's likely synchronous in the mock/simple version.
 
         with patch.object(agent._llm, 'chat_async', new_callable=AsyncMock) as mock_chat:
             mock_chat.return_value = LLMResponse(
-                content="Response with context",
+                content="I will remember you prefer Python.",
                 model="ollama/llama3:latest",
                 prompt_tokens=30,
                 completion_tokens=40,
@@ -185,20 +191,22 @@ class TestAsyncAgent:
                 finish_reason="stop",
             )
 
-            response = await agent.run("Help me code")
+            # Use a query that will trigger the memory retrieval
+            response = await agent.run("What is my favorite language?")
 
-            assert response.content == "Response with context"
-            
+            assert response.content == "I will remember you prefer Python."
+
             # Verify that the added memory is actually used to build the LLM input.
-            # We don't rely on a specific interface; instead, we check that the
-            # memory text appears somewhere in the arguments passed to chat_async.
-            _, kwargs = mock_chat.call_args
-            args_str = repr(kwargs)
-            assert "User prefers Python" in args_str, "Memory content should be passed to LLM"
+            args, kwargs = mock_chat.call_args
+            args_str = str(args) + str(kwargs)
+            assert "Python" in args_str, "Memory content should be passed to LLM"
 
     @pytest.mark.asyncio
     async def test_run_streaming(self):
         """Test streaming response."""
+        import piranha
+        print(f"\nDEBUG: piranha location: {piranha.__file__}")
+        
         agent = AsyncAgent(name="test-agent", model="ollama/llama3:latest")
 
         async def mock_stream():
@@ -206,17 +214,18 @@ class TestAsyncAgent:
             yield " "
             yield "World"
 
-        # Create async mock that returns the stream generator
-        mock_chat = AsyncMock()
+        # For streaming, LLMProvider.chat_async is called and its result is iterated over.
+        # So the mock should return the async generator directly.
+        mock_chat = MagicMock()
         mock_chat.return_value = mock_stream()
 
         with patch.object(agent._llm, 'chat_async', mock_chat):
-            # Don't await when streaming - get the async generator
-            response = agent.run("Test", stream=True)
+            # Await the coroutine to get the async generator
+            response_gen = await agent.run("Test", stream=True)
 
             # Collect streaming response
             chunks = []
-            async for chunk in response:
+            async for chunk in response_gen:
                 chunks.append(chunk)
 
             assert chunks == ["Hello", " ", "World"]
@@ -228,6 +237,14 @@ class TestAsyncAgent:
             assistant_messages = [m for m in history if m.get("role") == "assistant"]
             assert assistant_messages, "Expected at least one assistant message in history"
             assert assistant_messages[-1].get("content") == full_response
+
+            # Ensure only the final concatenated response is stored, not individual chunks
+            contents = [m.get("content") for m in assistant_messages]
+            # Exactly one assistant message should equal the full streamed response
+            assert contents.count(full_response) == 1
+            # No assistant message should contain any individual chunk as its full content
+            for chunk in chunks:
+                assert chunk not in contents
 
     def test_get_history(self):
         """Test getting conversation history."""

@@ -33,6 +33,22 @@ from piranha import (
 from piranha.memory import MemoryManager, ContextManager
 from typing import Optional, List
 import asyncio
+import inspect
+
+
+def _execute_task_run(task: Task):
+    """
+    Execute task.run() whether it is defined as a synchronous or async method.
+    Returns the final result of the call (or None if run() is not present).
+    """
+    if not hasattr(task, "run"):
+        return None
+    run_method = task.run
+    result = run_method()
+    # If Task.run returns a coroutine/awaitable, run it via asyncio
+    if inspect.iscoroutine(result) or inspect.isawaitable(result):
+        return asyncio.run(result)
+    return result
 
 
 print("=" * 70)
@@ -307,13 +323,14 @@ try:
     task2 = Task(description="Task 2", agent=agent2)
 
     # Execute tasks to ensure they participate in the monitored workflow
+    # Use helper function to handle both sync and async Task.run() methods
     if hasattr(task1, "run"):
-        result1 = task1.run()
+        result1 = _execute_task_run(task1)
         # If run() returns an explicit status, ensure it does not indicate failure
         if result1 is not None:
             assert result1 is not False, "Task 1 run() returned failure status"
     if hasattr(task2, "run"):
-        result2 = task2.run()
+        result2 = _execute_task_run(task2)
         # If run() returns an explicit status, ensure it does not indicate failure
         if result2 is not None:
             assert result2 is not False, "Task 2 run() returned failure status"
@@ -333,7 +350,12 @@ try:
     # during agent registration or task execution.
     if hasattr(workflow_monitor, "events") and len(workflow_monitor.events) > 0:
         # Events are being tracked - verify agent-related events exist
-        agent_events = [e for e in workflow_monitor.events if 'agent' in e.type.lower()]
+        # Add guards to check that events have a 'type' attribute
+        agent_events = [
+            e
+            for e in workflow_monitor.events
+            if hasattr(e, "type") and isinstance(e.type, str) and "agent" in e.type.lower()
+        ]
         # This is optional - events may not be recorded in all implementations
     if hasattr(workflow_monitor, "agent_events"):
         # Expect each agent to have at least one recorded event
