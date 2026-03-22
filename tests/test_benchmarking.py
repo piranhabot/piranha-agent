@@ -327,7 +327,32 @@ class BenchmarkRunner:
                 "total_errors": total_errors,
             }
         
+        # New: Report to monitor if URL is provided
+        monitor_url = os.getenv("PIRANHA_MONITOR_URL")
+        if monitor_url:
+            self.report_to_monitor(monitor_url)
+            
         return report
+
+    def report_to_monitor(self, url: str):
+        """Send benchmark results to Piranha Studio."""
+        import requests
+        print(f"\nReporting {len(self.results)} results to monitor at {url}...")
+        
+        for result in self.results:
+            data = {
+                "name": result.name,
+                "iterations": result.iterations,
+                "avg_time_ms": result.avg_time * 1000,
+                "throughput": result.throughput,
+                "p95_ms": result.p95_time * 1000,
+                "p99_ms": result.p99_time * 1000,
+                "errors": result.errors
+            }
+            try:
+                requests.post(f"{url}/api/benchmarks", json=data, timeout=5)
+            except Exception as e:
+                print(f"Failed to report {result.name}: {e}")
 
 
 # =============================================================================

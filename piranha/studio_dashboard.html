@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🐟 Piranha Studio - Real-Time Agent Monitoring</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             margin: 0;
@@ -22,22 +23,62 @@
             background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
             padding: 20px 30px;
             border-bottom: 1px solid #334155;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .header h1 {
+        .header-content h1 {
             font-size: 24px;
             margin-bottom: 5px;
         }
 
-        .header p {
+        .header-content p {
             color: #94a3b8;
             font-size: 14px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #334155;
+            padding: 0 30px;
+            background: #0f172a;
+        }
+
+        .nav-tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            color: #94a3b8;
+            border-bottom: 2px solid transparent;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .nav-tab:hover {
+            color: #e2e8f0;
+            background: #1e293b;
+        }
+
+        .nav-tab.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+            background: #1e293b;
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 30px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         .status-bar {
@@ -81,6 +122,7 @@
             border: 1px solid #334155;
             border-radius: 8px;
             padding: 20px;
+            margin-bottom: 20px;
         }
 
         .panel h2 {
@@ -89,28 +131,11 @@
             color: #94a3b8;
         }
 
-        .agent-list, .task-list {
-            list-style: none;
-        }
-
         .agent-item, .task-item {
             background: #0f172a;
             border: 1px solid #334155;
             border-radius: 6px;
             padding: 15px;
-            margin-bottom: 10px;
-        }
-
-        .agent-item .name, .task-item .name {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .agent-item .status, .task-item .status {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 12px;
             margin-bottom: 10px;
         }
 
@@ -122,70 +147,37 @@
         .status-completed { background: #22c55e; color: white; }
         .status-failed { background: #ef4444; color: white; }
 
-        .metrics {
-            font-size: 13px;
-            color: #94a3b8;
-        }
-
-        .metrics span {
-            margin-right: 15px;
-        }
-
-        .connection-status {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: bold;
-        }
-
-        .connected {
-            background: #22c55e;
-            color: white;
-        }
-
-        .disconnected {
-            background: #ef4444;
-            color: white;
-        }
-
         .event-log {
             background: #0f172a;
             border: 1px solid #334155;
             border-radius: 6px;
             padding: 15px;
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
             font-family: monospace;
             font-size: 12px;
         }
 
         .event-item {
-            padding: 5px 0;
+            padding: 8px 0;
             border-bottom: 1px solid #334155;
         }
 
-        .event-item:last-child {
-            border-bottom: none;
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
         }
 
-        .event-time {
-            color: #64748b;
-            margin-right: 10px;
-        }
-
-        .event-type {
-            color: #3b82f6;
+        .connection-status {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 12px;
             font-weight: bold;
         }
 
-        .no-data {
-            text-align: center;
-            color: #64748b;
-            padding: 40px;
-        }
+        .connected { background: #065f46; color: #34d399; }
+        .disconnected { background: #991b1b; color: #f87171; }
 
         .refresh-btn {
             background: #3b82f6;
@@ -195,245 +187,241 @@
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
-            margin-bottom: 20px;
-        }
-
-        .refresh-btn:hover {
-            background: #2563eb;
         }
     </style>
 </head>
 <body>
-    <div id="connection-status" class="connection-status disconnected">
-        ❌ Disconnected
+    <div class="header">
+        <div class="header-content">
+            <h1>🐟 Piranha Studio</h1>
+            <p>Enterprise AI Agent Monitoring & Performance</p>
+        </div>
+        <div id="connection-status" class="connection-status disconnected">
+            Offline
+        </div>
     </div>
 
-    <div class="header">
-        <h1>🐟 Piranha Studio</h1>
-        <p>Real-Time Agent Monitoring Dashboard</p>
+    <div class="nav-tabs">
+        <div class="nav-tab active" onclick="showTab('dashboard')">🏠 Dashboard</div>
+        <div class="nav-tab" onclick="showTab('benchmarks')">📈 Benchmarks</div>
+        <div class="nav-tab" onclick="showTab('collaboration')">🤝 Collaboration</div>
+        <div class="nav-tab" onclick="showTab('events')">📜 Event Log</div>
     </div>
 
     <div class="container">
-        <button class="refresh-btn" onclick="fetchData()">🔄 Refresh Data</button>
+        
+        <!-- DASHBOARD TAB -->
+        <div id="dashboard" class="tab-content active">
+            <div class="status-bar">
+                <div class="stat-card">
+                    <h3>Active Agents</h3>
+                    <div class="value" id="active-agents">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Tokens</h3>
+                    <div class="value" id="total-tokens">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Cost</h3>
+                    <div class="value" id="total-cost">$0.00</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Success Rate</h3>
+                    <div class="value" id="success-rate">100%</div>
+                </div>
+            </div>
 
-        <div class="status-bar">
-            <div class="stat-card">
-                <h3>Active Agents</h3>
-                <div class="value" id="active-agents">0</div>
-            </div>
-            <div class="stat-card">
-                <h3>Pending Tasks</h3>
-                <div class="value" id="pending-tasks">0</div>
-            </div>
-            <div class="stat-card">
-                <h3>Total Tokens</h3>
-                <div class="value" id="total-tokens">0</div>
-            </div>
-            <div class="stat-card">
-                <h3>Total Cost</h3>
-                <div class="value" id="total-cost">$0.00</div>
-            </div>
-            <div class="stat-card">
-                <h3>Cache Hits</h3>
-                <div class="value" id="cache-hits">0</div>
+            <div class="grid">
+                <div class="panel">
+                    <h2>🤖 Agents</h2>
+                    <div id="agent-list" class="list"></div>
+                </div>
+                <div class="panel">
+                    <h2>📋 Recent Tasks</h2>
+                    <div id="task-list" class="list"></div>
+                </div>
             </div>
         </div>
 
-        <div class="grid">
+        <!-- BENCHMARKS TAB -->
+        <div id="benchmarks" class="tab-content">
+            <div class="grid">
+                <div class="panel">
+                    <h2>⚡ Throughput (ops/sec)</h2>
+                    <div class="chart-container">
+                        <canvas id="throughputChart"></canvas>
+                    </div>
+                </div>
+                <div class="panel">
+                    <h2>⏱️ Latency (P95/P99 ms)</h2>
+                    <div class="chart-container">
+                        <canvas id="latencyChart"></canvas>
+                    </div>
+                </div>
+            </div>
             <div class="panel">
-                <h2>🤖 Agents</h2>
-                <ul class="agent-list" id="agent-list">
-                    <li class="no-data">No agents registered</li>
-                </ul>
+                <h2>📊 Benchmark History</h2>
+                <table style="width:100%; border-collapse: collapse; font-size: 14px;">
+                    <thead>
+                        <tr style="text-align:left; color:#94a3b8; border-bottom: 1px solid #334155;">
+                            <th style="padding:10px">Name</th>
+                            <th>Avg (ms)</th>
+                            <th>Throughput</th>
+                            <th>P95</th>
+                            <th>P99</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody id="benchmark-table-body"></tbody>
+                </table>
             </div>
+        </div>
 
+        <!-- COLLABORATION TAB -->
+        <div id="collaboration" class="tab-content">
             <div class="panel">
-                <h2>📋 Tasks</h2>
-                <ul class="task-list" id="task-list">
-                    <li class="no-data">No tasks</li>
-                </ul>
+                <h2>🤝 Shared Message Bus</h2>
+                <div class="event-log" id="bus-log">
+                    <div class="no-data">No bus activity yet</div>
+                </div>
             </div>
         </div>
 
-        <div class="panel">
-            <h2>📊 Event Log</h2>
-            <div class="event-log" id="event-log">
-                <div class="no-data">No events yet</div>
+        <!-- EVENTS TAB -->
+        <div id="events" class="tab-content">
+            <div class="panel">
+                <h2>📜 System Events</h2>
+                <div class="event-log" id="event-log"></div>
             </div>
         </div>
+
     </div>
 
     <script>
+        let throughputChart, latencyChart;
         const API_BASE = window.location.origin;
         let ws = null;
-        let reconnectAttempts = 0;
 
-        function updateConnectionStatus(connected) {
-            const status = document.getElementById('connection-status');
-            status.className = 'connection-status ' + (connected ? 'connected' : 'disconnected');
-            status.textContent = connected ? '✅ Connected' : '❌ Disconnected';
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+            
+            if (tabId === 'benchmarks') initCharts();
+        }
+
+        function initCharts() {
+            if (throughputChart) return;
+
+            const ctxT = document.getElementById('throughputChart').getContext('2d');
+            throughputChart = new Chart(ctxT, {
+                type: 'bar',
+                data: { labels: [], datasets: [{ label: 'Ops/Sec', data: [], backgroundColor: '#3b82f6' }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            const ctxL = document.getElementById('latencyChart').getContext('2d');
+            latencyChart = new Chart(ctxL, {
+                type: 'line',
+                data: { 
+                    labels: [], 
+                    datasets: [
+                        { label: 'P95', data: [], borderColor: '#f59e0b', fill: false },
+                        { label: 'P99', data: [], borderColor: '#ef4444', fill: false }
+                    ] 
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+            
+            fetchBenchmarks();
+        }
+
+        async function fetchBenchmarks() {
+            try {
+                const res = await fetch(`${API_BASE}/api/benchmarks`);
+                const data = await res.json();
+                updateBenchmarkUI(data.benchmarks);
+            } catch (e) { console.error(e); }
+        }
+
+        function updateBenchmarkUI(benchmarks) {
+            if (!benchmarks || benchmarks.length === 0) return;
+
+            const tbody = document.getElementById('benchmark-table-body');
+            tbody.innerHTML = benchmarks.map(b => `
+                <tr style="border-bottom: 1px solid #334155;">
+                    <td style="padding:10px">${b.name}</td>
+                    <td>${b.avg_time_ms.toFixed(2)}</td>
+                    <td>${b.throughput.toFixed(0)}</td>
+                    <td>${b.p95_ms.toFixed(2)}</td>
+                    <td>${b.p99_ms.toFixed(2)}</td>
+                    <td style="color:#64748b">${new Date(b.timestamp).toLocaleTimeString()}</td>
+                </tr>
+            `).join('');
+
+            if (throughputChart) {
+                const last10 = benchmarks.slice(-10);
+                throughputChart.data.labels = last10.map(b => b.name.split(' ')[0]);
+                throughputChart.data.datasets[0].data = last10.map(b => b.throughput);
+                throughputChart.update();
+
+                latencyChart.data.labels = last10.map(b => b.name.split(' ')[0]);
+                latencyChart.data.datasets[0].data = last10.map(b => b.p95_ms);
+                latencyChart.data.datasets[1].data = last10.map(b => b.p99_ms);
+                latencyChart.update();
+            }
         }
 
         function connectWebSocket() {
-            const wsUrl = `ws://${window.location.hostname}:8080/ws`;
-            ws = new WebSocket(wsUrl);
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
 
             ws.onopen = () => {
-                console.log('Connected to Piranha Studio');
-                updateConnectionStatus(true);
-                reconnectAttempts = 0;
-            };
-
-            ws.onclose = () => {
-                console.log('Disconnected from Piranha Studio');
-                updateConnectionStatus(false);
-                
-                // Reconnect after delay
-                if (reconnectAttempts < 5) {
-                    setTimeout(() => {
-                        reconnectAttempts++;
-                        connectWebSocket();
-                    }, 2000 * reconnectAttempts);
-                }
-            };
-
-            ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
-                updateConnectionStatus(false);
+                document.getElementById('connection-status').className = 'connection-status connected';
+                document.getElementById('connection-status').textContent = 'Online';
             };
 
             ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                handleWebSocketMessage(data);
+                const msg = JSON.parse(event.data);
+                if (msg.type === 'event') {
+                    handleEvent(msg.event);
+                } else if (msg.type === 'init') {
+                    updateMetrics(msg.metrics);
+                }
             };
         }
 
-        function handleWebSocketMessage(data) {
-            console.log('Received:', data);
-            
-            // Add to event log
-            addEventLog(data.type, data.data);
-            
-            // Update metrics if present
-            if (data.data.metrics) {
-                updateMetrics(data.data.metrics);
-            }
-        }
-
-        function addEventLog(type, data) {
+        function handleEvent(event) {
             const log = document.getElementById('event-log');
-            const now = new Date().toLocaleTimeString();
+            const item = document.createElement('div');
+            item.className = 'event-item';
+            item.innerHTML = `<span style="color:#3b82f6">[${event.type}]</span> ${JSON.stringify(event.data)}`;
+            log.prepend(item);
+
+            if (event.type === 'benchmark.added') {
+                fetchBenchmarks();
+            }
             
-            const event = document.createElement('div');
-            event.className = 'event-item';
-            event.innerHTML = `
-                <span class="event-time">${now}</span>
-                <span class="event-type">${type}</span>
-                <span>${JSON.stringify(data).substring(0, 100)}...</span>
-            `;
-            
-            log.insertBefore(event, log.firstChild);
-            
-            // Keep only last 50 events
-            while (log.children.length > 50) {
-                log.removeChild(log.lastChild);
+            if (event.type === 'collaboration.log') {
+                const busLog = document.getElementById('bus-log');
+                const busItem = document.createElement('div');
+                busItem.className = 'event-item';
+                busItem.innerHTML = `<span style="color:#10b981">➔</span> ${event.data.message}`;
+                busLog.prepend(busItem);
             }
         }
 
-        function updateMetrics(metrics) {
-            if (metrics.active_agents !== undefined) {
-                document.getElementById('active-agents').textContent = metrics.active_agents;
-            }
-            if (metrics.pending_tasks !== undefined) {
-                document.getElementById('pending-tasks').textContent = metrics.pending_tasks;
-            }
-            if (metrics.total_tokens !== undefined) {
-                document.getElementById('total-tokens').textContent = metrics.total_tokens.toLocaleString();
-            }
-            if (metrics.total_cost_usd !== undefined) {
-                document.getElementById('total-cost').textContent = '$' + metrics.total_cost_usd.toFixed(4);
-            }
-            if (metrics.cache_hits !== undefined) {
-                document.getElementById('cache-hits').textContent = metrics.cache_hits;
-            }
+        function updateMetrics(m) {
+            document.getElementById('active-agents').textContent = m.active_agents;
+            document.getElementById('total-tokens').textContent = m.total_tokens.toLocaleString();
+            document.getElementById('total-cost').textContent = '$' + m.total_cost_usd.toFixed(4);
         }
 
-        async function fetchData() {
-            try {
-                // Fetch agents
-                const agentsRes = await fetch(`${API_BASE}/api/agents`);
-                if (agentsRes.ok) {
-                    const agents = await agentsRes.json();
-                    updateAgentList(agents);
-                }
-
-                // Fetch tasks
-                const tasksRes = await fetch(`${API_BASE}/api/tasks`);
-                if (tasksRes.ok) {
-                    const tasks = await tasksRes.json();
-                    updateTaskList(tasks);
-                }
-
-                // Fetch metrics
-                const metricsRes = await fetch(`${API_BASE}/api/metrics`);
-                if (metricsRes.ok) {
-                    const metrics = await metricsRes.json();
-                    updateMetrics(metrics);
-                }
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            }
-        }
-
-        function updateAgentList(agents) {
-            const list = document.getElementById('agent-list');
-            
-            if (!agents || agents.length === 0) {
-                list.innerHTML = '<li class="no-data">No agents registered</li>';
-                return;
-            }
-            
-            list.innerHTML = agents.map(agent => `
-                <li class="agent-item">
-                    <div class="name">${agent.name || 'Unknown'}</div>
-                    <div class="status status-${agent.status || 'idle'}">${agent.status || 'idle'}</div>
-                    <div class="metrics">
-                        <span>Model: ${agent.model || 'N/A'}</span>
-                        <span>Tokens: ${agent.tokens_used || 0}</span>
-                        <span>Cost: $${(agent.cost_usd || 0).toFixed(4)}</span>
-                    </div>
-                </li>
-            `).join('');
-        }
-
-        function updateTaskList(tasks) {
-            const list = document.getElementById('task-list');
-            
-            if (!tasks || tasks.length === 0) {
-                list.innerHTML = '<li class="no-data">No tasks</li>';
-                return;
-            }
-            
-            list.innerHTML = tasks.map(task => `
-                <li class="task-item">
-                    <div class="name">${task.description || 'Unknown task'}</div>
-                    <div class="status status-${task.status || 'pending'}">${task.status || 'pending'}</div>
-                    <div class="metrics">
-                        <span>Agent: ${task.agent_id || 'Unassigned'}</span>
-                        <span>Tokens: ${task.tokens_used || 0}</span>
-                        <span>Cost: $${(task.cost_usd || 0).toFixed(4)}</span>
-                    </div>
-                </li>
-            `).join('');
-        }
-
-        // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            fetchData();
             connectWebSocket();
-            
-            // Refresh data every 5 seconds
-            setInterval(fetchData, 5000);
+            // Fetch initial data
+            fetch(`${API_BASE}/api/metrics`).then(r => r.json()).then(updateMetrics);
         });
     </script>
 </body>

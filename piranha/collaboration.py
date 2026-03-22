@@ -8,15 +8,18 @@ Features:
 - Conversational collaboration
 - Task chains
 - Shared context
+- Shared Message Bus
+- Shared State (Whiteboard)
 - Automatic monitoring
 """
 
 from __future__ import annotations
 
 import uuid
+from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, Callable
 
 from piranha import Agent
 from piranha.realtime import RealtimeMonitor, get_monitor
@@ -53,6 +56,54 @@ class CollaborationTask:
     assigned_roles: list[str] = field(default_factory=list)
     results: list[str] = field(default_factory=list)
     conversation: list[ConversationMessage] = field(default_factory=list)
+
+
+class MessageBus:
+    """Shared message bus for asynchronous agent communication."""
+    
+    def __init__(self):
+        self._topics: dict[str, list[Callable]] = defaultdict(list)
+        self._history: list[dict[str, Any]] = []
+    
+    def publish(self, topic: str, sender: str, message: Any):
+        """Publish a message to a topic."""
+        event = {
+            "topic": topic,
+            "sender": sender,
+            "message": message,
+            "timestamp": uuid.uuid4().hex
+        }
+        self._history.append(event)
+        
+        for handler in self._topics[topic]:
+            try:
+                handler(event)
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(f"Error in bus handler: {e}")
+            
+    def subscribe(self, topic: str, handler: Callable):
+        """Subscribe to a topic."""
+        self._topics[topic].append(handler)
+
+
+class SharedState:
+    """Shared data store ('whiteboard') for agents in a collaboration."""
+    
+    def __init__(self):
+        self._data: dict[str, Any] = {}
+        
+    def set(self, key: str, value: Any):
+        """Set a value in shared state."""
+        self._data[key] = value
+        
+    def get(self, key: str, default: Any = None) -> Any:
+        """Get a value from shared state."""
+        return self._data.get(key, default)
+    
+    def get_all(self) -> dict[str, Any]:
+        """Get all shared data."""
+        return self._data.copy()
 
 
 class MultiAgentCollaboration:
@@ -102,6 +153,10 @@ class MultiAgentCollaboration:
         self.max_turns = max_turns
         self.auto_monitor = auto_monitor
         
+        # Shared Communication and State
+        self.message_bus = MessageBus()
+        self.shared_state = SharedState()
+        
         # Get or create monitor
         self.monitor = monitor
         if self.monitor is None and self.auto_monitor:
@@ -121,6 +176,11 @@ class MultiAgentCollaboration:
             description: Role description
         """
         role_str = role.value if isinstance(role, AgentRole) else role
+        
+        # Inject shared components into agent (if they support it)
+        # This is a loose coupling approach
+        setattr(agent, "message_bus", self.message_bus)
+        setattr(agent, "shared_state", self.shared_state)
         
         self.agents[agent.id] = {
             "agent": agent,
@@ -242,6 +302,9 @@ class MultiAgentCollaboration:
             self._update_agent_status(agent.id, "idle", None)
             agent_data["tasks_completed"] += 1
             agent_data["messages_sent"] += 1
+            
+            # Publish to bus
+            self.message_bus.publish("task.step_completed", agent.name, result)
         
         # Mark task complete
         task.status = "completed"
@@ -308,6 +371,9 @@ class MultiAgentCollaboration:
         # Update status
         self._update_agent_status(speaker.id, "idle", None)
         speaker_data["messages_sent"] += 1
+        
+        # Publish to bus
+        self.message_bus.publish("chat.message_sent", speaker.name, content)
         
         return message
     

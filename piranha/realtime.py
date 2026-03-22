@@ -9,6 +9,7 @@ Features:
 - Event streaming
 - Task queue monitoring
 - System health metrics
+- Performance benchmarking dashboard
 
 Usage:
     from piranha import RealtimeMonitor
@@ -36,7 +37,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
@@ -122,6 +123,18 @@ class LLMProviderRequest(BaseModel):
         extra = "allow"
 
 
+class BenchmarkData(BaseModel):
+    """Benchmark result data."""
+    name: str
+    iterations: int
+    avg_time_ms: float
+    throughput: float
+    p95_ms: float
+    p99_ms: float
+    errors: int = 0
+    timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())
+
+
 class Event(BaseModel):
     """Event for real-time streaming."""
     id: str
@@ -157,11 +170,12 @@ class RealtimeMonitor:
         self.port = port
         self.dashboard_path = dashboard_path
         self.memory_manager = memory_manager or MemoryManager()
-        self.app = FastAPI(title="Piranha Studio API")
+        
         # State
         self.agents: dict[str, AgentStatus] = {}
         self.tasks: dict[str, TaskStatus] = {}
         self.events: list[Event] = []
+        self.benchmarks: list[BenchmarkData] = []
         self.metrics = SystemMetrics()
         self.start_time = datetime.now()
         
@@ -215,6 +229,7 @@ class RealtimeMonitor:
                     "tasks": "/api/tasks",
                     "metrics": "/api/metrics",
                     "events": "/api/events",
+                    "benchmarks": "/api/benchmarks",
                     "websocket": "/ws"
                 }
             }
@@ -255,6 +270,25 @@ class RealtimeMonitor:
             """Get recent events."""
             return {"events": self.events[-limit:]}
         
+        @self.app.get("/api/benchmarks")
+        @get_limiter().limit("30/minute")
+        async def get_benchmarks(request: Request):
+            """Get benchmark history."""
+            return {"benchmarks": self.benchmarks}
+        
+        @self.app.post("/api/benchmarks")
+        @get_limiter().limit("10/minute")
+        async def add_benchmark(benchmark: BenchmarkData, request: Request):
+            """Add a benchmark result."""
+            self.benchmarks.append(benchmark)
+            # Limit history
+            if len(self.benchmarks) > 100:
+                self.benchmarks.pop(0)
+            
+            # Broadcast
+            self.record_event("benchmark.added", benchmark.model_dump())
+            return {"status": "ok"}
+
         @self.app.get("/api/security/check")
         @get_limiter().limit("10/minute")
         async def security_check(request: Request):
