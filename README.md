@@ -8,7 +8,17 @@
 [![Security: A+](https://img.shields.io/badge/security-A%2B-brightgreen.svg)](piranha/security.py)
 [![Performance: 10K+ events/sec](https://img.shields.io/badge/performance-10K%2B%20events%2Fsec-brightgreen.svg)](tests/test_benchmarking.py)
 
-**Next-generation autonomous agent framework with Rust core, time-travel debugging, Wasm sandbox, and 46+ Claude Skills.**
+**Next-generation autonomous agent framework with Rust core, radical transparency through time-travel debugging, Wasm sandboxing, and 46+ Claude Skills.**
+
+---
+
+## 🛡️ Human-in-the-Loop & Supervised Autonomy
+
+Piranha is designed for **Supervised Autonomy**. We believe that while agents should be fast, they must never be "black boxes." 
+
+- **The Autonomy Speed Gap**: Piranha can execute core operations at 51K+ ops/sec. Without oversight, a logic error can scale instantly. We provide the infrastructure to stop, audit, and intercept these actions before they cause real-world harm.
+- **Accountability Engine**: Our "Time-Travel Debugger" isn't just for fixing bugs; it's a cryptographic-ready audit trail. Every decision made by an LLM is recorded in our Rust-backed EventStore, allowing for full post-action forensic analysis.
+- **Sandboxing vs. Network**: While our **Wasm Sandbox** isolates the agent from your host machine, it does not automatically restrict the agent's "intent" on the network. Developers must apply their own context-aware guardrails for external API interactions.
 
 ---
 
@@ -38,7 +48,7 @@ python examples/01_basic_agent.py
 | **Performance** | ⚡⚡⚡⚡⚡ Rust core | ⚡⚡⚡ Python | ⚡⚡ Python | ⚡⚡⚡ Python | ⚡⚡ Python | ⚡⚡ Python | ⚡⚡ Python |
 | **Security** | ✅ Wasm sandbox | ⚠️ Process | ⚠️ Process | ❌ None | ❌ None | ❌ None | ❌ None |
 | **Claude Skills** | ✅ 46+ pre-built | ⚠️ 14 basic | ⚠️ Limited | ❌ None | ❌ None | ❌ None | ❌ None |
-| **Time-Travel Debug** | ✅ Full UI | ⚠️ Limited | ❌ None | ⚠️ Limited | ❌ None | ✅ Basic | ❌ None |
+| **Accountability** | ✅ Radical Transparency | ⚠️ Limited | ❌ None | ⚠️ Limited | ❌ None | ✅ Basic | ❌ None |
 | **Semantic Cache** | ✅ Fuzzy matching | ⚠️ Exact only | ❌ None | ⚠️ Exact only | ❌ None | ❌ None | ❌ None |
 | **Local LLM** | ✅ Native Ollama | ✅ Yes | ⚠️ Manual | ⚠️ Manual | ✅ Yes | ⚠️ Manual | ⚠️ Manual |
 | **Event Sourcing** | ✅ Full audit log | ✅ Yes | ❌ None | ✅ Yes | ❌ None | ✅ Yes | ❌ None |
@@ -290,21 +300,18 @@ if result:
 
 **Full example:** [`examples/08_semantic_cache_fuzzy.py`](examples/08_semantic_cache_fuzzy.py)
 
-### 5. Time-Travel Debugger
+### 5. Accountability Engine (Time-Travel Debugger)
 
 ```bash
-# Launch debugger UI
+# Launch transparency UI
 piranha debug
-
-# Or programmatically
-python -c "from piranha import create_debugger_ui; create_debugger_ui().launch()"
 ```
 
 **Features:**
-- Step through agent decisions
-- Visualize event timeline
-- Rollback to any state
-- Cost analysis
+- **Forensic Replay**: Step through every LLM decision and tool call.
+- **Decision Provenance**: Trace exactly why an agent chose a specific path.
+- **State Rollback**: Revert the agent to a pre-error state for safe intervention.
+- **Audit Reports**: High-speed export of all system events for compliance.
 
 ### 6. Distributed Agents
 
