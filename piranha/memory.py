@@ -143,9 +143,17 @@ class HashEmbeddingProvider(EmbeddingProvider):
 
 class OllamaEmbeddingProvider(EmbeddingProvider):
     """Semantic embeddings using Ollama (e.g., nomic-embed-text)."""
-    def __init__(self, model: str = "nomic-embed-text", base_url: str = "http://localhost:11434"):
+    def __init__(
+        self,
+        model: str = "nomic-embed-text",
+        base_url: str = "http://localhost:11434",
+        dim: int | None = None
+    ):
         self.model = model
         self.base_url = base_url
+        # Default dimension matches nomic-embed-text unless overridden.
+        self._dim = dim if dim is not None else 768
+
     def embed(self, text: str) -> list[float]:
         try:
             res = requests.post(
@@ -155,9 +163,10 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
             return res.json()["embedding"]
         except Exception as e:
             logger.error(f"Ollama embedding failed: {e}")
-            return [0.0] * 768 # Fallback
+            # Fallback to a zero vector matching the configured dimension.
+            return [0.0] * self._dim
     def dimension(self) -> int:
-        return 768 # Standard for nomic-embed-text
+        return self._dim
 
 
 class SentenceTransformerProvider(EmbeddingProvider):
@@ -183,7 +192,9 @@ class EmbeddingModel:
     
     def __init__(self, provider: str = "hash", model: str | None = None, **kwargs):
         if provider == "ollama":
-            self._impl = OllamaEmbeddingProvider(model or "nomic-embed-text", **kwargs)
+            # Allow callers to override the Ollama embedding dimension (default 768).
+            dim = kwargs.pop("dim", None)
+            self._impl = OllamaEmbeddingProvider(model or "nomic-embed-text", dim=dim, **kwargs)
         elif provider == "sentence-transformers":
             self._impl = SentenceTransformerProvider(model or "all-MiniLM-L6-v2")
         else:
