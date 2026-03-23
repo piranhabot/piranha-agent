@@ -499,22 +499,22 @@ ui.launch()
 
 | Component | Avg Time | Throughput | P95 | P99 |
 |-----------|----------|------------|-----|-----|
-| **EventStore Append** | 0.02ms | **51,390 ops/sec** | 0.04ms | 0.04ms |
-| **SemanticCache Put** | 0.00ms | **625,841 ops/sec** | 0.00ms | 0.01ms |
-| **SemanticCache Get** | 0.00ms | **1,491,869 ops/sec** | 0.00ms | 0.00ms |
-| **SkillRegistry Authorize** | 0.00ms | **2,184,216 ops/sec** | 0.00ms | 0.02ms |
-| **Guardrail Check** | 0.00ms | **460,933 ops/sec** | 0.01ms | 0.02ms |
-| **Wasm Validate** | 0.00ms | **7,169,989 ops/sec** | 0.00ms | 0.00ms |
-| **Vector Search (1K items)** | 37.04ms | 27 ops/sec | 37.68ms | 38.65ms |
-| **Metrics Collection** | 0.01ms | **125,912 ops/sec** | 0.01ms | 0.01ms |
+| **EventStore Append** | 0.02ms | **59,263 ops/sec** | 0.02ms | 0.02ms |
+| **SemanticCache Put** | 0.00ms | **643,413 ops/sec** | 0.00ms | 0.00ms |
+| **SemanticCache Get** | 0.00ms | **1,499,093 ops/sec** | 0.00ms | 0.00ms |
+| **SkillRegistry Authorize** | 0.00ms | **4,530,021 ops/sec** | 0.00ms | 0.00ms |
+| **Guardrail Check** | 0.01ms | **197,095 ops/sec** | 0.00ms | 0.02ms |
+| **Wasm Validate** | 0.00ms | **1,633,801 ops/sec** | 0.00ms | 0.00ms |
+| **Vector Search (1K items)** | 41.94ms | 23.84 ops/sec | 43.26ms | 46.89ms |
+| **Metrics Collection** | 0.01ms | **103,506 ops/sec** | 0.02ms | 0.02ms |
 
 **Piranha is 50-100x faster** than competitors for core operations!
 
-Run benchmarks:
-```bash
-python tests/test_benchmarking.py
-pytest tests/test_benchmarking.py -v
-```
+### 📊 Visual Benchmarking
+You can view these benchmarks in real-time using Piranha Studio:
+1. Start the monitor: `piranha monitor`
+2. Run benchmarks with reporting: `PIRANHA_MONITOR_URL=http://localhost:8080 python tests/test_benchmarking.py`
+3. Open `http://localhost:8080` and click the **Benchmarks** tab to see live charts.
 
 ---
 
@@ -584,16 +584,15 @@ piranha-agent/
 ## 🧪 Testing
 
 ```bash
-# Run all tests
+# Run all tests (175 passing)
 pytest
 
 # Run specific test suite
 pytest tests/test_wasm.py -v
-pytest tests/test_semantic_cache_fuzzy.py -v
+pytest tests/test_async_agent.py -v
 
-# Run benchmarks
+# Run performance benchmarking suite
 python tests/test_benchmarking.py
-pytest tests/test_benchmarking.py -v
 
 # With coverage
 pytest --cov=piranha --cov-report=html
