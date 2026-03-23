@@ -67,22 +67,56 @@ python examples/example.py
 
 ## Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     Piranha Agent                            │
-├─────────────────────────────────────────────────────────────┤
-│  Python SDK (Safety-First)                                   │
-│  ├── AsyncAgent / MultiAgentCollaboration                   │
-│  ├── MemoryManager (Semantic) / SecretMasker                 │
-│  ├── SharedMessageBus / SharedState                          │
-│  └── Piranha Studio Dashboard (Visual Benchmarks)            │
-├─────────────────────────────────────────────────────────────┤
-│  Rust Core (High-Performance)                                │
-│  ├── EventStore (Audit Trail)                                │
-│  ├── WasmRunner (Wasmtime Engine)                            │
-│  ├── SkillRegistry (Authorization)                           │
-│  └── SemanticCache (Fuzzy Matching)                          │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph "Clients & Tools"
+        CLI[Piranha CLI]
+        UI[Piranha Studio / Debugger]
+        NC[No-Code Builder]
+        VS[VS Code Extension]
+    end
+
+    subgraph "Python SDK (Safety & Orchestration)"
+        Agent[Agent / AsyncAgent]
+        Collab[Multi-Agent Collaboration]
+        Bus[Shared Message Bus]
+        State[Shared State / Whiteboard]
+        Memory[MemoryManager / Semantic Search]
+        Mask[SecretMasker]
+    end
+
+    subgraph "Rust Core (High-Performance)"
+        ES[EventStore / Audit Log]
+        Wasm[WasmRunner / Wasmtime]
+        SR[SkillRegistry / Auth]
+        SC[SemanticCache / Fuzzy]
+    end
+
+    subgraph "External Systems"
+        LLM[Ollama / Anthropic / OpenAI]
+        DB[(PostgreSQL / SQLite)]
+    end
+
+    %% Connections
+    CLI --> Agent
+    UI --> ES
+    NC --> Agent
+    VS --> Agent
+
+    Agent --> Collab
+    Collab --> Bus
+    Collab --> State
+    Agent --> Memory
+    Agent --> Mask
+
+    Agent --> LLM
+    Agent --> SR
+    Agent --> SC
+    Agent --> Wasm
+    
+    ES --> DB
+    SC --> ES
+    Memory --> LLM
 ```
 
 ---

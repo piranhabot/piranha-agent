@@ -113,6 +113,62 @@ python examples/01_basic_agent.py
 
 ---
 
+## 🏗️ Architecture
+
+```mermaid
+graph TD
+    subgraph "Clients & Tools"
+        CLI[Piranha CLI]
+        UI[Piranha Studio / Debugger]
+        NC[No-Code Builder]
+        VS[VS Code Extension]
+    end
+
+    subgraph "Python SDK (Safety & Orchestration)"
+        Agent[Agent / AsyncAgent]
+        Collab[Multi-Agent Collaboration]
+        Bus[Shared Message Bus]
+        State[Shared State / Whiteboard]
+        Memory[MemoryManager / Semantic Search]
+        Mask[SecretMasker]
+    end
+
+    subgraph "Rust Core (High-Performance)"
+        ES[EventStore / Audit Log]
+        Wasm[WasmRunner / Wasmtime]
+        SR[SkillRegistry / Auth]
+        SC[SemanticCache / Fuzzy]
+    end
+
+    subgraph "External Systems"
+        LLM[Ollama / Anthropic / OpenAI]
+        DB[(PostgreSQL / SQLite)]
+    end
+
+    %% Connections
+    CLI --> Agent
+    UI --> ES
+    NC --> Agent
+    VS --> Agent
+
+    Agent --> Collab
+    Collab --> Bus
+    Collab --> State
+    Agent --> Memory
+    Agent --> Mask
+
+    Agent --> LLM
+    Agent --> SR
+    Agent --> SC
+    Agent --> Wasm
+    
+    ES --> DB
+    SC --> ES
+    Memory --> LLM
+```
+
+---
+
 ## 🎯 46+ Claude Skills Available
 
 Piranha includes the largest collection of pre-built AI skills:
