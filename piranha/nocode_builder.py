@@ -270,20 +270,12 @@ def create_builder_ui():
             # Left sidebar - Node palette
             with gr.Column(scale=1, min_width=220):
                 gr.Markdown("### 📦 Node Library")
-                
+                node_buttons = []
                 for cat_name, cat_nodes in NODE_CATEGORIES.items():
                     gr.Markdown(f"**{cat_name}**")
                     for ntype, info in cat_nodes.items():
                         btn = gr.Button(f"{info['icon']} {info['label']}", size="sm", variant="secondary")
-                        btn.click(
-                            fn=add_node,
-                            inputs=[workflow_state, gr.State(ntype)],
-                            outputs=[workflow_state, gr.HTML(), gr.Code(), node_selector],
-                        ).then(
-                            fn=update_selector_choices,
-                            inputs=[workflow_state],
-                            outputs=[node_selector]
-                        )
+                        node_buttons.append((btn, ntype))
                     gr.Markdown("---")
             
             # Center - Canvas and toolbar
@@ -316,6 +308,18 @@ def create_builder_ui():
         # Events
         def update_stats(wf):
             return f"Nodes: **{len(wf['nodes'])}** | Connections: **{len(wf['connections'])}**"
+
+        # Bind Node Library Events
+        for btn, ntype in node_buttons:
+            btn.click(
+                fn=add_node,
+                inputs=[workflow_state, gr.State(ntype)],
+                outputs=[workflow_state, canvas, code_out, node_selector],
+            ).then(
+                fn=update_selector_choices,
+                inputs=[workflow_state],
+                outputs=[node_selector]
+            ).then(update_stats, workflow_state, stats_out)
 
         template_dd.change(
             fn=load_template,
