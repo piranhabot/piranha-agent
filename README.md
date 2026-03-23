@@ -73,6 +73,7 @@ python examples/01_basic_agent.py
 | Feature | Piranha | DeepAgents | AgentGen | MAF | AutoGen | LangGraph | CrewAI |
 |---------|---------|------------|----------|-----|---------|-----------|--------|
 | **Performance** | ⚡⚡⚡⚡⚡ Rust core | ⚡⚡⚡ Python | ⚡⚡ Python | ⚡⚡⚡ Python | ⚡⚡ Python | ⚡⚡ Python | ⚡⚡ Python |
+| **State Resilience**| ✅ SQLite Persist | ❌ In-memory | ❌ None | ⚠️ Optional | ❌ None | ✅ Yes | ❌ None |
 | **Collaboration**| ✅ Shared Msg Bus | ❌ Linear only | ❌ Linear | ⚠️ Basic | ✅ Yes | ✅ Yes | ⚠️ Basic |
 | **Security** | ✅ Wasmtime (Strict) | ⚠️ Process | ⚠️ Process | ❌ None | ❌ None | ❌ None | ❌ None |
 | **Data Privacy** | ✅ Auto-Redaction | ❌ None | ❌ None | ❌ None | ❌ None | ❌ None | ❌ None |
@@ -347,14 +348,17 @@ print(f"Success: {result['success']}, Time: {result['execution_time_ms']}ms")
 ```python
 from piranha import MemoryManager, EmbeddingModel
 
-# Use real semantic embeddings via Ollama or Sentence-Transformers
+# Use real semantic embeddings with SQLite-based persistence
 model = EmbeddingModel(provider="ollama", model="nomic-embed-text")
-memory = MemoryManager(embedding_model=model)
+memory = MemoryManager(
+    embedding_model=model,
+    persist_path="my_agent_memory.db" # Memory survives restarts!
+)
 
 # Accurate semantic retrieval
 memory.add("Piranha uses a Rust core for extreme speed")
 results = memory.search("Is this framework fast?")
-print(results[0].memory.content) # Found via semantic similarity!
+print(results[0][0].content) 
 ```
 
 **Full example:** [`examples/08_semantic_cache_fuzzy.py`](examples/08_semantic_cache_fuzzy.py)

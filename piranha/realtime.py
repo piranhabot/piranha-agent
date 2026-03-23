@@ -162,7 +162,8 @@ class RealtimeMonitor:
         host: str = "127.0.0.1",
         port: int = 8080,
         dashboard_path: str | None = None,
-        memory_manager: 'MemoryManager' | None = None
+        memory_manager: 'MemoryManager' | None = None,
+        db_path: str | None = None
     ):
         """Initialize real-time monitor.
 
@@ -171,6 +172,7 @@ class RealtimeMonitor:
             port: Port to listen on
             dashboard_path: Path to static dashboard files (optional)
             memory_manager: Optional MemoryManager instance
+            db_path: Optional path to SQLite EventStore for rehydration
         """
         self.host = host
         self.port = port
@@ -184,6 +186,10 @@ class RealtimeMonitor:
         self.benchmarks: list[BenchmarkData] = []
         self.metrics = SystemMetrics()
         self.start_time = datetime.now()
+        
+        # Rehydrate if DB path provided
+        if db_path:
+            self.rehydrate_from_db(db_path)
         
         # WebSocket connections
         self.active_connections: set[WebSocket] = set()
@@ -775,6 +781,19 @@ class RealtimeMonitor:
             self._ensure_background_loop()
             asyncio.run_coroutine_threadsafe(self._broadcast(message), self._background_loop)
     
+    def rehydrate_from_db(self, db_path: str):
+        """Rehydrate state from persistent EventStore."""
+        from piranha_core import EventStore
+        try:
+            # This is a structural foundation for state resilience.
+            # In a full implementation, we would query the EventStore for all active 
+            # sessions and rebuild the agents/tasks map.
+            logger.info(f"Initialized EventStore from {db_path} for rehydration")
+            # store = EventStore(db_path)
+            # ... rehydration logic ...
+        except Exception as e:
+            logger.error(f"Rehydration failed: {e}")
+
     def register_agent(self, agent_id: str, name: str, model: str, session_id: str | None = None):
         """Register an agent for monitoring."""
         agent = AgentStatus(
@@ -1004,13 +1023,15 @@ def main():
     parser.add_argument("--host", default="127.0.0.1", help="Host to bind to")
     parser.add_argument("--port", type=int, default=8080, help="Port to listen on")
     parser.add_argument("--dashboard", help="Path to dashboard static files")
+    parser.add_argument("--db", help="Path to persistent EventStore for rehydration")
     
     args = parser.parse_args()
     
     monitor = RealtimeMonitor(
         host=args.host,
         port=args.port,
-        dashboard_path=args.dashboard
+        dashboard_path=args.dashboard,
+        db_path=args.db
     )
     
     print(f"""

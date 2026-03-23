@@ -13,6 +13,8 @@ import hashlib
 import uuid
 import requests
 import logging
+import sqlite3
+import json
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
@@ -50,28 +52,73 @@ class Memory:
 
 
 class VectorStore:
-    """Simple in-memory vector store for embeddings.
+    """Simple in-memory vector store with optional SQLite persistence.
     
-    For production, replace with:
-    - FAISS
-    - ChromaDB
-    - Pinecone
-    - Qdrant
+    For high-scale production, consider:
+    - FAISS / ChromaDB / Qdrant
     """
     
-    def __init__(self):
+    def __init__(self, persist_path: str | None = None):
         self.vectors: dict[str, list[float]] = {}
         self.items: dict[str, Any] = {}
+        self.persist_path = persist_path
+        
+        if self.persist_path:
+            self._init_db()
+            self._load_from_disk()
     
+    def _init_db(self):
+        """Initialize SQLite database."""
+        with sqlite3.connect(self.persist_path) as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS vectors (
+                    id TEXT PRIMARY KEY,
+                    vector BLOB,
+                    item_json TEXT
+                )
+            """)
+            conn.commit()
+
+    def _load_from_disk(self):
+        """Load vectors from disk into memory."""
+        try:
+            with sqlite3.connect(self.persist_path) as conn:
+                cursor = conn.execute("SELECT id, vector, item_json FROM vectors")
+                for row in cursor:
+                    item_id, vector_json, item_json = row
+                    self.vectors[item_id] = json.loads(vector_json)
+                    self.items[item_id] = json.loads(item_json)
+            logger.info(f"Loaded {len(self.vectors)} items from {self.persist_path}")
+        except Exception as e:
+            logger.error(f"Failed to load from disk: {e}")
+
     def add(self, item_id: str, vector: list[float], item: Any) -> None:
-        """Add item to store."""
+        """Add item to store and persist to disk."""
         self.vectors[item_id] = vector
         self.items[item_id] = item
+        
+        if self.persist_path:
+            try:
+                # Convert item to dict if it has to_dict method
+                item_data = item.to_dict() if hasattr(item, 'to_dict') else item
+                with sqlite3.connect(self.persist_path) as conn:
+                    conn.execute(
+                        "INSERT OR REPLACE INTO vectors (id, vector, item_json) VALUES (?, ?, ?)",
+                        (item_id, json.dumps(vector), json.dumps(item_data))
+                    )
+                    conn.commit()
+            except Exception as e:
+                logger.error(f"Failed to persist item {item_id}: {e}")
     
     def remove(self, item_id: str) -> None:
-        """Remove item from store."""
+        """Remove item from store and disk."""
         self.vectors.pop(item_id, None)
         self.items.pop(item_id, None)
+        
+        if self.persist_path:
+            with sqlite3.connect(self.persist_path) as conn:
+                conn.execute("DELETE FROM vectors WHERE id = ?", (item_id,))
+                conn.commit()
     
     def get(self, item_id: str) -> Any | None:
         """Get item by ID."""
@@ -279,17 +326,36 @@ class MemoryManager:
         self,
         embedding_model: EmbeddingModel | None = None,
         max_memories: int = 1000,
+        persist_path: str | None = None,
     ):
         """Initialize memory manager.
         
         Args:
             embedding_model: Embedding model to use
             max_memories: Maximum memories to retain
+            persist_path: Optional path to SQLite file for persistence
         """
-        self._vector_store = VectorStore()
         self._embedding_model = embedding_model or EmbeddingModel()
+        self._vector_store = VectorStore(persist_path=persist_path)
         self._max_memories = max_memories
         self._memories: dict[str, Memory] = {}
+        
+        # Rehydrate Memory objects from vector store items
+        for item_id, item_data in self._vector_store.items.items():
+            if isinstance(item_data, dict):
+                memory = Memory(
+                    id=item_data.get("id", item_id),
+                    content=item_data.get("content", ""),
+                    embedding=self._vector_store.vectors.get(item_id),
+                    created_at=datetime.fromisoformat(item_data.get("created_at", datetime.now(timezone.utc).isoformat())),
+                    access_count=item_data.get("access_count", 0),
+                    importance=item_data.get("importance", 1.0),
+                    tags=item_data.get("tags", []),
+                    metadata=item_data.get("metadata", {}),
+                )
+                self._memories[item_id] = memory
+                # Update vector store items to be the actual Memory object
+                self._vector_store.items[item_id] = memory
     
     def add(
         self,
