@@ -31,15 +31,24 @@ def debug(host: str, port: int) -> None:
 
 @main.command()
 @click.option("--name", default="assistant", help="Agent name")
-@click.option("--model", default="ollama/llama3:latest", help="LLM model")
-@click.option("--ollama", is_flag=True, help="Use local Ollama")
-def agent(name: str, model: str, ollama: bool) -> None:
+@click.option(
+    "--model",
+    default=None,
+    help="LLM model (defaults to ollama/llama3:latest if not specified)",
+)
+@click.option("--ollama", is_flag=True, help="Use local Ollama (sets a default model if none is specified)")
+def agent(name: str, model: str | None, ollama: bool) -> None:
     """Create and test an agent."""
     from piranha import Agent
     
-    if ollama:
+    # Determine final model based on flags and user input.
+    if ollama and model is None:
         model = "ollama/llama3:latest"
         click.echo("🦙 Using Ollama (make sure it's running!)")
+    elif model is None:
+        # Preserve previous behavior where, in the absence of any flags,
+        # the default model is ollama/llama3:latest.
+        model = "ollama/llama3:latest"
     
     agent = Agent(name=name, model=model)
     click.echo(f"✓ Created agent '{name}'")
@@ -68,7 +77,7 @@ def version() -> None:
     import piranha_core
     
     click.echo("🐍 Piranha Agent")
-    click.echo("  Python SDK: v0.2.0")
+    click.echo("  Python SDK: v0.4.0")
     click.echo(f"  Rust Core: v{piranha_core.__version__}")
     click.echo("  Features: LiteLLM, Async, Memory, Wasm, Time-Travel Debug")
 
