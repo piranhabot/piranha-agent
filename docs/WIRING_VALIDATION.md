@@ -31,7 +31,7 @@
 
 **Wiring:**
 ```python
-from piranha import start_monitoring, monitor_agent, Agent
+from piranha_agent import start_monitoring, monitor_agent, Agent
 
 # Start monitor
 monitor = start_monitoring(port=8080)
@@ -101,8 +101,8 @@ result = monitored_skill("test")
 
 **Wiring:**
 ```python
-from piranha import Agent
-from piranha.collaboration import MultiAgentCollaboration, AgentRole
+from piranha_agent import Agent
+from piranha_agent.collaboration import MultiAgentCollaboration, AgentRole
 
 # Create collaboration
 collab = MultiAgentCollaboration(auto_monitor=True)
@@ -258,7 +258,7 @@ System Validation:                     PASS ✓
 ### 1. Quick Start with Monitoring
 
 ```python
-from piranha import Agent, Task, start_monitoring, monitor_agent
+from piranha_agent import Agent, Task, start_monitoring, monitor_agent
 
 # Start monitoring
 monitor = start_monitoring(port=8080)
@@ -277,8 +277,8 @@ result = task.run()
 ### 2. Multi-Agent Collaboration
 
 ```python
-from piranha import Agent
-from piranha.collaboration import MultiAgentCollaboration, AgentRole
+from piranha_agent import Agent
+from piranha_agent.collaboration import MultiAgentCollaboration, AgentRole
 
 # Create collaboration
 collab = MultiAgentCollaboration(auto_monitor=True)
@@ -306,7 +306,7 @@ report = collab.get_collaboration_report()
 ### 3. Auto-Monitored Skills
 
 ```python
-from piranha import skill
+from piranha_agent import skill
 
 @skill(
     name="calculate_tax",

@@ -1,8 +1,8 @@
 """Tests for Piranha Python SDK."""
 
 import pytest
-from piranha import Agent, Task, Session, Skill
-from piranha.skill import skill
+from piranha_agent import Agent, Task, Session, Skill
+from piranha_agent.skill import skill
 
 
 class TestAgent:
@@ -196,7 +196,7 @@ class TestAgentResponse:
 
     def test_response_creation(self):
         """Test creating a response."""
-        from piranha.agent import AgentResponse
+        from piranha_agent.agent import AgentResponse
         response = AgentResponse(result="test", model="gpt-4")
         assert response.result == "test"
         assert response.model == "gpt-4"
@@ -204,12 +204,12 @@ class TestAgentResponse:
 
     def test_response_string(self):
         """Test response string representation."""
-        from piranha.agent import AgentResponse
+        from piranha_agent.agent import AgentResponse
         response = AgentResponse(result="hello")
         assert str(response) == "hello"
 
     def test_response_cached_string(self):
         """Test cached response string representation."""
-        from piranha.agent import AgentResponse
+        from piranha_agent.agent import AgentResponse
         response = AgentResponse(result="cached", cache_hit=True)
         assert "(cached)" in str(response)

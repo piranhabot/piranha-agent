@@ -7,7 +7,7 @@ This example demonstrates:
 - Viewing the response
 """
 
-from piranha import Agent, Task
+from piranha_agent import Agent, Task
 
 
 def main():

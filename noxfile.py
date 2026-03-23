@@ -10,4 +10,4 @@ def tests(session):
 def lint(session):
     session.install("ruff", "mypy")
     session.run("ruff", "check", ".")
-    session.run("mypy", "piranha/")
+    session.run("mypy", "piranha_agent/")

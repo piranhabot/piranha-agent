@@ -42,7 +42,7 @@ class TestGradioDebugger:
 
     def test_debugger_module_imports(self):
         """Test that debugger module imports correctly."""
-        from piranha import debugger
+        from piranha_agent import debugger
         assert hasattr(debugger, 'load_trace')
         assert hasattr(debugger, 'parse_events')
         assert hasattr(debugger, 'format_event')
@@ -50,7 +50,7 @@ class TestGradioDebugger:
 
     def test_load_trace_function(self, db_path):
         """Test load_trace function."""
-        from piranha.debugger import load_trace
+        from piranha_agent.debugger import load_trace
         
         session_id = "550e8400-e29b-41d4-a716-446655440003"
         trace_json, status = load_trace(session_id, db_path)
@@ -65,7 +65,7 @@ class TestGradioDebugger:
 
     def test_load_trace_invalid_session(self):
         """Test load_trace with invalid session."""
-        from piranha.debugger import load_trace
+        from piranha_agent.debugger import load_trace
         
         trace_json, status = load_trace("invalid-session-id")
         
@@ -74,7 +74,7 @@ class TestGradioDebugger:
 
     def test_parse_events_function(self):
         """Test parse_events function."""
-        from piranha.debugger import parse_events
+        from piranha_agent.debugger import parse_events
         
         trace_json = json.dumps({
             "events": [
@@ -91,7 +91,7 @@ class TestGradioDebugger:
 
     def test_parse_events_empty(self):
         """Test parse_events with empty trace."""
-        from piranha.debugger import parse_events
+        from piranha_agent.debugger import parse_events
         
         events = parse_events("{}")
         assert events == []
@@ -101,7 +101,7 @@ class TestGradioDebugger:
 
     def test_format_event_function(self):
         """Test format_event function."""
-        from piranha.debugger import format_event
+        from piranha_agent.debugger import format_event
         
         event = {
             "event_type": "LlmCall",
@@ -120,7 +120,7 @@ class TestGradioDebugger:
 
     def test_create_ui_function(self):
         """Test create_ui function returns Gradio app."""
-        from piranha.debugger import create_ui
+        from piranha_agent.debugger import create_ui
         
         ui = create_ui()
         
@@ -130,7 +130,7 @@ class TestGradioDebugger:
 
     def test_debugger_event_types(self):
         """Test that debugger handles various event types."""
-        from piranha.debugger import format_event
+        from piranha_agent.debugger import format_event
         
         event_types = [
             "LlmCall",
@@ -157,7 +157,7 @@ class TestGradioDebugger:
 
     def test_debugger_trace_export(self, db_path):
         """Test trace export functionality."""
-        from piranha.debugger import load_trace
+        from piranha_agent.debugger import load_trace
         
         session_id = "550e8400-e29b-41d4-a716-446655440003"
         trace_json, status = load_trace(session_id, db_path)
@@ -168,7 +168,7 @@ class TestGradioDebugger:
 
     def test_debugger_cost_calculation(self, db_path):
         """Test that debugger correctly shows cost information."""
-        from piranha.debugger import load_trace, parse_events
+        from piranha_agent.debugger import load_trace, parse_events
         
         session_id = "550e8400-e29b-41d4-a716-446655440003"
         trace_json, _ = load_trace(session_id, db_path)

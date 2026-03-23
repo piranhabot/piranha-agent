@@ -13,8 +13,8 @@ Usage:
 """
 
 import httpx
-from piranha import Agent, Task
-from piranha.skill import skill
+from piranha_agent import Agent, Task
+from piranha_agent.skill import skill
 
 
 # Define a skill for calling Ollama

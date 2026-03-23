@@ -138,7 +138,7 @@ POST /api/wasm/execute
 ### Python Code
 
 ```python
-from piranha import start_monitoring, WasmRunner
+from piranha_agent import start_monitoring, WasmRunner
 
 # Start monitoring
 monitor = start_monitoring(port=8080)

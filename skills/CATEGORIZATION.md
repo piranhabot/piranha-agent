@@ -206,7 +206,7 @@ Comprehensive categorization of all 46+ Claude Skills available in Piranha Agent
 From https://github.com/anthropics/skills
 
 ```python
-from piranha.official_claude_skills import register_official_claude_skills
+from piranha_agent.official_claude_skills import register_official_claude_skills
 register_official_claude_skills(agent)
 ```
 
@@ -216,7 +216,7 @@ register_official_claude_skills(agent)
 From https://github.com/ComposioHQ/awesome-claude-skills
 
 ```python
-from piranha.complete_claude_skills import register_additional_claude_skills
+from piranha_agent.complete_claude_skills import register_additional_claude_skills
 register_additional_claude_skills(agent)
 ```
 
@@ -226,7 +226,7 @@ register_additional_claude_skills(agent)
 Piranha-specific implementations
 
 ```python
-from piranha.claude_skills import register_claude_skills
+from piranha_agent.claude_skills import register_claude_skills
 register_claude_skills(agent)
 ```
 
@@ -238,7 +238,7 @@ register_claude_skills(agent)
 
 ### For Developers
 ```python
-from piranha.official_claude_skills import (
+from piranha_agent.official_claude_skills import (
     frontend_design,
     mcp_builder,
     test_driven_development,
@@ -248,7 +248,7 @@ from piranha.official_claude_skills import (
 
 ### For Researchers
 ```python
-from piranha.complete_claude_skills import (
+from piranha_agent.complete_claude_skills import (
     deep_research,
     root_cause_tracing,
     article_extractor,
@@ -257,7 +257,7 @@ from piranha.complete_claude_skills import (
 
 ### For Business Users
 ```python
-from piranha.complete_claude_skills import (
+from piranha_agent.complete_claude_skills import (
     competitive_ads_extractor,
     domain_name_brainstormer,
     lead_research_assistant,
@@ -267,12 +267,12 @@ from piranha.complete_claude_skills import (
 
 ### For Content Creators
 ```python
-from piranha.claude_skills import (
+from piranha_agent.claude_skills import (
     creative_writing,
     summarize_text,
     edit_improve_text,
 )
-from piranha.complete_claude_skills import (
+from piranha_agent.complete_claude_skills import (
     content_research_writer,
     brainstorming,
 )
@@ -280,11 +280,11 @@ from piranha.complete_claude_skills import (
 
 ### For Data Analysts
 ```python
-from piranha.official_claude_skills import (
+from piranha_agent.official_claude_skills import (
     csv_data_summarizer,
     postgres,
 )
-from piranha.claude_skills import (
+from piranha_agent.claude_skills import (
     statistical_analysis,
 )
 ```

@@ -199,7 +199,7 @@ Expected output
 ### LLM Provider Example
 
 ```python
-from piranha import Agent, LLMProvider
+from piranha_agent import Agent, LLMProvider
 
 # Local LLM
 agent = Agent(

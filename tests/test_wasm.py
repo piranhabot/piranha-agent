@@ -1,7 +1,7 @@
 """Tests for Wasm Sandbox Integration (Phase 2)."""
 
 import pytest
-from piranha import WasmRunner, DynamicSkillCompiler
+from piranha_agent import WasmRunner, DynamicSkillCompiler
 
 
 class TestWasmRunner:

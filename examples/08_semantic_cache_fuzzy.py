@@ -14,7 +14,7 @@ Usage:
     python examples/08_semantic_cache_fuzzy.py
 """
 
-from piranha import SemanticCache
+from piranha_agent import SemanticCache
 
 
 def main():

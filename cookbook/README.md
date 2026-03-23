@@ -47,7 +47,7 @@ A collection of recipes for common AI agent use cases and patterns.
 **Solution:**
 
 ```python
-from piranha import Agent, Task
+from piranha_agent import Agent, Task
 
 # Create agent
 agent = Agent(
@@ -77,7 +77,7 @@ print(result)
 **Solution:**
 
 ```python
-from piranha import Agent, Task
+from piranha_agent import Agent, Task
 
 agent = Agent(model="ollama/llama3:latest")
 
@@ -102,7 +102,7 @@ print(f"Result: {result.result}")
 **Solution:**
 
 ```python
-from piranha import Agent, Task
+from piranha_agent import Agent, Task
 
 # First, install Ollama: https://ollama.ai
 # Then pull a model: ollama pull llama3:latest
@@ -128,8 +128,8 @@ print(result)
 **Solution:**
 
 ```python
-from piranha import Agent
-from piranha.complete_claude_skills import (
+from piranha_agent import Agent
+from piranha_agent.complete_claude_skills import (
     register_complete_claude_skills,
     deep_research,
     frontend_design,
@@ -157,8 +157,8 @@ review = code_review(code=my_code, focus_areas=["Security"])
 **Solution:**
 
 ```python
-from piranha import Agent, Skill
-from piranha.skill import skill
+from piranha_agent import Agent, Skill
+from piranha_agent.skill import skill
 
 # Method 1: Using decorator
 @skill(
@@ -201,10 +201,10 @@ agent = Agent(name="custom-agent", skills=[calculate_tax, custom_skill])
 **Solution:**
 
 ```python
-from piranha import Agent
-from piranha.claude_skills import get_all_claude_skills
-from piranha.official_claude_skills import get_all_official_claude_skills
-from piranha.complete_claude_skills import get_all_additional_claude_skills
+from piranha_agent import Agent
+from piranha_agent.claude_skills import get_all_claude_skills
+from piranha_agent.official_claude_skills import get_all_official_claude_skills
+from piranha_agent.complete_claude_skills import get_all_additional_claude_skills
 
 # Get all skills from different modules
 all_skills = (
@@ -232,7 +232,7 @@ print(f"Registered {len(agent.skills)} skills")
 **Solution:**
 
 ```python
-from piranha import SemanticCache
+from piranha_agent import SemanticCache
 
 # Create cache
 cache = SemanticCache(ttl_hours=24, max_entries=10000)
@@ -268,7 +268,7 @@ else:
 **Solution:**
 
 ```python
-from piranha import WasmRunner
+from piranha_agent import WasmRunner
 
 # Create Wasm runner
 runner = WasmRunner()
@@ -302,16 +302,16 @@ print(f"Time: {result['execution_time_ms']}ms")
 
 ```python
 # Method 1: Launch from CLI
-# Run: piranha debug
+# Run: piranha-agent debug
 
 # Method 2: Programmatically
-from piranha import create_debugger_ui
+from piranha_agent import create_debugger_ui
 
 ui = create_debugger_ui()
 ui.launch()
 
 # Method 3: Export trace for analysis
-from piranha import Agent, Task
+from piranha_agent import Agent, Task
 
 agent = Agent(name="debug-agent", model="ollama/llama3:latest")
 task = Task(description="Test task", agent=agent)
@@ -335,7 +335,7 @@ print(f"Trace size: {len(trace)} bytes")
 **Solution:**
 
 ```python
-from piranha import Agent, Task
+from piranha_agent import Agent, Task
 
 # Create specialized agents
 researcher = Agent(
@@ -389,8 +389,8 @@ print(final_result.result)
 **Solution:**
 
 ```python
-from piranha import Agent, Task
-from piranha.memory import MemoryManager
+from piranha_agent import Agent, Task
+from piranha_agent.memory import MemoryManager
 
 # Shared memory for communication
 shared_memory = MemoryManager()
@@ -416,7 +416,7 @@ for memory, score in search_results:
 **Solution:**
 
 ```python
-from piranha import AgentOrchestrator, DistributedAgent
+from piranha_agent import AgentOrchestrator, DistributedAgent
 
 # Create orchestrator
 orchestrator = AgentOrchestrator(queue_size=100)
@@ -455,7 +455,7 @@ for worker_id, tasks_completed in stats:
 **Solution:**
 
 ```python
-from piranha import PostgresEventStore
+from piranha_agent import PostgresEventStore
 
 # Create PostgreSQL store
 store = PostgresEventStore(
@@ -480,7 +480,7 @@ print(store.get_connection_info())
 **Solution:**
 
 ```python
-from piranha import Agent, Task
+from piranha_agent import Agent, Task
 
 agent = Agent(name="cost-tracker", model="anthropic/claude-3-5-sonnet")
 
@@ -508,7 +508,7 @@ trace = agent.export_trace()
 **Solution:**
 
 ```python
-from piranha import Agent
+from piranha_agent import Agent
 from piranha_core import GuardrailEngine
 
 # Create guardrail engine
@@ -544,7 +544,7 @@ else:
 **Solution:**
 
 ```python
-from piranha import SemanticCache, EmbeddingModel
+from piranha_agent import SemanticCache, EmbeddingModel
 
 # Option 1: sentence-transformers (local, free)
 model = EmbeddingModel(
@@ -623,7 +623,7 @@ result = cache.get_fuzzy("Tell me about Python programming", "llama3")
 **Solution:**
 
 ```python
-from piranha import Agent
+from piranha_agent import Agent
 
 agent = Agent(name="streaming-agent", model="ollama/llama3:latest")
 

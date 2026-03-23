@@ -7,7 +7,7 @@ Usage:
     python examples/12_wasm_tracking.py
 """
 
-from piranha import start_monitoring, WasmRunner
+from piranha_agent import start_monitoring, WasmRunner
 import time
 
 

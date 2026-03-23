@@ -92,8 +92,8 @@ Complete collection of Claude Skills for Piranha Agent framework.
 ### Quick Start
 
 ```python
-from piranha import Agent
-from piranha.complete_claude_skills import register_complete_claude_skills
+from piranha_agent import Agent
+from piranha_agent.complete_claude_skills import register_complete_claude_skills
 
 # Create agent
 agent = Agent(
@@ -106,17 +106,17 @@ agent = Agent(
 register_complete_claude_skills(agent)
 
 # Or register specific categories
-from piranha.official_claude_skills import register_official_claude_skills
+from piranha_agent.official_claude_skills import register_official_claude_skills
 register_official_claude_skills(agent)  # 16 official skills
 
-from piranha.complete_claude_skills import register_additional_claude_skills
+from piranha_agent.complete_claude_skills import register_additional_claude_skills
 register_additional_claude_skills(agent)  # 16 additional skills
 ```
 
 ### Using Individual Skills
 
 ```python
-from piranha.complete_claude_skills import (
+from piranha_agent.complete_claude_skills import (
     deep_research,
     frontend_design,
     code_review,

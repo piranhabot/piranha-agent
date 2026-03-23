@@ -7,7 +7,7 @@ Usage:
     python examples/11_piranha_studio.py
 """
 
-from piranha import (
+from piranha_agent import (
     Agent,
     Task,
     start_monitoring,

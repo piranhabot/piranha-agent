@@ -7,8 +7,8 @@ Usage:
     python examples/10_official_claude_skills.py
 """
 
-from piranha import Agent
-from piranha.official_claude_skills import (
+from piranha_agent import Agent
+from piranha_agent.official_claude_skills import (
     get_all_official_claude_skills,
 )
 
@@ -233,7 +233,7 @@ def main():
     print("  ✓ git-workflows - Git management")
     print()
     print("Usage:")
-    print("  from piranha.official_claude_skills import register_official_claude_skills")
+    print("  from piranha_agent.official_claude_skills import register_official_claude_skills")
     print("  register_official_claude_skills(agent)")
     print()
     print("References:")

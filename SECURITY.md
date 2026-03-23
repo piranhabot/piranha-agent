@@ -322,7 +322,7 @@ curl http://localhost:8080/api/security/check
 ### Via Python
 
 ```python
-from piranha.security import run_security_check
+from piranha_agent.security import run_security_check
 
 result = run_security_check()
 print(f"Status: {result['status']}")

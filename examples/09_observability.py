@@ -11,7 +11,7 @@ Usage:
     python examples/09_observability.py
 """
 
-from piranha import (
+from piranha_agent import (
     Agent,
 )
 
@@ -49,7 +49,7 @@ def main():
     print("-" * 70)
     print()
 
-    from piranha.observability import AlertConfig
+    from piranha_agent.observability import AlertConfig
 
     # High cost alert - $5 per minute
     obs.alerts.register_config(AlertConfig(

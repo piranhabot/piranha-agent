@@ -87,7 +87,7 @@ Piranha Studio now has **multiple UI interfaces** for different purposes:
 ### Example Usage
 
 ```python
-from piranha.memory import MemoryManager
+from piranha_agent.memory import MemoryManager
 
 # Create memory manager
 memory = MemoryManager()
@@ -156,10 +156,10 @@ for mem, score in results:
 
 ```bash
 # Launch debugger
-piranha debug
+piranha-agent debug
 
 # Or programmatically
-python -c "from piranha import create_debugger_ui; create_debugger_ui().launch()"
+python -c "from piranha_agent import create_debugger_ui; create_debugger_ui().launch()"
 ```
 
 ---
@@ -173,10 +173,10 @@ python -c "from piranha import create_debugger_ui; create_debugger_ui().launch()
 
 ```bash
 # Launch debugger
-piranha debug
+piranha-agent debug
 
 # Interactive agent
-piranha agent
+piranha-agent agent
 
 # Version info
 piranha version

@@ -47,7 +47,7 @@ DEFAULT_BENCHMARK_MODEL = "ollama/llama3:latest"
 
 def benchmark_agent_creation(runner: "BenchmarkRunner"):
     """Benchmark: Agent creation speed."""
-    from piranha import Agent
+    from piranha_agent import Agent
     def create_agent():
         return Agent(name="test", model=DEFAULT_BENCHMARK_MODEL)
     result = runner.run("Agent Creation", create_agent, iterations=50)
@@ -158,7 +158,7 @@ def benchmark_wasm_validate(runner: "BenchmarkRunner"):
 
 def benchmark_memory_vector_search(runner: "BenchmarkRunner"):
     """Benchmark: Memory vector search performance."""
-    from piranha.memory import VectorStore
+    from piranha_agent.memory import VectorStore
     store = VectorStore()
     for i in range(1000):
         # Create varied, unique vectors for better search benchmarking
@@ -173,7 +173,7 @@ def benchmark_memory_vector_search(runner: "BenchmarkRunner"):
 
 def benchmark_observability_metrics(runner: "BenchmarkRunner"):
     """Benchmark: Observability metrics collection."""
-    from piranha.observability import MetricsCollector
+    from piranha_agent.observability import MetricsCollector
     metrics = MetricsCollector()
     def record_metrics():
         metrics.increment_counter("requests_total")
@@ -185,7 +185,7 @@ def benchmark_observability_metrics(runner: "BenchmarkRunner"):
 
 def benchmark_cost_anomaly_detection(runner: "BenchmarkRunner"):
     """Benchmark: Cost anomaly detection performance."""
-    from piranha.observability import CostAnomalyDetector
+    from piranha_agent.observability import CostAnomalyDetector
     detector = CostAnomalyDetector(window_size=DEFAULT_ANOMALY_WINDOW_SIZE)
     for _ in range(DEFAULT_ANOMALY_WINDOW_SIZE):
         detector.record_cost(0.001)
@@ -197,7 +197,7 @@ def benchmark_cost_anomaly_detection(runner: "BenchmarkRunner"):
 
 def benchmark_concurrent_agent_execution(runner: "BenchmarkRunner"):
     """Benchmark: Concurrent agent execution."""
-    from piranha import Agent
+    from piranha_agent import Agent
     def create_and_run():
         agent = Agent(name="test", model=DEFAULT_BENCHMARK_MODEL)
         return agent.id
@@ -212,7 +212,7 @@ def benchmark_concurrent_agent_execution(runner: "BenchmarkRunner"):
 
 def benchmark_export_prometheus(runner: "BenchmarkRunner"):
     """Benchmark: Prometheus metrics export."""
-    from piranha.observability import MetricsCollector
+    from piranha_agent.observability import MetricsCollector
     metrics = MetricsCollector()
     for i in range(100):
         metrics.increment_counter("requests_total", labels={"endpoint": f"/api/{i}"})
@@ -571,7 +571,7 @@ class TestPiranhaBenchmarks:
     
     @pytest.fixture
     def agent(self):
-        from piranha import Agent
+        from piranha_agent import Agent
         return Agent(name="benchmark-agent", model=DEFAULT_BENCHMARK_MODEL)
     
     @pytest.fixture

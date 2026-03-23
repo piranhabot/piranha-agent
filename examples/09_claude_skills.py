@@ -7,8 +7,8 @@ Usage:
     python examples/09_claude_skills.py
 """
 
-from piranha import Agent
-from piranha.claude_skills import (
+from piranha_agent import Agent
+from piranha_agent.claude_skills import (
     analyze_complex_problem,
     logical_reasoning,
     explain_code,
@@ -239,7 +239,7 @@ def calculate_sum(numbers):
     print("  - Data Analysis")
     print()
     print("Usage:")
-    print("  from piranha.claude_skills import register_claude_skills")
+    print("  from piranha_agent.claude_skills import register_claude_skills")
     print("  register_claude_skills(agent)")
     print()
 

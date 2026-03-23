@@ -265,7 +265,7 @@ pip install -e ".[dev]"
 ### Verify Installation
 
 ```bash
-python -c "from piranha import Agent; print('✓ Piranha installed!')"
+python -c "from piranha_agent import Agent; print('✓ Piranha installed!')"
 ```
 
 ---
@@ -275,7 +275,7 @@ python -c "from piranha import Agent; print('✓ Piranha installed!')"
 ### 1. Basic Agent with Local LLM
 
 ```python
-from piranha import Agent, Task
+from piranha_agent import Agent, Task
 
 # Create agent with Ollama and strict security
 agent = Agent(
@@ -296,8 +296,8 @@ print(result.content)
 
 ```python
 import asyncio
-from piranha import AsyncAgent as Agent
-from piranha.complete_claude_skills import register_complete_claude_skills
+from piranha_agent import AsyncAgent as Agent
+from piranha_agent.complete_claude_skills import register_complete_claude_skills
 
 async def main():
     # Create async agent
@@ -323,7 +323,7 @@ if __name__ == "__main__":
 ### 3. Wasm Sandbox for Safe Code Execution
 
 ```python
-from piranha import WasmRunner
+from piranha_agent import WasmRunner
 
 # Create Wasm runner
 runner = WasmRunner()
@@ -346,7 +346,7 @@ print(f"Success: {result['success']}, Time: {result['execution_time_ms']}ms")
 ### 4. Semantic Memory with Real Embeddings
 
 ```python
-from piranha import MemoryManager, EmbeddingModel
+from piranha_agent import MemoryManager, EmbeddingModel
 
 # Use real semantic embeddings with SQLite-based persistence
 model = EmbeddingModel(provider="ollama", model="nomic-embed-text")
@@ -379,8 +379,8 @@ piranha-agent debug
 ### 6. Multi-Agent Collaboration (Shared Message Bus)
 
 ```python
-from piranha import Agent
-from piranha.collaboration import MultiAgentCollaboration, AgentRole
+from piranha_agent import Agent
+from piranha_agent.collaboration import MultiAgentCollaboration, AgentRole
 
 # Create collaboration with Shared Message Bus
 collab = MultiAgentCollaboration()
@@ -414,7 +414,7 @@ piranha monitor
 ### 8. Observability & Metrics
 
 ```python
-from piranha import ObservabilityManager, init_observability
+from piranha_agent import ObservabilityManager, init_observability
 
 # Initialize observability
 obs = init_observability(
@@ -443,7 +443,7 @@ anomaly = obs.cost_detector.record_cost(0.01)  # Detects 10x normal cost
 ### 9. No-Code Visual Builder
 
 ```python
-from piranha import create_nocode_ui
+from piranha_agent import create_nocode_ui
 
 # Launch visual builder
 ui = create_nocode_ui()
@@ -802,7 +802,7 @@ We welcome contributions of all kinds! Please check out these resources to get s
 | **Wasm Sandbox** | [examples/07_wasm_sandbox.py](examples/07_wasm_sandbox.py) |
 | **Semantic Cache** | [examples/08_semantic_cache_fuzzy.py](examples/08_semantic_cache_fuzzy.py) |
 | **Observability** | [examples/09_observability.py](examples/09_observability.py) |
-| **No-Code Builder** | `python -c "from piranha import create_nocode_ui; create_nocode_ui().launch()"` |
+| **No-Code Builder** | `python -c "from piranha_agent import create_nocode_ui; create_nocode_ui().launch()"` |
 | **Time-Travel Debugger** | `piranha-agent debug` |
 | **Benchmarks** | [tests/test_benchmarking.py](tests/test_benchmarking.py) |
 | **Skills Catalog** | [skills/CATEGORIZATION.md](skills/CATEGORIZATION.md) |

@@ -149,8 +149,8 @@ Claude Skills are specialized capabilities that extend Piranha Agent's functiona
 ### Via Python
 
 ```python
-from piranha import Agent
-from piranha.claude_skills import register_complete_claude_skills
+from piranha_agent import Agent
+from piranha_agent.claude_skills import register_complete_claude_skills
 
 # Create agent
 agent = Agent(name="assistant", model="ollama/llama3:latest")
@@ -159,7 +159,7 @@ agent = Agent(name="assistant", model="ollama/llama3:latest")
 register_complete_claude_skills(agent)
 
 # Use specific skill
-from piranha.complete_claude_skills import deep_research
+from piranha_agent.complete_claude_skills import deep_research
 
 result = deep_research(
     topic="AI agent frameworks",
@@ -181,7 +181,7 @@ result = deep_research(
 ### Skill Template
 
 ```python
-from piranha import skill
+from piranha_agent import skill
 
 @skill(
     name="my_custom_skill",

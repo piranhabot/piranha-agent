@@ -1,6 +1,6 @@
 """Tests for Embedding-based Semantic Cache with Fuzzy Matching (Phase 4)."""
 
-from piranha import SemanticCache
+from piranha_agent import SemanticCache
 
 
 def approx_equal(a, b, tolerance=0.001):

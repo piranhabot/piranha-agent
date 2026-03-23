@@ -44,7 +44,7 @@ Fixed **10 remaining unused imports** to achieve 100% clean codebase with zero i
 ### 1. examples/example.py
 ```python
 # Removed: Skill (unused)
-from piranha import (
+from piranha_agent import (
     Agent,
     Task,
 )
@@ -70,13 +70,13 @@ from slowapi import Limiter
 ### 4. tests/validate_system.py
 ```python
 # Removed: asyncio (unused)
-from piranha import (...)
+from piranha_agent import (...)
 ```
 
 ### 5. examples/06_complete_features.py
 ```python
 # Removed: AgentGroup (unused)
-from piranha import (
+from piranha_agent import (
     Agent,
     AsyncAgent,
     skill,
@@ -86,7 +86,7 @@ from piranha import (
 ### 6. examples/09_claude_skills.py
 ```python
 # Removed: register_claude_skills (unused)
-from piranha.claude_skills import (
+from piranha_agent.claude_skills import (
     analyze_complex_problem,
     # ... other skills
     step_by_step_solver,
@@ -201,7 +201,7 @@ pytest tests/ -q
 ### Check Imports
 ```bash
 # Verify all imports work
-python -c "from piranha import *"
+python -c "from piranha_agent import *"
 
 # Result: ✅ Success
 ```
@@ -213,10 +213,10 @@ python -c "from piranha import *"
 ### 1. Import Only What You Use ✅
 ```python
 # ❌ Before
-from piranha import Agent, Task, Skill  # Skill unused
+from piranha_agent import Agent, Task, Skill  # Skill unused
 
 # ✅ After
-from piranha import Agent, Task
+from piranha_agent import Agent, Task
 ```
 
 ### 2. Remove Unused Stdlib Imports ✅

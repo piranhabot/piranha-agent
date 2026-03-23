@@ -7,9 +7,9 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from piranha.async_agent import AsyncAgent, AgentGroup
-from piranha.skill import Skill, skill
-from piranha.llm_provider import LLMResponse
+from piranha_agent.async_agent import AsyncAgent, AgentGroup
+from piranha_agent.skill import Skill, skill
+from piranha_agent.llm_provider import LLMResponse
 
 
 class TestAsyncAgent:
@@ -204,7 +204,7 @@ class TestAsyncAgent:
     @pytest.mark.asyncio
     async def test_run_streaming(self):
         """Test streaming response."""
-        import piranha
+        import piranha_agent
         print(f"\nDEBUG: piranha location: {piranha.__file__}")
         
         agent = AsyncAgent(name="test-agent", model="ollama/llama3:latest")

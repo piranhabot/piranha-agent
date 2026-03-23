@@ -7,8 +7,8 @@ This example demonstrates:
 - Using skills in task execution
 """
 
-from piranha import Agent, Task
-from piranha.skill import skill
+from piranha_agent import Agent, Task
+from piranha_agent.skill import skill
 
 
 # Define custom skills using the decorator

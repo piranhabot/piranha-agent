@@ -9,7 +9,7 @@ This example shows:
 - Multi-agent coordination
 """
 
-from piranha import (
+from piranha_agent import (
     Agent,
     AsyncAgent,
 )
@@ -31,7 +31,7 @@ def demo_llm_provider():
         api_base="http://localhost:11434",
     )
     
-    from piranha.llm_provider import LLMMessage
+    from piranha_agent.llm_provider import LLMMessage
     
     messages = [LLMMessage(role="user", content="Say hello in one word")]
     

@@ -40,12 +40,12 @@ def skill_registry():
 @pytest.fixture
 def agent():
     """Create a test agent."""
-    from piranha import Agent
+    from piranha_agent import Agent
     return Agent(name="test_agent", model="gpt-4-test")
 
 
 @pytest.fixture
 def session():
     """Create a test session."""
-    from piranha import Session
+    from piranha_agent import Session
     return Session.create()

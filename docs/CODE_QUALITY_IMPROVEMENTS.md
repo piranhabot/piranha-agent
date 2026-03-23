@@ -53,7 +53,7 @@ Fixed **12 files** with unused imports to improve code quality and maintainabili
 **Before:**
 ```python
 from typing import Optional
-from piranha.llm_provider import LLMProvider, LLMResponse
+from piranha_agent.llm_provider import LLMProvider, LLMResponse
 ```
 
 **After:**
@@ -67,7 +67,7 @@ from piranha.llm_provider import LLMProvider, LLMResponse
 
 **Before:**
 ```python
-from piranha import (
+from piranha_agent import (
     PiranhaAgent,
     Guardrail,
     GroupChat,
@@ -76,7 +76,7 @@ from piranha import (
 
 **After:**
 ```python
-from piranha import (
+from piranha_agent import (
     Agent,
     Task,
     Skill,
@@ -89,7 +89,7 @@ from piranha import (
 
 **Before:**
 ```python
-from piranha.official_claude_skills import (
+from piranha_agent.official_claude_skills import (
     docx_skill,
     pdf_skill,
     pptx_skill,
@@ -102,7 +102,7 @@ from piranha.official_claude_skills import (
 
 **After:**
 ```python
-from piranha.official_claude_skills import (
+from piranha_agent.official_claude_skills import (
     register_official_claude_skills,
     get_all_official_claude_skills,
 )
@@ -182,20 +182,20 @@ pytest tests/ -q
 ### 1. Import Only What You Use
 ```python
 # ❌ Bad
-from piranha import Agent, Task, Skill, unused_import
+from piranha_agent import Agent, Task, Skill, unused_import
 
 # ✅ Good
-from piranha import Agent, Task, Skill
+from piranha_agent import Agent, Task, Skill
 ```
 
 ### 2. Use Specific Imports
 ```python
 # ❌ Bad
-import piranha
+import piranha_agent
 piranha.Agent(...)
 
 # ✅ Good
-from piranha import Agent
+from piranha_agent import Agent
 ```
 
 ### 3. Group Imports Properly
@@ -209,7 +209,7 @@ import pytest
 import requests
 
 # Local imports
-from piranha import Agent
+from piranha_agent import Agent
 ```
 
 ---

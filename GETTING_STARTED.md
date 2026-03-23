@@ -26,7 +26,7 @@ Create your first agent in Python:
 
 ```python
 import asyncio
-from piranha import Agent
+from piranha_agent import Agent
 
 async def main():
     agent = Agent(name="Researcher")

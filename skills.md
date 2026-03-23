@@ -26,7 +26,7 @@ Static skills are built into the Piranha framework and available to all agents b
 ### Usage Example
 
 ```python
-from piranha import Agent, Skill
+from piranha_agent import Agent, Skill
 
 # Static skills are automatically available
 agent = Agent(name="assistant")
@@ -48,8 +48,8 @@ Dynamic skills are registered at runtime by users. They can be:
 ### Creating Dynamic Skills
 
 ```python
-from piranha import Skill
-from piranha.skill import skill
+from piranha_agent import Skill
+from piranha_agent.skill import skill
 
 # Using the decorator
 @skill(

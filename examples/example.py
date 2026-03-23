@@ -21,7 +21,7 @@ console = Console()
 # ---------------------------------------------------------------------------
 
 try:
-    from piranha import (
+    from piranha_agent import (
         AsyncAgent as Agent,
         Task,
         skill,

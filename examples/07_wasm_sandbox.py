@@ -12,7 +12,7 @@ Usage:
     python examples/07_wasm_sandbox.py
 """
 
-from piranha import WasmRunner, DynamicSkillCompiler
+from piranha_agent import WasmRunner, DynamicSkillCompiler
 
 
 def main():

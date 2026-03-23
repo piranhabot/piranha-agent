@@ -15,7 +15,7 @@ MAIN_MONITOR_PORT = 8080
 INTEGRATION_MONITOR_PORT = 8081
 WORKFLOW_MONITOR_PORT = 8082
 
-from piranha import (
+from piranha_agent import (
     Agent,
     Task,
     skill,
@@ -25,7 +25,7 @@ from piranha import (
     monitor_agent,
     get_monitor,
 )
-from piranha.memory import MemoryManager, ContextManager
+from piranha_agent.memory import MemoryManager, ContextManager
 from typing import Optional, List
 import asyncio
 import inspect

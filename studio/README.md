@@ -22,7 +22,7 @@ python -m piranha.realtime --port 8080
 Or programmatically:
 
 ```python
-from piranha import start_monitoring
+from piranha_agent import start_monitoring
 
 monitor = start_monitoring(port=8080)
 ```
@@ -42,7 +42,7 @@ Open http://localhost:3000 in your browser.
 ### Monitor Agents
 
 ```python
-from piranha import Agent, start_monitoring, monitor_agent
+from piranha_agent import Agent, start_monitoring, monitor_agent
 
 # Start monitoring server
 start_monitoring(port=8080)
@@ -182,7 +182,7 @@ python -m piranha.realtime --port 8080
 Check that agents are registered with the monitor:
 
 ```python
-from piranha import monitor_agent
+from piranha_agent import monitor_agent
 monitor_agent(agent)
 ```
 

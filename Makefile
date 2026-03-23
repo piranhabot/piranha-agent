@@ -33,7 +33,7 @@ bench:
 
 lint:
 	ruff check .
-	mypy piranha/
+	mypy piranha_agent/
 
 format:
 	ruff format .
