@@ -157,12 +157,12 @@ class TestAsyncAgent:
             "completion_tokens": 20,
             "cost_usd": 0.001,
         }
-        
-        with patch('piranha.async_agent.SemanticCache') as mock_cache_class:
+
+        with patch('piranha_agent.async_agent.SemanticCache') as mock_cache_class:
             mock_cache_instance = mock_cache_class.return_value
             mock_cache_instance.get.return_value = mock_cache_response
             mock_cache_instance.compute_key.return_value = "test_key"
-            
+
             agent = AsyncAgent(name="test-agent", model="ollama/llama3:latest")
             response = await agent.run("Test query")
 
@@ -205,7 +205,7 @@ class TestAsyncAgent:
     async def test_run_streaming(self):
         """Test streaming response."""
         import piranha_agent
-        print(f"\nDEBUG: piranha location: {piranha.__file__}")
+        print(f"\nDEBUG: piranha_agent location: {piranha_agent.__file__}")
         
         agent = AsyncAgent(name="test-agent", model="ollama/llama3:latest")
 
