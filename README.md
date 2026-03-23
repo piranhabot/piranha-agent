@@ -770,6 +770,17 @@ This project is licensed under the MIT License OR Apache-2.0 License - see the [
 
 ---
 
+## 🤝 Community & Contributing
+
+We welcome contributions of all kinds! Please check out these resources to get started:
+
+- **[Contributing Guide](CONTRIBUTING.md)**: How to set up your dev environment and submit a PR.
+- **[Code of Conduct](CODE_OF_CONDUCT.md)**: Our expectations for community behavior.
+- **[Support Guide](SUPPORT.md)**: Where to get help and how to report issues.
+- **[Changelog](CHANGELOG.md)**: Stay up to date with the latest changes.
+
+---
+
 ## 📬 Contact
 
 - **GitHub Issues**: [Report bugs or request features](https://github.com/piranha-agent/piranha-agent/issues)
