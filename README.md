@@ -713,7 +713,11 @@ Please read our [Contributing Guide](CONTRIBUTING.md) for details.
 | Phase 9 | **Benchmarking Suite** | ✅ Complete | Q1 2026 |
 | **Phase 10** | **GitHub Actions CI/CD** | 📋 Planned | Q2 2026 |
 | **Phase 11** | **PyPI Publishing** | 📋 Planned | Q2 2026 |
-| **Phase 12** | **Plugin Marketplace** | 📋 Planned | Q3 2026 |
+| **v0.5.0** | **IDE Marketplace Release** | 📋 Planned | Q2 2026 |
+| **v0.5.0** | **Cloud Sandbox Integration** | 📋 Planned | Q2 2026 |
+| **v0.5.0** | **Plugin Marketplace** | 📋 Planned | Q3 2026 |
+| **Future** | **FAISS/ChromaDB memory** | 📋 Planned | TBD |
+| **Future** | **Redis/RabbitMQ Scaling** | 📋 Planned | TBD |
 
 ---
 
