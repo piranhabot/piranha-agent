@@ -8,10 +8,11 @@ Usage:
 """
 
 import click
+from piranha import __version__
 
 
 @click.group()
-@click.version_option(version="0.4.0")
+@click.version_option(version=__version__)
 def main() -> None:
     """Piranha Agent CLI."""
     pass
@@ -77,7 +78,7 @@ def version() -> None:
     import piranha_core
     
     click.echo("🐍 Piranha Agent")
-    click.echo("  Python SDK: v0.4.0")
+    click.echo(f"  Python SDK: v{__version__}")
     click.echo(f"  Rust Core: v{piranha_core.__version__}")
     click.echo("  Features: LiteLLM, Async, Memory, Wasm, Time-Travel Debug")
 
