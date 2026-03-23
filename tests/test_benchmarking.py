@@ -41,6 +41,188 @@ EMBEDDING_DIMENSION = 384
 # Default model used across Piranha benchmarks
 DEFAULT_BENCHMARK_MODEL = "ollama/llama3:latest"
 
+# =============================================================================
+# Standalone Benchmark Functions
+# =============================================================================
+
+def benchmark_agent_creation(runner: BenchmarkRunner):
+    """Benchmark: Agent creation speed."""
+    from piranha import Agent
+    def create_agent():
+        return Agent(name="test", model=DEFAULT_BENCHMARK_MODEL)
+    result = runner.run("Agent Creation", create_agent, iterations=50)
+    print(f"\nAgent Creation: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+    max_avg_time_s = float(os.getenv("AGENT_CREATION_MAX_AVG_TIME_S", "0.01"))
+    assert result.avg_time < max_avg_time_s
+
+def benchmark_event_store_append(runner: BenchmarkRunner, event_store):
+    """Benchmark: Event store append performance."""
+    import uuid
+    def append_event():
+        return event_store.record_llm_call(
+            session_id=str(uuid.uuid4()),
+            agent_id=str(uuid.uuid4()),
+            model="llama3",
+            prompt_tokens=100,
+            completion_tokens=50,
+            cost_usd=0.001,
+            cache_hit=False,
+            context_event_count=10,
+        )
+    result = runner.run("EventStore Append", append_event, iterations=100)
+    print(f"\nEventStore Append: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+    assert result.throughput > 100
+
+def benchmark_semantic_cache_put(runner: BenchmarkRunner, semantic_cache):
+    """Benchmark: Semantic cache put performance."""
+    def put_cache():
+        semantic_cache.put(
+            key=f"test_{time.time()}",
+            response="Test response",
+            model="llama3",
+            prompt_tokens=10,
+            completion_tokens=20,
+            cost_usd=0.001,
+        )
+    result = runner.run("SemanticCache Put", put_cache, iterations=100)
+    print(f"\nSemanticCache Put: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+    assert result.throughput > 500
+
+def benchmark_semantic_cache_get(runner: BenchmarkRunner, semantic_cache):
+    """Benchmark: Semantic cache get performance."""
+    for i in range(100):
+        semantic_cache.put(
+            key=f"key_{i}",
+            response=f"Response {i}",
+            model="llama3",
+            prompt_tokens=10,
+            completion_tokens=20,
+            cost_usd=0.001,
+        )
+    def get_cache():
+        return semantic_cache.get("key_50")
+    result = runner.run("SemanticCache Get", get_cache, iterations=100)
+    print(f"\nSemanticCache Get: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+    assert result.throughput > 1000
+
+def benchmark_skill_registry_authorize(runner: BenchmarkRunner):
+    """Benchmark: Skill registry authorization performance."""
+    from piranha_core import SkillRegistry
+    import uuid
+    registry = SkillRegistry()
+    agent_id = str(uuid.uuid4())
+    registry.register_skill(
+        skill_id="test_skill",
+        name="Test Skill",
+        description="Benchmark skill for testing authorization performance with cache_access permission",
+        parameters_schema={},
+        permissions=["cache_access"],
+        inheritable=True,
+    )
+    registry.grant_skills(agent_id, ["test_skill"])
+    def authorize():
+        registry.authorize(agent_id, "test_skill")
+    result = runner.run("SkillRegistry Authorize", authorize, iterations=100)
+    print(f"\nSkillRegistry Authorize: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+    assert result.throughput > 1000
+
+def benchmark_guardrail_check(runner: BenchmarkRunner):
+    """Benchmark: Guardrail check performance."""
+    from piranha_core import GuardrailEngine
+    import uuid
+    engine = GuardrailEngine(token_budget=DEFAULT_GUARDRAIL_TOKEN_BUDGET)
+    agent_id = str(uuid.uuid4())
+    session_id = str(uuid.uuid4())
+    def check_guardrail():
+        return engine.check(
+            agent_id=agent_id,
+            session_id=session_id,
+            tokens_used=100,
+            token_budget=DEFAULT_GUARDRAIL_TOKEN_BUDGET,
+            pending_action=None,
+        )
+    result = runner.run("Guardrail Check", check_guardrail, iterations=100)
+    print(f"\nGuardrail Check: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+    assert result.throughput > 1000
+
+def benchmark_wasm_validate(runner: BenchmarkRunner):
+    """Benchmark: Wasm validation performance."""
+    from piranha_core import WasmRunner
+    wasm_runner = WasmRunner()
+    valid_wasm = bytes([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00])
+    def validate_wasm():
+        return wasm_runner.validate(valid_wasm)
+    result = runner.run("Wasm Validate", validate_wasm, iterations=100)
+    print(f"\nWasm Validate: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+    assert result.throughput > 10000
+
+def benchmark_memory_vector_search(runner: BenchmarkRunner):
+    """Benchmark: Memory vector search performance."""
+    from piranha.memory import VectorStore
+    store = VectorStore()
+    for i in range(1000):
+        # Create varied, unique vectors for better search benchmarking
+        vector = [float(i * EMBEDDING_DIMENSION + j) / 10000 for j in range(EMBEDDING_DIMENSION)]
+        store.add(f"item_{i}", vector, {"content": f"Item {i}"})
+    query_vector = [0.5] * EMBEDDING_DIMENSION
+    def search():
+        return store.similarity_search(query_vector, top_k=5)
+    result = runner.run("Vector Search (1K items)", search, iterations=50)
+    print(f"\nVector Search: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+    assert result.avg_time < 0.1
+
+def benchmark_observability_metrics(runner: BenchmarkRunner):
+    """Benchmark: Observability metrics collection."""
+    from piranha.observability import MetricsCollector
+    metrics = MetricsCollector()
+    def record_metrics():
+        metrics.increment_counter("requests_total")
+        metrics.record_histogram("request_latency", 50.0)
+        metrics.set_gauge("active_connections", 10)
+    result = runner.run("Metrics Collection", record_metrics, iterations=100)
+    print(f"\nMetrics Collection: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+    assert result.throughput > 10000
+
+def benchmark_cost_anomaly_detection(runner: BenchmarkRunner):
+    """Benchmark: Cost anomaly detection performance."""
+    from piranha.observability import CostAnomalyDetector
+    detector = CostAnomalyDetector(window_size=DEFAULT_ANOMALY_WINDOW_SIZE)
+    for _ in range(DEFAULT_ANOMALY_WINDOW_SIZE):
+        detector.record_cost(0.001)
+    def detect_anomaly():
+        return detector.record_cost(0.01)
+    result = runner.run("Cost Anomaly Detection", detect_anomaly, iterations=50)
+    print(f"\nCost Anomaly Detection: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+    assert result.avg_time < 0.001
+
+def benchmark_concurrent_agent_execution(runner: BenchmarkRunner):
+    """Benchmark: Concurrent agent execution."""
+    from piranha import Agent
+    def create_and_run():
+        agent = Agent(name="test", model=DEFAULT_BENCHMARK_MODEL)
+        return agent.id
+    result = runner.run_concurrent(
+        "Concurrent Agent Creation",
+        create_and_run,
+        concurrent_users=10,
+        requests_per_user=10,
+    )
+    print(f"\nConcurrent Agent Creation: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+    assert result.errors == 0
+
+def benchmark_export_prometheus(runner: BenchmarkRunner):
+    """Benchmark: Prometheus metrics export."""
+    from piranha.observability import MetricsCollector
+    metrics = MetricsCollector()
+    for i in range(100):
+        metrics.increment_counter("requests_total", labels={"endpoint": f"/api/{i}"})
+        metrics.record_histogram("latency", float(i))
+    def export():
+        return metrics.export_prometheus()
+    result = runner.run("Prometheus Export", export, iterations=20)
+    print(f"\nPrometheus Export: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
+    assert result.avg_time < 0.01
+
 @dataclass
 class BenchmarkResult:
     """Results from a benchmark run."""
@@ -250,13 +432,13 @@ class BenchmarkRunner:
             futures = [executor.submit(worker) for _ in range(concurrent_users)]
             # Use concurrent.futures.as_completed instead of asyncio.as_completed
             for future in as_completed(futures):
+                # The worker function already handles and records exceptions in 'errors'.
+                # We call result() only to ensure the future is complete and catch 
+                # any truly unhandled/system-level exceptions without double-counting.
                 try:
                     future.result()
                 except Exception:
-                    # Ensure any unexpected worker exceptions are recorded and logged
-                    with lock:
-                        errors += 1
-                    logger.exception("Unhandled exception in benchmark worker future")
+                    logger.exception("System-level exception in benchmark worker future")
         wall_end = time.perf_counter()
         wall_clock_time = wall_end - wall_start
         
@@ -366,7 +548,7 @@ class BenchmarkRunner:
 # =============================================================================
 
 class TestPiranhaBenchmarks:
-    """Benchmarks for Piranha Agent components."""
+    """Benchmarks for Piranha Agent components (Pytest Entry Points)."""
     
     @pytest.fixture
     def runner(self):
@@ -391,240 +573,40 @@ class TestPiranhaBenchmarks:
         return EventStore()
     
     def test_agent_creation_benchmark(self, runner):
-        """Benchmark: Agent creation speed.
-        
-        The acceptable average agent creation time threshold is configurable via
-        the AGENT_CREATION_MAX_AVG_TIME_S environment variable (in seconds).
-        """
-        from piranha import Agent
-        
-        def create_agent():
-            return Agent(name="test", model=DEFAULT_BENCHMARK_MODEL)
-        
-        result = runner.run("Agent Creation", create_agent, iterations=50)
-
-        print(f"\nAgent Creation: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
-        # Use environment variable for configurable threshold (default: 10ms)
-        max_avg_time_s = float(os.getenv("AGENT_CREATION_MAX_AVG_TIME_S", "0.01"))
-        assert result.avg_time < max_avg_time_s
+        benchmark_agent_creation(runner)
     
     def test_event_store_append_benchmark(self, runner, event_store):
-        """Benchmark: Event store append performance."""
-        import uuid
-        
-        def append_event():
-            return event_store.record_llm_call(
-                session_id=str(uuid.uuid4()),
-                agent_id=str(uuid.uuid4()),
-                model="llama3",
-                prompt_tokens=100,
-                completion_tokens=50,
-                cost_usd=0.001,
-                cache_hit=False,
-                context_event_count=10,
-            )
-        
-        result = runner.run("EventStore Append", append_event, iterations=100)
-        
-        print(f"\nEventStore Append: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
-        assert result.throughput > 100  # Should handle 100+ events/sec
+        benchmark_event_store_append(runner, event_store)
     
     def test_semantic_cache_put_benchmark(self, runner, semantic_cache):
-        """Benchmark: Semantic cache put performance."""
-        def put_cache():
-            semantic_cache.put(
-                key=f"test_{time.time()}",
-                response="Test response",
-                model="llama3",
-                prompt_tokens=10,
-                completion_tokens=20,
-                cost_usd=0.001,
-            )
-        
-        result = runner.run("SemanticCache Put", put_cache, iterations=100)
-        
-        print(f"\nSemanticCache Put: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
-        assert result.throughput > 500  # Should handle 500+ puts/sec
+        benchmark_semantic_cache_put(runner, semantic_cache)
     
     def test_semantic_cache_get_benchmark(self, runner, semantic_cache):
-        """Benchmark: Semantic cache get performance."""
-        # Pre-populate cache
-        for i in range(100):
-            semantic_cache.put(
-                key=f"key_{i}",
-                response=f"Response {i}",
-                model="llama3",
-                prompt_tokens=10,
-                completion_tokens=20,
-                cost_usd=0.001,
-            )
-        
-        def get_cache():
-            return semantic_cache.get("key_50")
-        
-        result = runner.run("SemanticCache Get", get_cache, iterations=100)
-        
-        print(f"\nSemanticCache Get: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
-        assert result.throughput > 1000  # Should handle 1000+ gets/sec
+        benchmark_semantic_cache_get(runner, semantic_cache)
     
     def test_skill_registry_authorize_benchmark(self, runner):
-        """Benchmark: Skill registry authorization performance."""
-        from piranha_core import SkillRegistry
-        import uuid
-        
-        registry = SkillRegistry()
-        agent_id = str(uuid.uuid4())
-        
-        # Register skill
-        registry.register_skill(
-            skill_id="test_skill",
-            name="Test Skill",
-            description="Benchmark skill for testing authorization performance with cache_access permission",
-            parameters_schema={},
-            permissions=["cache_access"],
-            inheritable=True,
-        )
-        registry.grant_skills(agent_id, ["test_skill"])
-        
-        def authorize():
-            registry.authorize(agent_id, "test_skill")
-        
-        result = runner.run("SkillRegistry Authorize", authorize, iterations=100)
-        
-        print(f"\nSkillRegistry Authorize: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
-        assert result.throughput > 1000  # Should handle 1000+ auth/sec
+        benchmark_skill_registry_authorize(runner)
     
     def test_guardrail_check_benchmark(self, runner):
-        """Benchmark: Guardrail check performance."""
-        from piranha_core import GuardrailEngine
-        import uuid
-
-        engine = GuardrailEngine(token_budget=DEFAULT_GUARDRAIL_TOKEN_BUDGET)
-        agent_id = str(uuid.uuid4())
-        session_id = str(uuid.uuid4())
-
-        def check_guardrail():
-            return engine.check(
-                agent_id=agent_id,
-                session_id=session_id,
-                tokens_used=100,
-                token_budget=DEFAULT_GUARDRAIL_TOKEN_BUDGET,
-                pending_action=None,
-            )
-        
-        result = runner.run("Guardrail Check", check_guardrail, iterations=100)
-        
-        print(f"\nGuardrail Check: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
-        assert result.throughput > 1000  # Should handle 1000+ checks/sec
+        benchmark_guardrail_check(runner)
     
     def test_wasm_validate_benchmark(self, runner):
-        """Benchmark: Wasm validation performance."""
-        from piranha_core import WasmRunner
-        
-        runner_instance = WasmRunner()
-        
-        # Valid Wasm magic number
-        valid_wasm = bytes([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00])
-        
-        def validate_wasm():
-            return runner_instance.validate(valid_wasm)
-        
-        result = runner.run("Wasm Validate", validate_wasm, iterations=100)
-        
-        print(f"\nWasm Validate: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
-        assert result.throughput > 10000  # Should handle 10K+ validations/sec
+        benchmark_wasm_validate(runner)
     
     def test_memory_vector_search_benchmark(self, runner):
-        """Benchmark: Memory vector search performance."""
-        from piranha.memory import VectorStore
-
-        store = VectorStore()
-
-        # Pre-populate with vectors
-        for i in range(1000):
-            vector = [float(i) / 100 for _ in range(EMBEDDING_DIMENSION)]  # Unique vectors
-            store.add(f"item_{i}", vector, {"content": f"Item {i}"})
-
-        query_vector = [0.5] * EMBEDDING_DIMENSION
-        
-        def search():
-            return store.similarity_search(query_vector, top_k=5)
-        
-        result = runner.run("Vector Search (1K items)", search, iterations=50)
-        
-        print(f"\nVector Search: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
-        assert result.avg_time < 0.1  # Should be < 100ms for 1K items
+        benchmark_memory_vector_search(runner)
     
     def test_observability_metrics_benchmark(self, runner):
-        """Benchmark: Observability metrics collection."""
-        from piranha.observability import MetricsCollector
-        
-        metrics = MetricsCollector()
-        
-        def record_metrics():
-            metrics.increment_counter("requests_total")
-            metrics.record_histogram("request_latency", 50.0)
-            metrics.set_gauge("active_connections", 10)
-        
-        result = runner.run("Metrics Collection", record_metrics, iterations=100)
-        
-        print(f"\nMetrics Collection: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
-        assert result.throughput > 10000  # Should handle 10K+ metrics/sec
+        benchmark_observability_metrics(runner)
     
     def test_cost_anomaly_detection_benchmark(self, runner):
-        """Benchmark: Cost anomaly detection performance."""
-        from piranha.observability import CostAnomalyDetector
-
-        detector = CostAnomalyDetector(window_size=DEFAULT_ANOMALY_WINDOW_SIZE)
-
-        # Pre-populate with normal costs
-        for _ in range(DEFAULT_ANOMALY_WINDOW_SIZE):
-            detector.record_cost(0.001)
-        
-        def detect_anomaly():
-            return detector.record_cost(0.01)  # 10x normal
-        
-        result = runner.run("Cost Anomaly Detection", detect_anomaly, iterations=50)
-        
-        print(f"\nCost Anomaly Detection: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
-        assert result.avg_time < 0.001  # Should be < 1ms
+        benchmark_cost_anomaly_detection(runner)
     
     def test_concurrent_agent_execution_benchmark(self, runner):
-        """Benchmark: Concurrent agent execution."""
-        from piranha import Agent
-        
-        def create_and_run():
-            agent = Agent(name="test", model=DEFAULT_BENCHMARK_MODEL)
-            return agent.id
-        
-        result = runner.run_concurrent(
-            "Concurrent Agent Creation",
-            create_and_run,
-            concurrent_users=10,
-            requests_per_user=10,
-        )
-        
-        print(f"\nConcurrent Agent Creation: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
-        assert result.errors == 0  # Should have no errors
+        benchmark_concurrent_agent_execution(runner)
     
     def test_export_prometheus_benchmark(self, runner):
-        """Benchmark: Prometheus metrics export."""
-        from piranha.observability import MetricsCollector
-        
-        metrics = MetricsCollector()
-        
-        # Add some metrics
-        for i in range(100):
-            metrics.increment_counter("requests_total", labels={"endpoint": f"/api/{i}"})
-            metrics.record_histogram("latency", float(i))
-        
-        def export():
-            return metrics.export_prometheus()
-        
-        result = runner.run("Prometheus Export", export, iterations=20)
-        
-        print(f"\nPrometheus Export: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
-        assert result.avg_time < 0.01  # Should be < 10ms
+        benchmark_export_prometheus(runner)
 
 
 def run_all_benchmarks():
@@ -635,9 +617,8 @@ def run_all_benchmarks():
     print()
 
     runner = BenchmarkRunner()
-    test_class = TestPiranhaBenchmarks()
 
-    # Create fixtures manually
+    # Create components manually for standalone run
     from piranha_core import SemanticCache, EventStore
 
     semantic_cache = SemanticCache(
@@ -646,19 +627,21 @@ def run_all_benchmarks():
     )
     event_store = EventStore()
     
-    # Run benchmarks
+    # Run all benchmarks
     print("Running benchmarks...\n")
     
-    test_class.test_event_store_append_benchmark(runner, event_store)
-    test_class.test_semantic_cache_put_benchmark(runner, semantic_cache)
-    test_class.test_semantic_cache_get_benchmark(runner, semantic_cache)
-    test_class.test_skill_registry_authorize_benchmark(runner)
-    test_class.test_guardrail_check_benchmark(runner)
-    test_class.test_wasm_validate_benchmark(runner)
-    test_class.test_memory_vector_search_benchmark(runner)
-    test_class.test_observability_metrics_benchmark(runner)
-    test_class.test_cost_anomaly_detection_benchmark(runner)
-    test_class.test_export_prometheus_benchmark(runner)
+    benchmark_agent_creation(runner)
+    benchmark_event_store_append(runner, event_store)
+    benchmark_semantic_cache_put(runner, semantic_cache)
+    benchmark_semantic_cache_get(runner, semantic_cache)
+    benchmark_skill_registry_authorize(runner)
+    benchmark_guardrail_check(runner)
+    benchmark_wasm_validate(runner)
+    benchmark_memory_vector_search(runner)
+    benchmark_observability_metrics(runner)
+    benchmark_cost_anomaly_detection(runner)
+    benchmark_concurrent_agent_execution(runner)
+    benchmark_export_prometheus(runner)
     
     # Generate report
     report = runner.generate_report()
