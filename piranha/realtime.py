@@ -34,6 +34,7 @@ from dataclasses import asdict
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
+import os
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Request
@@ -148,6 +149,28 @@ class Event(BaseModel):
     type: str  # agent.created, task.started, task.completed, etc.
     timestamp: str
     data: dict[str, Any]
+
+
+class GuardrailsConfig(BaseModel):
+    """Guardrail configuration model."""
+    token_budget: int = Field(..., description="Total token budget available")
+    max_tokens_per_request: int = Field(..., description="Maximum tokens allowed per request")
+    enable_content_filter: bool = Field(..., description="Whether content filtering is enabled")
+    blocked_actions: list[str] = Field(default_factory=list, description="List of blocked action identifiers")
+    warning_threshold: int = Field(..., description="Warning threshold as a percentage of budget used")
+
+
+class MemorySearchRequest(BaseModel):
+    """Request model for searching memories."""
+    query: str = Field("", description="Search query string")
+    top_k: int = Field(5, ge=1, le=100, description="Number of top results to return")
+
+
+class MemoryCreateRequest(BaseModel):
+    """Request model for creating a memory."""
+    content: str
+    tags: list[str] = Field(default_factory=list)
+    importance: float = Field(default=1.0, ge=0.0, le=1.0)
 
 
 # =============================================================================
@@ -310,8 +333,15 @@ class RealtimeMonitor:
         @self.app.get("/api/security/token")
         @get_limiter().limit("5/minute")
         async def get_token(request: Request):
-            """Get authentication token (for demo purposes)."""
-            token = create_access_token(data={"sub": "user", "role": "admin"})
+            """Get authentication token (for demo purposes only)."""
+            # Only allow this endpoint in explicit demo mode to avoid
+            # unauthenticated privilege escalation in production.
+            demo_mode = os.getenv("PIRANHA_DEMO_MODE", "").lower() in {"1", "true", "yes"}
+            if not demo_mode:
+                raise HTTPException(status_code=403, detail="Token endpoint disabled")
+            
+            # Issue a non-admin token even in demo mode to reduce impact
+            token = create_access_token(data={"sub": "demo-user", "role": "user"})
             return {"token": token, "expires_in": 3600}
         
         @self.app.get("/api/health")
@@ -420,8 +450,8 @@ class RealtimeMonitor:
             return {
                 "providers": [
                     {"id": "1", "name": "Ollama Local", "type": "local", "model": "ollama/llama3:latest", "status": "active", "is_default": True},
-                    {"id": "2", "name": "Claude API", "type": "cloud", "model": "anthropic/claude-3-5-sonnet", "api_base": "https://api.anthropic.com", "status": "active", "is_default": False},
-                    {"id": "3", "name": "OpenAI GPT-4", "type": "cloud", "model": "openai/gpt-4", "api_base": "https://api.openai.com", "status": "active", "is_default": False},
+                    {"id": "2", "name": "Claude API", "type": "cloud", "model": "anthropic/claude-3-5-sonnet", "api_id": "anthropic", "status": "active", "is_default": False},
+                    {"id": "3", "name": "OpenAI GPT-4", "type": "cloud", "model": "openai/gpt-4", "api_id": "openai", "status": "active", "is_default": False},
                     {"id": "4", "name": "Hugging Face", "type": "cloud", "model": "huggingface/meta-llama/Llama-2-70b", "status": "inactive", "is_default": False},
                     {"id": "5", "name": "OpenRouter", "type": "cloud", "model": "openrouter/meta-llama/llama-3-70b-instruct", "status": "active", "is_default": False},
                 ]
@@ -565,7 +595,7 @@ class RealtimeMonitor:
         
         @self.app.put("/api/guardrails")
         @get_limiter().limit("10/minute")
-        async def update_guardrails(config: dict, request: Request):
+        async def update_guardrails(config: GuardrailsConfig, request: Request):
             """Update guardrail configuration."""
             return {"status": "ok", "message": "Guardrails updated"}
         
@@ -591,10 +621,10 @@ class RealtimeMonitor:
         
         @self.app.post("/api/memory/search")
         @get_limiter().limit("60/minute")
-        async def search_memory(search_request: dict, request: Request):
+        async def search_memory(search_request: MemorySearchRequest, request: Request):
             """Search memories."""
-            query = search_request.get("query", "")
-            top_k = search_request.get("top_k", 5)
+            query = search_request.query
+            top_k = search_request.top_k
             results = self.memory_manager.search(query, top_k=top_k)
             
             # Format results
@@ -609,14 +639,14 @@ class RealtimeMonitor:
         
         @self.app.post("/api/memory")
         @get_limiter().limit("30/minute")
-        async def add_memory(memory_request: dict, request: Request):
+        async def add_memory(memory_request: MemoryCreateRequest, request: Request):
             """Add memory."""
-            content = memory_request.get("content", "")
+            content = memory_request.content
             if not content:
                 raise HTTPException(status_code=400, detail="Content is required")
                 
-            tags = memory_request.get("tags", [])
-            importance = memory_request.get("importance", 1.0)
+            tags = memory_request.tags
+            importance = memory_request.importance
             
             memory = self.memory_manager.add(content, tags=tags, importance=importance)
             return {"status": "ok", "memory_id": memory.id}

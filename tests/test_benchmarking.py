@@ -428,19 +428,17 @@ class BenchmarkRunner:
                     with lock:
                         errors += 1
         
-        # Run concurrent workers
-        wall_start = time.perf_counter()
-        with ThreadPoolExecutor(max_workers=concurrent_users) as executor:
-            futures = [executor.submit(worker) for _ in range(concurrent_users)]
-            # Use concurrent.futures.as_completed instead of asyncio.as_completed
-            for future in as_completed(futures):
-                # The worker function already handles and records exceptions in 'errors'.
-                # We call result() only to ensure the future is complete and catch 
-                # any truly unhandled/system-level exceptions without double-counting.
-                try:
-                    future.result()
-                except Exception:
-                    logger.exception("System-level exception in benchmark worker future")
+        # Use concurrent.futures.as_completed instead of asyncio.as_completed
+        for future in as_completed(futures):
+            # The worker function already handles and records exceptions in 'errors'.
+            # We call result() only to ensure the future is complete and catch 
+            # any truly unhandled/system-level exceptions without double-counting.
+            try:
+                future.result()
+            except Exception as e:
+                # Log only once to avoid flooding logs during mass failures
+                logger.error(f"System-level exception in benchmark worker: {e}")
+                
         wall_end = time.perf_counter()
         wall_clock_time = wall_end - wall_start
         
@@ -453,7 +451,8 @@ class BenchmarkRunner:
         median_time = statistics.median(times) if times else 0
         p95_time = self._percentile(times, 95)
         p99_time = self._percentile(times, 99)
-        throughput = total_requests / wall_clock_time if wall_clock_time > 0 else 0
+        # Use len(times) for accurate throughput of successful requests
+        throughput = len(times) / wall_clock_time if wall_clock_time > 0 else 0
         
         result = BenchmarkResult(
             name=f"{name} (concurrent={concurrent_users})",
@@ -529,6 +528,7 @@ class BenchmarkRunner:
         """Send benchmark results to Piranha Studio."""
         logger.info("Reporting %d results to monitor at %s...", len(self.results), url)
         
+        failed_count = 0
         for result in self.results:
             data = {
                 "name": result.name,
@@ -540,9 +540,16 @@ class BenchmarkRunner:
                 "errors": result.errors
             }
             try:
+                # Use a single request with retry logic would be better but let's 
+                # keep individual for now while catching errors more cleanly.
                 requests.post(f"{url}/api/benchmarks", json=data, timeout=5)
             except Exception as e:
-                logger.warning("Failed to report %s: %s", result.name, e)
+                failed_count += 1
+                if failed_count == 1:
+                    logger.warning("Failed to report result: %s. Subsequent failures will be suppressed.", e)
+        
+        if failed_count > 1:
+            logger.warning("Total failed reports: %d", failed_count)
 
 
 # =============================================================================
