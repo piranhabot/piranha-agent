@@ -22,12 +22,12 @@ Analysis of improvement areas based on framework comparisons and competitive ana
 
 ### 1. Advanced Ecosystem (High Priority)
 - [ ] **Full IDE Marketplace Release**: Publish the VS Code and JetBrains extensions.
-- [ ] **Cloud Sandbox Integration**: Native support for Modal/Runloop/Daytona egress.
+- [ ] **Cloud Sandbox Integration**: Native support for Modal/Runloop/Daytona network egress control from sandboxes.
 - [ ] **Plugin Marketplace**: Centralized hub for sharing Claude Skills.
 
 ### 2. Intelligent Memory (Medium Priority)
 - [ ] **FAISS/ChromaDB Integration**: Move from in-memory to persistent vector databases.
-- [ ] **Automated Re-ranking**: Use Cross-Encoders for even more accurate memory retrieval.
+- [ ] **Automated Re-ranking**: Use Cross-Encoders to improve memory retrieval accuracy.
 
 ### 3. Distributed Orchestration (Medium Priority)
 - [ ] **Shared Message Bus scaling**: Support Redis/RabbitMQ for multi-server agent teams.
