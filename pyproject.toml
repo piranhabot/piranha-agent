@@ -43,6 +43,9 @@ dev = [
     "ruff>=0.4",
     "mypy>=1.9",
     "respx>=0.21",
+    "mkdocs>=1.5",
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.24",
 ]
 all = ["piranha-agent[dev]"]
 
@@ -58,6 +61,19 @@ piranha-agent = "piranha.cli:main"
 [tool.maturin]
 manifest-path = "rust_core/Cargo.toml"
 features = ["pyo3/extension-module"]
+include = [
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "RULES.md",
+    "skills.md",
+    "CODE_OF_CONDUCT.md",
+    "SUPPORT.md",
+    "CONTRIBUTING.md",
+    "IMPLEMENTATION_COMPLETE.md",
+    "INSTALL.md",
+    "GETTING_STARTED.md",
+    "RELEASE.md"
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

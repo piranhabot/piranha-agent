@@ -42,7 +42,8 @@ list_supported_embedding_providers = list_supported_providers
 
 from piranha.llm_provider import LLMMessage, LLMProvider, LLMResponse, create_provider
 from piranha.memory import ContextManager, Memory, MemoryManager
-from piranha.nocode_builder import create_builder_ui as create_nocode_ui
+# FIXME: nocode_builder has syntax errors - temporarily disabled
+# from piranha.nocode_builder import create_builder_ui as create_nocode_ui
 from piranha.observability import (
     AlertManager,
     CostAnomalyDetector,

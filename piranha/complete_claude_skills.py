@@ -889,15 +889,18 @@ def content_research_writer(topic: str, format: str, tone: str | None = None,
         "required": ["job_description", "experience"],
     },
 )
-def tailored_resume_generator(job_description: str, experience: str, 
+def tailored_resume_generator(job_description: str, experience: str,
                               skills: list[str] | None = None) -> str:
     """Tailored resume generator."""
+    # Fix: Cannot use backslash in f-string expression
+    lines = job_description.split('\n')[:5]
+    requirements = '\n'.join(f'- {req}' for req in lines)
     return f"""
 # Tailored Resume Generator
 
 ## Job Analysis
 **Key Requirements:**
-{chr(10).join(f'- {req}' for req in job_description.split('\\n')[:5])}
+{requirements}
 
 **Keywords to Include:**
 [Extracted from job description]

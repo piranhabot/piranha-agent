@@ -576,6 +576,7 @@ Best regards,
 )
 def article_extractor(url: str, include_metadata: bool = True) -> str:
     """Article extractor skill."""
+    metadata = '### Metadata\n- Tags: [tags]\n- Category: [category]\n- Reading Time: [X] min' if include_metadata else ''
     return f"""
 # Article Extractor
 
@@ -596,7 +597,7 @@ def article_extractor(url: str, include_metadata: bool = True) -> str:
 ### Content
 [Full article text would be extracted here]
 
-{'### Metadata\n- Tags: [tags]\n- Category: [category]\n- Reading Time: [X] min' if include_metadata else ''}
+{metadata}
 
 ---
 *Note: Full implementation requires newspaper3k or similar library*
