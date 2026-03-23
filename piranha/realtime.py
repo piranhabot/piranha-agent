@@ -157,7 +157,7 @@ class RealtimeMonitor:
         host: str = "127.0.0.1",
         port: int = 8080,
         dashboard_path: str | None = None,
-        memory_manager: MemoryManager | None = None
+        memory_manager: 'MemoryManager' | None = None
     ):
         """Initialize real-time monitor.
 
@@ -504,8 +504,6 @@ class RealtimeMonitor:
         @get_limiter().limit("30/minute")
         async def get_collaborations(request: Request):
             """Get multi-agent collaborations."""
-            from datetime import datetime, timedelta
-            
             return {
                 "collaborations": [
                     {
@@ -980,7 +978,7 @@ def monitor_agent(agent):
             monitor.update_task_status(
                 task_id,
                 status="completed",
-                result=str(result) if hasattr(result, '__str__') else str(result)
+                result=str(result)
             )
             monitor.update_agent_status(agent.id, status="idle", current_task=None)
             
