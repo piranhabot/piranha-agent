@@ -200,7 +200,8 @@ def add_node(workflow, node_type):
         prev_id = new_wf["nodes"][-2]["id"]
         new_wf["connections"].append({"source": prev_id, "target": nid})
         
-    return new_wf, render_canvas(new_wf), generate_code(new_wf), [n["id"] for n in new_wf["nodes"]]
+    choices = [n["id"] for n in new_wf["nodes"]]
+    return new_wf, render_canvas(new_wf), generate_code(new_wf), gr.update(choices=choices, value=nid)
 
 
 def update_node_config(workflow, node_id, new_name):
@@ -208,7 +209,7 @@ def update_node_config(workflow, node_id, new_name):
     if not node_id:
         return workflow, render_canvas(workflow), generate_code(workflow)
         
-    new_wf = {"nodes": list(workflow.get("nodes", [])), "connections": list(workflow.get("connections", []))}
+    new_wf = {"nodes": [dict(n) for n in workflow.get("nodes", [])], "connections": list(workflow.get("connections", []))}
     for node in new_wf["nodes"]:
         if node["id"] == node_id:
             node["name"] = new_name
@@ -220,27 +221,32 @@ def update_node_config(workflow, node_id, new_name):
 def delete_node(workflow, node_id):
     """Delete a node and its connections."""
     if not node_id:
-        return workflow, render_canvas(workflow), generate_code(workflow), []
+        choices = [n["id"] for n in workflow["nodes"]]
+        return workflow, render_canvas(workflow), generate_code(workflow), gr.update(choices=choices)
         
     new_wf = {
         "nodes": [n for n in workflow["nodes"] if n["id"] != node_id],
         "connections": [c for c in workflow["connections"] if c["source"] != node_id and c["target"] != node_id]
     }
     
-    return new_wf, render_canvas(new_wf), generate_code(new_wf), [n["id"] for n in new_wf["nodes"]]
+    choices = [n["id"] for n in new_wf["nodes"]]
+    new_val = choices[-1] if choices else None
+    return new_wf, render_canvas(new_wf), generate_code(new_wf), gr.update(choices=choices, value=new_val)
 
 
 def load_template(name):
     """Load template."""
     tpl = TEMPLATES.get(name, {"nodes": [], "connections": []})
-    wf = {"nodes": list(tpl.get("nodes", [])), "connections": list(tpl.get("connections", []))}
-    return wf, render_canvas(wf), generate_code(wf), [n["id"] for n in wf["nodes"]]
+    wf = {"nodes": [dict(n) for n in tpl.get("nodes", [])], "connections": list(tpl.get("connections", []))}
+    choices = [n["id"] for n in wf["nodes"]]
+    new_val = choices[0] if choices else None
+    return wf, render_canvas(wf), generate_code(wf), gr.update(choices=choices, value=new_val)
 
 
 def clear_canvas():
     """Clear."""
     wf = {"nodes": [], "connections": []}
-    return wf, render_canvas(wf), generate_code(wf), []
+    return wf, render_canvas(wf), generate_code(wf), gr.update(choices=[], value=None)
 
 
 def populate_sidebar(workflow, node_id):
@@ -253,91 +259,23 @@ def populate_sidebar(workflow, node_id):
     return "", ""
 
 
-def update_selector_choices(wf):
-    """Update choices for the node selector dropdown."""
-    ids = [n["id"] for n in wf["nodes"]]
-    return gr.update(choices=ids)
-
-
-def create_builder_ui():
-    """Create functional UI."""
-    with gr.Blocks(title="Piranha Workflow Builder") as ui:
-        gr.Markdown("# 🛠️ Piranha Workflow Builder\nBuild AI agent workflows visually")
-        
-        workflow_state = gr.State({"nodes": [], "connections": []})
-        
-        with gr.Row():
-            # Left sidebar - Node palette
-            with gr.Column(scale=1, min_width=220):
-                gr.Markdown("### 📦 Node Library")
-                node_buttons = []
-                for cat_name, cat_nodes in NODE_CATEGORIES.items():
-                    gr.Markdown(f"**{cat_name}**")
-                    for ntype, info in cat_nodes.items():
-                        btn = gr.Button(f"{info['icon']} {info['label']}", size="sm", variant="secondary")
-                        node_buttons.append((btn, ntype))
-                    gr.Markdown("---")
-            
-            # Center - Canvas and toolbar
-            with gr.Column(scale=3):
-                with gr.Row():
-                    template_dd = gr.Dropdown(choices=list(TEMPLATES.keys()), label="📋 Load Template", scale=2)
-                    clear_btn = gr.Button("🗑️ Clear", variant="stop", size="sm", scale=0)
-                    run_btn = gr.Button("▶️ Run", variant="primary", size="sm", scale=0)
-                
-                canvas = gr.HTML(value=render_canvas({"nodes": [], "connections": []}), variant="panel")
-                
-                gr.Markdown("### 📄 Generated Code")
-                code_out = gr.Code(label="Python", language="python", lines=12)
-            
-            # Right sidebar - Configuration
-            with gr.Column(scale=1, min_width=250):
-                gr.Markdown("### ⚙️ Configuration")
-                node_selector = gr.Dropdown(label="Select Node to Edit", choices=[])
-                cfg_name = gr.Textbox(label="Node Name")
-                cfg_type = gr.Textbox(label="Type", interactive=False)
-                
-                with gr.Row():
-                    update_btn = gr.Button("✅ Update", variant="primary", size="sm")
-                    delete_btn = gr.Button("🗑️ Delete", variant="stop", size="sm")
-                
-                gr.Markdown("---")
-                gr.Markdown("### 📊 Workflow Stats")
-                stats_out = gr.Markdown("No nodes added yet.")
-        
-        # Events
-        def update_stats(wf):
-            return f"Nodes: **{len(wf['nodes'])}** | Connections: **{len(wf['connections'])}**"
-
         # Bind Node Library Events
         for btn, ntype in node_buttons:
             btn.click(
                 fn=add_node,
                 inputs=[workflow_state, gr.State(ntype)],
                 outputs=[workflow_state, canvas, code_out, node_selector],
-            ).then(
-                fn=update_selector_choices,
-                inputs=[workflow_state],
-                outputs=[node_selector]
             ).then(update_stats, workflow_state, stats_out)
 
         template_dd.change(
             fn=load_template,
             inputs=[template_dd],
             outputs=[workflow_state, canvas, code_out, node_selector],
-        ).then(
-            fn=update_selector_choices,
-            inputs=[workflow_state],
-            outputs=[node_selector]
         ).then(update_stats, workflow_state, stats_out)
 
         clear_btn.click(
             fn=clear_canvas,
             outputs=[workflow_state, canvas, code_out, node_selector],
-        ).then(
-            fn=update_selector_choices,
-            inputs=[workflow_state],
-            outputs=[node_selector]
         ).then(update_stats, workflow_state, stats_out)
 
         node_selector.change(
@@ -356,10 +294,6 @@ def create_builder_ui():
             fn=delete_node,
             inputs=[workflow_state, node_selector],
             outputs=[workflow_state, canvas, code_out, node_selector]
-        ).then(
-            fn=update_selector_choices,
-            inputs=[workflow_state],
-            outputs=[node_selector]
         ).then(update_stats, workflow_state, stats_out)
 
         run_btn.click(fn=lambda wf: gr.Info("Workflow execution started! Check console for output."), inputs=[workflow_state])
