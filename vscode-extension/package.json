@@ -2,7 +2,7 @@
   "name": "piranha-agent",
   "displayName": "Piranha Agent",
   "description": "AI Agent development with Piranha - Build, debug, and deploy autonomous agents",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "piranha-agent",
   "engines": {
     "vscode": "^1.85.0"
