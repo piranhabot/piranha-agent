@@ -14,7 +14,7 @@ def main():
     # Create an agent
     agent = Agent(
         name="assistant",
-        model="anthropic/claude-3-5-sonnet",
+        model="ollama/llama3:latest",
         description="A helpful AI assistant",
     )
     

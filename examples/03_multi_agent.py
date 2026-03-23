@@ -14,21 +14,21 @@ def main():
     # Create specialized agents
     researcher = Agent(
         name="researcher",
-        model="anthropic/claude-3-5-sonnet",
+        model="ollama/llama3:latest",
         description="Researches topics and gathers information",
         system_prompt="You are a research expert. Gather comprehensive information on any topic.",
     )
     
     writer = Agent(
         name="writer",
-        model="anthropic/claude-3-5-sonnet",
+        model="ollama/llama3:latest",
         description="Writes clear, engaging content",
         system_prompt="You are a writing expert. Transform information into well-written content.",
     )
     
     reviewer = Agent(
         name="reviewer",
-        model="anthropic/claude-3-5-sonnet",
+        model="ollama/llama3:latest",
         description="Reviews and improves content",
         system_prompt="You are a quality reviewer. Identify issues and suggest improvements.",
     )

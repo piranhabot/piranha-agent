@@ -76,7 +76,7 @@ def main():
     # Create an agent with skills
     agent = Agent(
         name="researcher",
-        model="anthropic/claude-3-5-sonnet",
+        model="ollama/llama3:latest",
         description="A research assistant with web search capabilities",
         skills=[web_search, calculator],
     )

@@ -38,7 +38,7 @@ def main():
     event_id = store.record_llm_call(
         session_id=session_id,
         agent_id=agent_id,
-        model="anthropic/claude-3-5-sonnet",
+        model="ollama/llama3:latest",
         prompt_tokens=150,
         completion_tokens=50,
         cost_usd=0.002,
