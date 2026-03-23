@@ -19,15 +19,20 @@ def main() -> None:
 
 
 @main.command()
-@click.option("--host", default="0.0.0.0", help="Host to bind to")
+@click.option("--host", default="127.0.0.1", help="Host to bind to (default: localhost)")
 @click.option("--port", default=7860, help="Port to bind to")
-def debug(host: str, port: int) -> None:
+@click.option(
+    "--browser/--no-browser",
+    default=True,
+    help="Automatically open the debugger UI in a web browser",
+)
+def debug(host: str, port: int, browser: bool) -> None:
     """Launch the Time-Travel Debugger UI."""
     from piranha.debugger import create_ui
     
     click.echo(f"🚀 Launching Piranha Time-Travel Debugger at http://{host}:{port}")
     ui = create_ui()
-    ui.launch(server_name=host, server_port=port, inbrowser=True)
+    ui.launch(server_name=host, server_port=port, inbrowser=browser)
 
 
 @main.command()
@@ -37,7 +42,7 @@ def debug(host: str, port: int) -> None:
     default=None,
     help="LLM model (defaults to ollama/llama3:latest if not specified)",
 )
-@click.option("--ollama", is_flag=True, help="Use local Ollama (sets a default model if none is specified)")
+@click.option("--ollama", is_flag=True, help="Use local Ollama with default model")
 def agent(name: str, model: str | None, ollama: bool) -> None:
     """Create and test an agent."""
     from piranha import Agent

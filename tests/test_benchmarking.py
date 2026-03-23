@@ -26,7 +26,7 @@ from dataclasses import dataclass, field
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 import os
-import requests
+import httpx
 import pytest
 
 logger = logging.getLogger(__name__)
@@ -428,16 +428,20 @@ class BenchmarkRunner:
                     with lock:
                         errors += 1
         
-        # Use concurrent.futures.as_completed instead of asyncio.as_completed
-        for future in as_completed(futures):
-            # The worker function already handles and records exceptions in 'errors'.
-            # We call result() only to ensure the future is complete and catch 
-            # any truly unhandled/system-level exceptions without double-counting.
-            try:
-                future.result()
-            except Exception as e:
-                # Log only once to avoid flooding logs during mass failures
-                logger.error(f"System-level exception in benchmark worker: {e}")
+        wall_start = time.perf_counter()
+        with ThreadPoolExecutor(max_workers=concurrent_users) as executor:
+            futures = [executor.submit(worker) for _ in range(concurrent_users)]
+            
+            # Use concurrent.futures.as_completed instead of asyncio.as_completed
+            for future in as_completed(futures):
+                # The worker function already handles and records exceptions in 'errors'.
+                # We call result() only to ensure the future is complete and catch 
+                # any truly unhandled/system-level exceptions without double-counting.
+                try:
+                    future.result()
+                except Exception as e:
+                    # Log only once to avoid flooding logs during mass failures
+                    logger.error(f"System-level exception in benchmark worker: {e}")
                 
         wall_end = time.perf_counter()
         wall_clock_time = wall_end - wall_start
@@ -529,24 +533,26 @@ class BenchmarkRunner:
         logger.info("Reporting %d results to monitor at %s...", len(self.results), url)
         
         failed_count = 0
-        for result in self.results:
-            data = {
-                "name": result.name,
-                "iterations": result.iterations,
-                "avg_time_ms": result.avg_time * 1000,
-                "throughput": result.throughput,
-                "p95_ms": result.p95_time * 1000,
-                "p99_ms": result.p99_time * 1000,
-                "errors": result.errors
-            }
-            try:
-                # Use a single request with retry logic would be better but let's 
-                # keep individual for now while catching errors more cleanly.
-                requests.post(f"{url}/api/benchmarks", json=data, timeout=5)
-            except Exception as e:
-                failed_count += 1
-                if failed_count == 1:
-                    logger.warning("Failed to report result: %s. Subsequent failures will be suppressed.", e)
+        endpoint = f"{url.rstrip('/')}/api/benchmarks"
+        
+        with httpx.Client(timeout=10.0) as client:
+            for result in self.results:
+                data = {
+                    "name": result.name,
+                    "iterations": result.iterations,
+                    "avg_time_ms": result.avg_time * 1000,
+                    "throughput": result.throughput,
+                    "p95_ms": result.p95_time * 1000,
+                    "p99_ms": result.p99_time * 1000,
+                    "errors": result.errors
+                }
+                try:
+                    # Send result to monitor
+                    client.post(endpoint, json=data)
+                except Exception as e:
+                    failed_count += 1
+                    if failed_count == 1:
+                        logger.warning("Failed to report result: %s. Subsequent failures will be suppressed.", e)
         
         if failed_count > 1:
             logger.warning("Total failed reports: %d", failed_count)

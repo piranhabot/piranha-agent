@@ -365,4 +365,4 @@ def create_builder_ui():
 
 if __name__ == "__main__":
     ui = create_builder_ui()
-    ui.launch(server_name="0.0.0.0", server_port=7861, inbrowser=True)
+    ui.launch(server_name="127.0.0.1", server_port=7861, inbrowser=True)
