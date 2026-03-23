@@ -41,6 +41,7 @@ class LLMResponse:
     total_tokens: int = 0
     cost_usd: float = 0.0
     finish_reason: str = "stop"
+    cache_hit: bool = False
     raw_response: Any | None = field(default=None, repr=False)
     
     @property
@@ -185,6 +186,9 @@ class LLMProvider:
         # Calculate cost
         cost = litellm.cost_calculator.completion_cost(response)
         
+        # Check for cache hit (LiteLLM specific)
+        cache_hit = getattr(response, "cache_hit", False)
+        
         return LLMResponse(
             content=choice.message.content or "",
             model=response.model,
@@ -193,6 +197,7 @@ class LLMProvider:
             total_tokens=usage.total_tokens,
             cost_usd=cost if cost else 0.0,
             finish_reason=choice.finish_reason or "stop",
+            cache_hit=cache_hit,
             raw_response=response,
         )
     
