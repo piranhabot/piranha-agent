@@ -2,9 +2,9 @@
 """Piranha CLI.
 
 Usage:
-    piranha debug    - Launch Time-Travel Debugger
-    piranha agent    - Create an agent
-    piranha version  - Show version
+    piranha-agent debug    - Launch Time-Travel Debugger
+    piranha-agent agent    - Create an agent
+    piranha-agent version  - Show version
 """
 
 import click

@@ -367,7 +367,7 @@ print(results[0][0].content)
 
 ```bash
 # Launch transparency UI
-piranha debug
+piranha-agent debug
 ```
 
 **Features:**
@@ -803,7 +803,7 @@ We welcome contributions of all kinds! Please check out these resources to get s
 | **Semantic Cache** | [examples/08_semantic_cache_fuzzy.py](examples/08_semantic_cache_fuzzy.py) |
 | **Observability** | [examples/09_observability.py](examples/09_observability.py) |
 | **No-Code Builder** | `python -c "from piranha import create_nocode_ui; create_nocode_ui().launch()"` |
-| **Time-Travel Debugger** | `piranha debug` |
+| **Time-Travel Debugger** | `piranha-agent debug` |
 | **Benchmarks** | [tests/test_benchmarking.py](tests/test_benchmarking.py) |
 | **Skills Catalog** | [skills/CATEGORIZATION.md](skills/CATEGORIZATION.md) |
 | **Framework Comparison** | [docs/FRAMEWORK_COMPARISON.md](docs/FRAMEWORK_COMPARISON.md) |

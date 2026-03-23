@@ -53,7 +53,7 @@ Repository = "https://github.com/piranha-agent/piranha-agent"
 "Bug Tracker" = "https://github.com/piranha-agent/piranha-agent/issues"
 
 [project.scripts]
-piranha = "piranha.cli:main"
+piranha-agent = "piranha.cli:main"
 
 [tool.maturin]
 manifest-path = "rust_core/Cargo.toml"
