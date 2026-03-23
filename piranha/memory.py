@@ -19,6 +19,10 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+# Approximate number of characters per token used for rough token budgeting.
+# This is a heuristic and may need adjustment depending on the model/tokenizer.
+CHARS_PER_TOKEN_ESTIMATE = 4
+
 
 @dataclass
 class Memory:
@@ -154,14 +158,14 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         # Default dimension matches nomic-embed-text unless overridden.
         self._dim = dim if dim is not None else 768
 
-    def embed(self, text: str) -> list[float]:
+    def embed(self, text: str) -> list[float] | None:
         """
         Generate an embedding for the given text using the configured Ollama model.
         This method calls the Ollama `/api/embeddings` endpoint and returns the
         embedding vector from the response. If any error occurs while making the
         request or parsing the response (for example, network issues, timeouts,
-        or non-success HTTP status codes), the error is logged and a zero vector
-        of length `self._dim` is returned as a fallback.
+        or non-success HTTP status codes), the error is logged and ``None`` is
+        returned so that callers can handle the failure explicitly.
         """
         try:
             res = requests.post(
@@ -170,11 +174,22 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
                 timeout=30
             )
             res.raise_for_status()
-            return res.json()["embedding"]
+            
+            data = res.json()
+            embedding = data.get("embedding")
+            if not isinstance(embedding, list):
+                raise ValueError("Ollama embedding response missing 'embedding' list")
+            return embedding
         except Exception as e:
-            logger.error(f"Ollama embedding failed: {e}")
-            # Fallback to a zero vector matching the configured dimension.
-            return [0.0] * self._dim
+            truncated_text = text[:50] + ("..." if len(text) > 50 else "")
+            logger.error(
+                "Ollama embedding failed for model '%s' at '%s' with text '%s': %s",
+                self.model,
+                self.base_url,
+                truncated_text,
+                e,
+            )
+            return None
     def dimension(self) -> int:
         return self._dim
 
@@ -402,7 +417,7 @@ class MemoryManager:
             # Approximate token count assuming ~4 characters per token.
             # This is a heuristic and may differ from the true count
             # produced by a specific tokenizer (e.g., GPT-3/4).
-            tokens = len(memory.content) // 4  # ~4 chars per token heuristic
+            tokens = len(memory.content) // CHARS_PER_TOKEN_ESTIMATE
             
             if total_tokens + tokens > max_tokens:
                 break
@@ -481,13 +496,13 @@ class ContextManager:
     
     def get_token_count(self) -> int:
         """Estimate current token count."""
-        total = len(self.system_prompt) // 4
+        total = len(self.system_prompt) // CHARS_PER_TOKEN_ESTIMATE
         
         for summary in self._summaries:
-            total += len(summary) // 4
+            total += len(summary) // CHARS_PER_TOKEN_ESTIMATE
         
         for msg in self._messages:
-            total += len(msg["content"]) // 4
+            total += len(msg["content"]) // CHARS_PER_TOKEN_ESTIMATE
         
         return total
     
