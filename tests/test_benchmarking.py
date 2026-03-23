@@ -232,6 +232,7 @@ class BenchmarkRunner:
         lock = threading.Lock()
 
         def worker():
+            nonlocal errors
             for _ in range(requests_per_user):
                 start = time.perf_counter()
                 try:
@@ -240,7 +241,6 @@ class BenchmarkRunner:
                     with lock:
                         times.append(elapsed)
                 except Exception:
-                    nonlocal errors
                     with lock:
                         errors += 1
         
@@ -479,7 +479,7 @@ class TestPiranhaBenchmarks:
         registry.register_skill(
             skill_id="test_skill",
             name="Test Skill",
-            description="Test skill for benchmarking purposes",
+            description="Benchmark skill for testing authorization performance with cache_access permission",
             parameters_schema={},
             permissions=["cache_access"],
             inheritable=True,
@@ -542,7 +542,7 @@ class TestPiranhaBenchmarks:
 
         # Pre-populate with vectors
         for i in range(1000):
-            vector = [float(i % 100) / 100 for _ in range(EMBEDDING_DIMENSION)]  # 384-dim embedding
+            vector = [float(i) / 100 for _ in range(EMBEDDING_DIMENSION)]  # Unique vectors
             store.add(f"item_{i}", vector, {"content": f"Item {i}"})
 
         query_vector = [0.5] * EMBEDDING_DIMENSION
