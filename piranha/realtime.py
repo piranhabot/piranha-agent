@@ -49,7 +49,12 @@ from .security import (
     verify_websocket_token,
     get_cors_origins,
     run_security_check,
+    create_access_token,
 )
+
+from piranha.memory import MemoryManager
+from piranha.observability import SecretMasker
+from piranha.agent import Agent
 
 # Get limiter instance
 limiter = get_limiter()
@@ -167,7 +172,6 @@ class RealtimeMonitor:
             dashboard_path: Path to static dashboard files (optional)
             memory_manager: Optional MemoryManager instance
         """
-        from piranha.memory import MemoryManager
         self.host = host
         self.port = port
         self.dashboard_path = dashboard_path
@@ -301,8 +305,6 @@ class RealtimeMonitor:
         @get_limiter().limit("5/minute")
         async def get_token(request: Request):
             """Get authentication token (for demo purposes)."""
-            from .security import create_access_token
-            
             token = create_access_token(data={"sub": "user", "role": "admin"})
             return {"token": token, "expires_in": 3600}
         
@@ -632,6 +634,9 @@ class RealtimeMonitor:
         @self.app.websocket("/ws")
         async def websocket_endpoint(websocket: WebSocket):
             """WebSocket endpoint for real-time updates with authentication."""
+            # Accept the WebSocket connection before any messages are sent
+            await websocket.accept()
+            
             # Verify authentication token
             payload = await verify_websocket_token(websocket)
             if not payload:
@@ -644,7 +649,6 @@ class RealtimeMonitor:
                     await websocket.close(code=1008)
                 return
             
-            await websocket.accept()
             self.active_connections.add(websocket)
             
             logger.info(f"WebSocket connected: {payload.get('sub', 'anonymous')}")
@@ -877,8 +881,6 @@ class RealtimeMonitor:
     
     def record_event(self, event_type: str, data: dict[str, Any]):
         """Record an event and broadcast to clients."""
-        from piranha.observability import SecretMasker
-
         # Scrub sensitive data before recording/broadcasting
         masked_data = SecretMasker.mask(data)
 
@@ -950,8 +952,6 @@ def start_monitoring(port: int = 8080, dashboard_path: str | None = None):
 
 def monitor_agent(agent):
     """Wrap an agent for monitoring."""
-    from piranha import Agent
-    
     if not isinstance(agent, Agent):
         raise TypeError("Expected Agent instance")
     
