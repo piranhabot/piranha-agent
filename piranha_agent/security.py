@@ -179,14 +179,29 @@ async def verify_websocket_token(websocket: WebSocket) -> Optional[dict]:
 def verify_api_key(api_key: str) -> bool:
     """Verify API key.
     
-    If no API keys are configured (API_KEYS is empty), API key authentication is
-    treated as disabled and this function returns True. When API keys are
+    If no API keys are configured (API_KEYS is empty), then in development
+    environments API key authentication is treated as disabled and this
+    function returns True. Outside development, authentication fails closed
+    and this function returns False so that a missing API_KEYS configuration
+    does not silently disable authentication in production. When API keys are
     configured, the provided api_key must be one of the configured keys.
+
+    Note:
+        API_KEYS is expected to contain a small, statically configured set of
+        keys (for example, loaded from environment variables or a config file).
+        Under this assumption, the linear scan below is acceptable. If the
+        number of API keys grows large, consider introducing a different
+        storage/lookup mechanism.
     """
     if not API_KEYS:
         # Fail closed outside development so a missing API_KEYS configuration
         # does not silently disable authentication in production.
         return is_development_environment()
+
+    # Quickly reject obviously invalid keys before performing timing-safe
+    # comparisons against the configured keys.
+    if len(api_key) < MIN_API_KEY_LENGTH:
+        return False
     
     for valid_key in API_KEYS:
         if secrets.compare_digest(api_key, valid_key):
@@ -258,9 +273,11 @@ def run_security_check() -> dict:
 
     # Check SECRET_KEY and report if it appears too weak
     if not _is_secret_key_strong(SECRET_KEY):
-        if len(SECRET_KEY) < 32:
+        if len(SECRET_KEY) < MIN_API_KEY_LENGTH:
             issues.append("CRITICAL: SECRET_KEY is too short!")
-            recommendations.append("Set a strong SECRET_KEY (min 32 chars) in .env file")
+            recommendations.append(
+                f"Set a strong SECRET_KEY (min {MIN_API_KEY_LENGTH} chars) in .env file"
+            )
         else:
             issues.append("CRITICAL: SECRET_KEY appears weak or placeholder-like!")
             recommendations.append(
