@@ -224,6 +224,7 @@ class TestAsyncAgent:
             # Find the last assistant message in the history
             assistant_messages = [m for m in history if m.get("role") == "assistant"]
             assert assistant_messages, "Expected at least one assistant message in history"
+            assert len(assistant_messages) == 1
             assert assistant_messages[-1].get("content") == full_response
 
             # Ensure only the final concatenated response is stored, not individual chunks
@@ -324,7 +325,7 @@ class TestAsyncAgent:
         with patch.object(agent._llm, 'chat_async', new_callable=AsyncMock) as mock_chat:
             mock_chat.side_effect = Exception("LLM error")
             
-            with pytest.raises(Exception):
+            with pytest.raises(Exception, match="LLM error"):
                 await agent.run("Test")
 
     def test_agent_session_id_property(self):
@@ -513,6 +514,7 @@ class TestAgentGroup:
                 assert len(transform_calls) == 2
                 # First call with initial task, second with first agent's output
                 assert transform_calls[0] == ("Task", 0)
+                assert transform_calls[1][0] == "First output"
                 assert transform_calls[1][1] == 1
 
     @pytest.mark.asyncio
