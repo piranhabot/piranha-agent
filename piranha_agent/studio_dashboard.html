@@ -301,7 +301,8 @@
         let throughputChart, latencyChart;
         const API_BASE = window.location.origin;
         let ws = null;
-        let reconnectAttempts = 0;
+        let reconnectAttemptsCount = 0;
+        let reconnectTimeoutId = null;
         const BASE_RECONNECT_DELAY = 1000;
         const MAX_RECONNECT_DELAY = 30000;
 
@@ -355,6 +356,14 @@
             row.appendChild(cell);
         }
 
+        function extractBenchmarkLabel(b) {
+            const rawName = (b && typeof b.name === 'string') ? b.name : String(b?.name ?? '');
+            const trimmed = rawName.trim();
+            if (!trimmed) return '';
+            const parts = trimmed.split(' ');
+            return parts[0] || trimmed;
+        }
+
         function updateBenchmarkUI(benchmarks) {
             if (!benchmarks || benchmarks.length === 0) return;
 
@@ -380,13 +389,7 @@
 
             if (throughputChart) {
                 const last10 = benchmarks.slice(-10);
-                const labels = last10.map((b) => {
-                    const rawName = (b && typeof b.name === 'string') ? b.name : String(b?.name ?? '');
-                    const trimmed = rawName.trim();
-                    if (!trimmed) return '';
-                    const parts = trimmed.split(' ');
-                    return parts[0] || trimmed;
-                });
+                const labels = last10.map(extractBenchmarkLabel);
                 throughputChart.data.labels = labels;
                 throughputChart.data.datasets[0].data = last10.map((b) => Number(b?.throughput ?? 0));
                 throughputChart.update();
@@ -399,9 +402,10 @@
         }
 
         function scheduleReconnect() {
-            reconnectAttempts += 1;
+            reconnectAttemptsCount += 1;
+            const effectiveAttempts = Math.min(reconnectAttemptsCount, 10);
             const delay = Math.min(
-                BASE_RECONNECT_DELAY * Math.pow(2, reconnectAttempts - 1),
+                BASE_RECONNECT_DELAY * Math.pow(2, effectiveAttempts - 1),
                 MAX_RECONNECT_DELAY
             );
             const statusEl = document.getElementById('connection-status');
@@ -409,7 +413,10 @@
                 statusEl.className = 'connection-status disconnected';
                 statusEl.textContent = 'Reconnecting...';
             }
-            window.setTimeout(() => {
+            if (reconnectTimeoutId !== null) {
+                window.clearTimeout(reconnectTimeoutId);
+            }
+            reconnectTimeoutId = window.setTimeout(() => {
                 connectWebSocket();
             }, delay);
         }
@@ -419,7 +426,11 @@
             ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
 
             ws.onopen = () => {
-                reconnectAttempts = 0;
+                reconnectAttemptsCount = 0;
+                if (reconnectTimeoutId !== null) {
+                    window.clearTimeout(reconnectTimeoutId);
+                    reconnectTimeoutId = null;
+                }
                 const statusEl = document.getElementById('connection-status');
                 if (statusEl) {
                     statusEl.className = 'connection-status connected';
@@ -428,7 +439,13 @@
             };
 
             ws.onmessage = (event) => {
-                const msg = JSON.parse(event.data);
+                let msg;
+                try {
+                    msg = JSON.parse(event.data);
+                } catch (e) {
+                    console.error('Failed to parse WebSocket message as JSON:', event.data, e);
+                    return;
+                }
                 if (msg.type === 'event') {
                     handleEvent(msg.event);
                 } else if (msg.type === 'init') {
