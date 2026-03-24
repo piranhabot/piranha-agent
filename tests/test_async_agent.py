@@ -373,7 +373,7 @@ class TestAgentGroup:
         
         with patch.object(agent1._llm, 'chat_async', new_callable=AsyncMock) as mock1:
             with patch.object(agent2._llm, 'chat_async', new_callable=AsyncMock) as mock2:
-                mock1.return_value = MagicMock(
+                mock1.return_value = LLMResponse(
                     content="Response from agent 1",
                     model="ollama/llama3:latest",
                     prompt_tokens=10,
@@ -381,7 +381,7 @@ class TestAgentGroup:
                     cost_usd=0.001,
                     finish_reason="stop",
                 )
-                mock2.return_value = MagicMock(
+                mock2.return_value = LLMResponse(
                     content="Response from agent 2",
                     model="ollama/llama3:latest",
                     prompt_tokens=15,
@@ -406,7 +406,7 @@ class TestAgentGroup:
         
         with patch.object(agent1._llm, 'chat_async', new_callable=AsyncMock) as mock1:
             with patch.object(agent2._llm, 'chat_async', new_callable=AsyncMock) as mock2:
-                mock1.return_value = MagicMock(
+                mock1.return_value = LLMResponse(
                     content="First response",
                     model="ollama/llama3:latest",
                     prompt_tokens=10,
@@ -414,7 +414,7 @@ class TestAgentGroup:
                     cost_usd=0.001,
                     finish_reason="stop",
                 )
-                mock2.return_value = MagicMock(
+                mock2.return_value = LLMResponse(
                     content="Second response",
                     model="ollama/llama3:latest",
                     prompt_tokens=15,
@@ -441,7 +441,7 @@ class TestAgentGroup:
         with patch.object(agent1._llm, 'chat_async', new_callable=AsyncMock) as mock1:
             with patch.object(agent2._llm, 'chat_async', new_callable=AsyncMock) as mock2:
                 with patch.object(agent3._llm, 'chat_async', new_callable=AsyncMock) as mock3:
-                    mock1.return_value = MagicMock(
+                    mock1.return_value = LLMResponse(
                         content="Step 1 output",
                         model="ollama/llama3:latest",
                         prompt_tokens=10,
@@ -449,7 +449,7 @@ class TestAgentGroup:
                         cost_usd=0.001,
                         finish_reason="stop",
                     )
-                    mock2.return_value = MagicMock(
+                    mock2.return_value = LLMResponse(
                         content="Step 2 output",
                         model="ollama/llama3:latest",
                         prompt_tokens=15,
@@ -457,7 +457,7 @@ class TestAgentGroup:
                         cost_usd=0.002,
                         finish_reason="stop",
                     )
-                    mock3.return_value = MagicMock(
+                    mock3.return_value = LLMResponse(
                         content="Final output",
                         model="ollama/llama3:latest",
                         prompt_tokens=20,
@@ -529,7 +529,7 @@ class TestAgentGroup:
             execution_order.append("agent1_start")
             await asyncio.sleep(0.1)
             execution_order.append("agent1_end")
-            return MagicMock(
+            return LLMResponse(
                 content="Response 1",
                 model="ollama/llama3:latest",
                 prompt_tokens=10,
@@ -542,7 +542,7 @@ class TestAgentGroup:
             execution_order.append("agent2_start")
             await asyncio.sleep(0.05)  # agent2 is faster
             execution_order.append("agent2_end")
-            return MagicMock(
+            return LLMResponse(
                 content="Response 2",
                 model="ollama/llama3:latest",
                 prompt_tokens=15,
