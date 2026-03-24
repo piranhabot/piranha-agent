@@ -345,20 +345,35 @@
             } catch (e) { console.error(e); }
         }
 
+        function appendTextCell(row, text, style = '') {
+            const cell = document.createElement('td');
+            if (style) cell.style.cssText = style;
+            cell.textContent = text;
+            row.appendChild(cell);
+        }
+
         function updateBenchmarkUI(benchmarks) {
             if (!benchmarks || benchmarks.length === 0) return;
 
             const tbody = document.getElementById('benchmark-table-body');
-            tbody.innerHTML = benchmarks.map(b => `
-                <tr style="border-bottom: 1px solid #334155;">
-                    <td style="padding:10px">${b.name}</td>
-                    <td>${b.avg_time_ms.toFixed(2)}</td>
-                    <td>${b.throughput.toFixed(0)}</td>
-                    <td>${b.p95_ms.toFixed(2)}</td>
-                    <td>${b.p99_ms.toFixed(2)}</td>
-                    <td style="color:#64748b">${new Date(b.timestamp).toLocaleTimeString()}</td>
-                </tr>
-            `).join('');
+            tbody.replaceChildren();
+            benchmarks.forEach((b) => {
+                const row = document.createElement('tr');
+                row.style.borderBottom = '1px solid #334155';
+
+                appendTextCell(row, String(b.name ?? ''), 'padding:10px');
+                appendTextCell(row, Number(b.avg_time_ms ?? 0).toFixed(2));
+                appendTextCell(row, Number(b.throughput ?? 0).toFixed(0));
+                appendTextCell(row, Number(b.p95_ms ?? 0).toFixed(2));
+                appendTextCell(row, Number(b.p99_ms ?? 0).toFixed(2));
+                appendTextCell(
+                    row,
+                    new Date(b.timestamp).toLocaleTimeString(),
+                    'color:#64748b'
+                );
+
+                tbody.appendChild(row);
+            });
 
             if (throughputChart) {
                 const last10 = benchmarks.slice(-10);
@@ -396,7 +411,11 @@
             const log = document.getElementById('event-log');
             const item = document.createElement('div');
             item.className = 'event-item';
-            item.innerHTML = `<span style="color:#3b82f6">[${event.type}]</span> ${JSON.stringify(event.data)}`;
+            const label = document.createElement('span');
+            label.style.color = '#3b82f6';
+            label.textContent = `[${event.type}] `;
+            item.appendChild(label);
+            item.appendChild(document.createTextNode(JSON.stringify(event.data)));
             log.prepend(item);
 
             if (event.type === 'benchmark.added') {
@@ -407,7 +426,11 @@
                 const busLog = document.getElementById('bus-log');
                 const busItem = document.createElement('div');
                 busItem.className = 'event-item';
-                busItem.innerHTML = `<span style="color:#10b981">➔</span> ${event.data.message}`;
+                const arrow = document.createElement('span');
+                arrow.style.color = '#10b981';
+                arrow.textContent = '➔ ';
+                busItem.appendChild(arrow);
+                busItem.appendChild(document.createTextNode(String(event.data?.message ?? '')));
                 busLog.prepend(busItem);
             }
         }
