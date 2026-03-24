@@ -81,21 +81,12 @@ class TestAsyncAgent:
         agent = AsyncAgent(name="invalid-agent", model="invalid-model")
         # Ensure the model attribute reflects the provided invalid value
         assert agent.model == "invalid-model"
-        
-        # Mock the underlying LLM call to avoid real network/model interactions
-        mock_response = LLMResponse(
-            content="Mocked response for invalid model",
-            model="invalid-model",
-            prompt_tokens=1,
-            completion_tokens=1,
-            cost_usd=0.0,
-            finish_reason="stop",
-        )
+
         with patch.object(agent._llm, "chat_async", new_callable=AsyncMock) as mock_chat:
-            mock_chat.return_value = mock_response
-            response = await agent.chat("Hello")
-            # Current behavior: the agent should still return the mocked response
-            assert response == "Mocked response for invalid model"
+            mock_chat.side_effect = ValueError("Unsupported model: invalid-model")
+
+            with pytest.raises(ValueError, match="Unsupported model"):
+                await agent.chat("Hello")
 
     @pytest.mark.asyncio
     async def test_chat_basic(self):
@@ -204,9 +195,6 @@ class TestAsyncAgent:
     @pytest.mark.asyncio
     async def test_run_streaming(self):
         """Test streaming response."""
-        import piranha_agent
-        print(f"\nDEBUG: piranha_agent location: {piranha_agent.__file__}")
-        
         agent = AsyncAgent(name="test-agent", model="ollama/llama3:latest")
 
         async def mock_stream():
@@ -244,7 +232,8 @@ class TestAsyncAgent:
             assert contents.count(full_response) == 1
             # No assistant message should contain any individual chunk as its full content
             for chunk in chunks:
-                assert chunk not in contents
+                for msg in assistant_messages:
+                    assert msg.get("content") != chunk
 
     def test_get_history(self):
         """Test getting conversation history."""
