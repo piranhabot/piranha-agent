@@ -24,9 +24,15 @@ import warnings
 # Minimum length for API keys to be considered valid.
 MIN_API_KEY_LENGTH = 32
 
+# Minimum number of unique characters required in a strong secret key.
+MIN_SECRET_UNIQUE_CHARS = 10
+
+# Markers that indicate a weak or placeholder-like secret key.
+WEAK_SECRET_KEY_MARKERS = ("secret", "changeme", "default", "password", "test-key")
+
 # Security configuration from environment
 _env_secret_key = os.getenv("SECRET_KEY")
-_env = os.getenv("ENV") or os.getenv("PYTHON_ENV") or "production"
+_env = os.getenv("ENV") or os.getenv("PYTHON_ENV") or "development"
 if not _env_secret_key:
     if _env.lower() in ("dev", "development", "local"):
         # In development, auto-generate a strong random key if none is provided.
@@ -198,12 +204,17 @@ def verify_api_key(api_key: str) -> bool:
         # does not silently disable authentication in production.
         return is_development_environment()
 
+    if not isinstance(api_key, str):
+        return False
+
     # Quickly reject obviously invalid keys before performing timing-safe
     # comparisons against the configured keys.
     if len(api_key) < MIN_API_KEY_LENGTH:
         return False
     
     for valid_key in API_KEYS:
+        if not isinstance(valid_key, str):
+            continue
         if secrets.compare_digest(api_key, valid_key):
             return True
     return False
@@ -257,12 +268,11 @@ def _is_secret_key_strong(secret_key: str) -> bool:
     if not secret_key or len(secret_key) < MIN_API_KEY_LENGTH:
         return False
 
-    if len(set(secret_key)) < 10:
+    if len(set(secret_key)) < MIN_SECRET_UNIQUE_CHARS:
         return False
 
     lowered = secret_key.lower()
-    weak_markers = ("secret", "changeme", "default", "password", "test-key")
-    return not any(marker in lowered for marker in weak_markers)
+    return not any(marker in lowered for marker in WEAK_SECRET_KEY_MARKERS)
 
 
 def run_security_check() -> dict:
