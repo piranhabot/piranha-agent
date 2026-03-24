@@ -301,6 +301,9 @@
         let throughputChart, latencyChart;
         const API_BASE = window.location.origin;
         let ws = null;
+        let reconnectAttempts = 0;
+        const BASE_RECONNECT_DELAY = 1000;
+        const MAX_RECONNECT_DELAY = 30000;
 
         function showTab(tabId, tabElement) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -377,15 +380,38 @@
 
             if (throughputChart) {
                 const last10 = benchmarks.slice(-10);
-                throughputChart.data.labels = last10.map(b => b.name.split(' ')[0]);
-                throughputChart.data.datasets[0].data = last10.map(b => b.throughput);
+                const labels = last10.map((b) => {
+                    const rawName = (b && typeof b.name === 'string') ? b.name : String(b?.name ?? '');
+                    const trimmed = rawName.trim();
+                    if (!trimmed) return '';
+                    const parts = trimmed.split(' ');
+                    return parts[0] || trimmed;
+                });
+                throughputChart.data.labels = labels;
+                throughputChart.data.datasets[0].data = last10.map((b) => Number(b?.throughput ?? 0));
                 throughputChart.update();
 
-                latencyChart.data.labels = last10.map(b => b.name.split(' ')[0]);
-                latencyChart.data.datasets[0].data = last10.map(b => b.p95_ms);
-                latencyChart.data.datasets[1].data = last10.map(b => b.p99_ms);
+                latencyChart.data.labels = labels;
+                latencyChart.data.datasets[0].data = last10.map((b) => Number(b?.p95_ms ?? 0));
+                latencyChart.data.datasets[1].data = last10.map((b) => Number(b?.p99_ms ?? 0));
                 latencyChart.update();
             }
+        }
+
+        function scheduleReconnect() {
+            reconnectAttempts += 1;
+            const delay = Math.min(
+                BASE_RECONNECT_DELAY * Math.pow(2, reconnectAttempts - 1),
+                MAX_RECONNECT_DELAY
+            );
+            const statusEl = document.getElementById('connection-status');
+            if (statusEl) {
+                statusEl.className = 'connection-status disconnected';
+                statusEl.textContent = 'Reconnecting...';
+            }
+            window.setTimeout(() => {
+                connectWebSocket();
+            }, delay);
         }
 
         function connectWebSocket() {
@@ -393,8 +419,12 @@
             ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
 
             ws.onopen = () => {
-                document.getElementById('connection-status').className = 'connection-status connected';
-                document.getElementById('connection-status').textContent = 'Online';
+                reconnectAttempts = 0;
+                const statusEl = document.getElementById('connection-status');
+                if (statusEl) {
+                    statusEl.className = 'connection-status connected';
+                    statusEl.textContent = 'Online';
+                }
             };
 
             ws.onmessage = (event) => {
@@ -404,6 +434,19 @@
                 } else if (msg.type === 'init') {
                     updateMetrics(msg.metrics);
                 }
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                const statusEl = document.getElementById('connection-status');
+                if (statusEl) {
+                    statusEl.className = 'connection-status disconnected';
+                    statusEl.textContent = 'Error';
+                }
+            };
+
+            ws.onclose = () => {
+                scheduleReconnect();
             };
         }
 
@@ -436,15 +479,44 @@
         }
 
         function updateMetrics(m) {
-            document.getElementById('active-agents').textContent = m.active_agents;
-            document.getElementById('total-tokens').textContent = m.total_tokens.toLocaleString();
-            document.getElementById('total-cost').textContent = '$' + m.total_cost_usd.toFixed(4);
+            if (!m) {
+                return;
+            }
+
+            const activeAgents = m.active_agents ?? 0;
+            const totalTokens = Number(m.total_tokens ?? 0);
+            const totalCostUsd = Number(m.total_cost_usd ?? 0);
+
+            const activeEl = document.getElementById('active-agents');
+            const tokensEl = document.getElementById('total-tokens');
+            const costEl = document.getElementById('total-cost');
+
+            if (activeEl) {
+                activeEl.textContent = String(activeAgents);
+            }
+            if (tokensEl) {
+                tokensEl.textContent = Number.isFinite(totalTokens) ? totalTokens.toLocaleString() : '0';
+            }
+            if (costEl) {
+                costEl.textContent = '$' + (Number.isFinite(totalCostUsd) ? totalCostUsd.toFixed(4) : '0.0000');
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             connectWebSocket();
             // Fetch initial data
-            fetch(`${API_BASE}/api/metrics`).then(r => r.json()).then(updateMetrics);
+            fetch(`${API_BASE}/api/metrics`)
+                .then((r) => r.json())
+                .then(updateMetrics)
+                .catch((err) => {
+                    console.error('Failed to load initial metrics:', err);
+                    const activeEl = document.getElementById('active-agents');
+                    const tokensEl = document.getElementById('total-tokens');
+                    const costEl = document.getElementById('total-cost');
+                    if (activeEl) activeEl.textContent = 'N/A';
+                    if (tokensEl) tokensEl.textContent = 'N/A';
+                    if (costEl) costEl.textContent = 'N/A';
+                });
         });
     </script>
 </body>
