@@ -8,22 +8,18 @@ This module provides security utilities:
 - API key management
 """
 
+import asyncio
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-from pathlib import Path
 
 import jwt
-from fastapi import WebSocket, HTTPException, status
+from fastapi import WebSocket, HTTPException, Request, status
 from fastapi.security import HTTPBearer
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 import secrets
 import warnings
-
-# Historical default development secret key retained only for detection.
-# This value SHOULD NOT be used for any new deployments.
-DEFAULT_DEV_SECRET_KEY = "dev-secret-key-change-me"
 
 # Minimum length for API keys to be considered valid.
 MIN_API_KEY_LENGTH = 32
@@ -34,22 +30,13 @@ _env = os.getenv("ENV") or os.getenv("PYTHON_ENV") or "production"
 if not _env_secret_key:
     if _env.lower() in ("dev", "development", "local"):
         # In development, auto-generate a strong random key if none is provided.
-        # Persist the generated key locally so it remains stable across restarts.
+        # Keep it process-local to avoid writing secrets to disk in plaintext.
         warnings.warn(
-            "SECRET_KEY not set! Using a persisted random development key. "
+            "SECRET_KEY not set! Using an ephemeral random development key. "
             "Set a strong, random SECRET_KEY in .env for non-development environments.",
             UserWarning,
         )
-        _dev_key_path = Path(".dev_secret_key")
-        if _dev_key_path.is_file():
-            SECRET_KEY = _dev_key_path.read_text(encoding="utf-8").strip()
-            if len(SECRET_KEY) < MIN_API_KEY_LENGTH:
-                # Regenerate if the stored key is too short or otherwise invalid.
-                SECRET_KEY = secrets.token_urlsafe(32)
-                _dev_key_path.write_text(SECRET_KEY, encoding="utf-8")
-        else:
-            SECRET_KEY = secrets.token_urlsafe(32)
-            _dev_key_path.write_text(SECRET_KEY, encoding="utf-8")
+        SECRET_KEY = secrets.token_urlsafe(32)
     else:
         # In non-development environments, refuse to start without an explicit SECRET_KEY
         raise RuntimeError(
@@ -97,6 +84,11 @@ if _env_api_keys:
 #     async def list_items():
 #         ...
 _limiter: Optional[Limiter] = None
+
+
+def is_development_environment() -> bool:
+    """Return True when running in a local/development environment."""
+    return _env.lower() in ("dev", "development", "local")
 
 
 def get_limiter() -> Limiter:
@@ -164,13 +156,16 @@ async def verify_websocket_token(websocket: WebSocket) -> Optional[dict]:
     """
     try:
         # Receive the first message from the client, which should contain the token.
-        token = await websocket.receive_text()
+        token = await asyncio.wait_for(websocket.receive_text(), timeout=10.0)
         if not token:
             await websocket.close(code=4001, reason="Missing authentication token in initial message")
             return None
 
         payload = verify_token(token)
         return payload
+    except asyncio.TimeoutError:
+        await websocket.close(code=4003, reason="Authentication token not received in time")
+        return None
     except HTTPException as exc:
         # Preserve specific authentication error details from token verification
         await websocket.close(code=4002, reason=str(exc.detail))
@@ -189,14 +184,47 @@ def verify_api_key(api_key: str) -> bool:
     configured, the provided api_key must be one of the configured keys.
     """
     if not API_KEYS:
-        # When no API keys are configured, treat API key authentication as disabled.
-        # This aligns with the security check, which only warns in this case.
-        return True
+        # Fail closed outside development so a missing API_KEYS configuration
+        # does not silently disable authentication in production.
+        return is_development_environment()
     
     for valid_key in API_KEYS:
         if secrets.compare_digest(api_key, valid_key):
             return True
     return False
+
+
+def authenticate_http_request(request: Request) -> dict:
+    """Authenticate an HTTP request via Bearer token or X-API-Key.
+
+    Bearer tokens are verified with JWT. API keys are accepted via the
+    ``X-API-Key`` header. Outside development, authentication fails closed
+    when API keys are not configured.
+    """
+    auth_header = request.headers.get("Authorization", "")
+    api_key = request.headers.get("X-API-Key", "")
+
+    if auth_header.startswith("Bearer "):
+        token = auth_header[len("Bearer "):].strip()
+        if not token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Missing bearer token",
+            )
+        return verify_token(token)
+
+    if api_key:
+        if verify_api_key(api_key):
+            return {"auth_type": "api_key"}
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API key",
+        )
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Authentication required",
+    )
 
 
 def get_cors_origins() -> list[str]:
@@ -209,29 +237,34 @@ def get_rate_limit() -> int:
     return RATE_LIMIT_PER_MINUTE
 
 
+def _is_secret_key_strong(secret_key: str) -> bool:
+    """Heuristically validate SECRET_KEY strength without hardcoded bad values."""
+    if not secret_key or len(secret_key) < MIN_API_KEY_LENGTH:
+        return False
+
+    if len(set(secret_key)) < 10:
+        return False
+
+    lowered = secret_key.lower()
+    weak_markers = ("secret", "changeme", "default", "password", "test-key")
+    return not any(marker in lowered for marker in weak_markers)
+
+
 def run_security_check() -> dict:
     """Run comprehensive security check."""
     issues = []
     warnings = []
     recommendations = []
 
-    def _is_secret_key_properly_configured() -> bool:
-        """
-        A secret key is considered properly configured if it is present, sufficiently long,
-        and not equal to the built-in development key.
-        """
-        return bool(SECRET_KEY) and len(SECRET_KEY) >= 32 and SECRET_KEY != DEFAULT_DEV_SECRET_KEY
-
     # Check SECRET_KEY and report if it appears too weak
-    if not _is_secret_key_properly_configured():
+    if not _is_secret_key_strong(SECRET_KEY):
         if len(SECRET_KEY) < 32:
             issues.append("CRITICAL: SECRET_KEY is too short!")
             recommendations.append("Set a strong SECRET_KEY (min 32 chars) in .env file")
-        elif SECRET_KEY == DEFAULT_DEV_SECRET_KEY:
-            issues.append("CRITICAL: DEFAULT_DEV_SECRET_KEY is in use!")
+        else:
+            issues.append("CRITICAL: SECRET_KEY appears weak or placeholder-like!")
             recommendations.append(
-                "Generate and set a strong, random SECRET_KEY in the environment; "
-                "do not use the built-in development key in production."
+                "Generate and set a strong, random SECRET_KEY in the environment."
             )
 
     # Check ALLOWED_ORIGINS
@@ -256,9 +289,7 @@ def run_security_check() -> dict:
         warnings.append(f"Token expiration is long ({ACCESS_TOKEN_EXPIRE_MINUTES} minutes)")
         recommendations.append("Consider shorter token expiration for security")
 
-    # A secret key is considered properly configured if it is present, sufficiently long,
-    # and not equal to the built-in development key.
-    secret_key_configured = _is_secret_key_properly_configured()
+    secret_key_configured = _is_secret_key_strong(SECRET_KEY)
 
     return {
         "status": "secure" if not issues else "issues_found",
