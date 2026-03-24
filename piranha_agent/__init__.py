@@ -128,6 +128,6 @@ __all__ = [
     # Collaboration
     "create_collaboration",
     "run_collaboration",
-        # Package Metadata
+    # Package Metadata
     "__version__",
 ]
