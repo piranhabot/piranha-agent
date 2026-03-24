@@ -21,7 +21,6 @@ interface CostData {
 
 export default function CostAnalyticsPage() {
   const [costData, setCostData] = useState<CostData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('7d');
   const [autoRefresh, setAutoRefresh] = useState(true);
 
@@ -40,11 +39,9 @@ export default function CostAnalyticsPage() {
         params: { range: timeRange }
       });
       setCostData(response.data);
-      setLoading(false);
     } catch (error) {
       console.error('Failed to load cost data:', error);
       setCostData(getMockCostData());
-      setLoading(false);
     }
   };
 
@@ -56,6 +53,7 @@ export default function CostAnalyticsPage() {
     link.href = url;
     link.download = `cost-analytics-${timeRange}.json`;
     link.click();
+    URL.revokeObjectURL(url);
   };
 
   if (!costData) return null;
@@ -375,8 +373,8 @@ function OptimizationTip({ title, description, impact, color }: {
 function getMockCostData(): CostData {
   const daily_breakdown = Array.from({ length: 7 }, (_, i) => ({
     date: new Date(Date.now() - (6 - i) * 86400000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    cost: Math.random() * 0.01,
-    tokens: Math.floor(Math.random() * 10000) + 5000
+    cost: Number(((i + 1) * 0.0017).toFixed(4)),
+    tokens: 5000 + (i * 913)
   }));
 
   return {
