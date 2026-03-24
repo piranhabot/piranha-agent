@@ -60,6 +60,7 @@ function App() {
   const [dbPath, setDbPath] = useState(':memory:')
   const [nodes, setNodes] = useState([])
   const [edges, setEdges] = useState([])
+  const [costData, setCostData] = useState([])
   const [costSummary, setCostSummary] = useState(null)
   const [status, setStatus] = useState('')
   const [selectedEvent, setSelectedEvent] = useState(null)
@@ -241,6 +242,7 @@ function App() {
               nodes={nodes}
               edges={edges}
               nodeTypes={nodeTypes}
+              onNodeClick={(_, node) => setSelectedEvent(node.data)}
               fitView
               attributionPosition="bottom-left"
             >
