@@ -32,7 +32,7 @@ export default function GuardrailsPage() {
     warning_threshold: 80
   });
 
-  const [stats, setStats] = useState<GuardrailsStats | null>(null);
+  // const [stats, setStats] = useState<GuardrailsStats | null>(null);  // Reserved for future stats display
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);

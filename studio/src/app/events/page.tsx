@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Activity, Filter, Download, RefreshCw, Search, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Activity, Filter, Download, RefreshCw, Search, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 
 const API_BASE = 'http://localhost:8080/api';
 

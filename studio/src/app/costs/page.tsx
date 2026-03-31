@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { DollarSign, TrendingUp, BarChart3, Calendar, Download, PieChart } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, PieChart as RechartsPie, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
+// import recharts components - reserved for future charts
 
 const API_BASE = 'http://localhost:8080/api';
 
