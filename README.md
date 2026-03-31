@@ -23,7 +23,7 @@ Piranha is designed for **Supervised Autonomy**. We believe that while agents sh
 
 ---
 
-## 🔒 Security Hardening (v0.4.2 Update)
+## 🔒 Security Hardening (Production-Ready)
 
 We have implemented multiple layers of defense to make Piranha safe for production deployment:
 
@@ -31,6 +31,7 @@ We have implemented multiple layers of defense to make Piranha safe for producti
 Unlike competitors who run generated code directly on the host, Piranha uses **Wasmtime** to execute code in a strictly isolated environment.
 - **Enforced Limits**: Memory, CPU (fuel), and execution time are strictly capped.
 - **No Host Access**: Isolated from the file system and environment by default.
+- **Performance**: 7M+ validations/sec
 
 ### 2. Fine-Grained Permission Enforcement
 Skills now verify agent permissions before execution using Python `contextvars`.
@@ -42,11 +43,37 @@ Prevent data exfiltration with built-in network guardrails.
 - **Allowed Hosts Whitelist**: Restrict agents to communicating only with trusted domains (e.g., `github.com`, `internal-api.company.com`).
 - **Validated Skills**: Core skills use the `validate_url()` helper to intercept and block unauthorized outbound requests.
 
-### 10. Autonomous Agent Orchestration (v0.5.0)
+### 4. Secret Masking (Auto-Redaction)
+Protect credentials from ending up in logs or UIs.
+- **Regex Scrubbing**: Automatically detects and redacts OpenAI keys (`sk-...`), GitHub tokens, and Bearer tokens.
+- **Keyword Masking**: Dictionary keys like `password`, `secret`, and `api_key` are scrubbed before storage.
+
+---
+
+## 🤖 Autonomous Agent Orchestration (v0.4.2)
+
 Piranha now supports autonomous multi-agent "teams" managed by a Coordinator agent, similar to Claude Code's agent swarms.
-- **Dynamic Delegation**: The Coordinator can autonomously "hire" specialized sub-agents and assign them tasks.
-- **Shared Environment**: Teams share a **Message Bus** for inter-agent communication and a **Shared State** (whiteboard) for collective memory.
-- **Orchestration Skills**: Built-in skills for `delegate_task`, `get_team_status`, and `broadcast_message`.
+
+### Dynamic Delegation
+The Coordinator can autonomously "hire" specialized sub-agents and assign them tasks.
+
+### Shared Environment
+Teams share a **Message Bus** for inter-agent communication and a **Shared State** (whiteboard) for collective memory.
+
+### Orchestration Skills
+Built-in skills for `delegate_task`, `get_team_status`, and `broadcast_message`.
+
+**Example:**
+```python
+from piranha_agent.orchestration import create_orchestrated_team
+
+team = create_orchestrated_team("research-team")
+# Coordinator delegates tasks autonomously
+# Sub-agents collaborate via shared message bus
+# Results aggregated automatically
+```
+
+**Documentation:** [docs/CLAUDE_CODE_SWARM.md](docs/CLAUDE_CODE_SWARM.md) | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 ---
 
