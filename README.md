@@ -9,7 +9,7 @@
 [![Performance: 7M+ ops/sec](https://img.shields.io/badge/performance-7M%2B%20ops%2Fsec-brightgreen.svg)](tests/test_benchmarking.py)
 [![Code Quality: 100%](https://img.shields.io/badge/code%20quality-100%25-brightgreen.svg)](docs/CODE_QUALITY_STATUS.md)
 
-**Next-generation autonomous agent framework with Rust core, radical transparency through time-travel debugging, Wasm sandboxing, and 46+ Claude Skills.**
+**Next-generation autonomous agent framework with Rust core, radical transparency through time-travel debugging, Wasm sandboxing, and 53+ skills (46 Claude + 5 Explorer + 2 Planning).**
 
 ---
 
@@ -134,7 +134,7 @@ python examples/01_basic_agent.py
 | **Phase 4** | Embedding-based Fuzzy Cache | ✅ | 16/16 | 1.4M ops/sec |
 | **Phase 5** | PostgreSQL Backend | ✅ | 8/8 | Production-ready |
 | **Phase 6** | Distributed Agents | ✅ | 9/9 | Multi-process |
-| **Phase 7** | 46+ Claude Skills | ✅ | - | Full catalog |
+| **Phase 7** | 53+ Skills Total (46 Claude + 5 Explorer + 2 Planning) | ✅ | - | Full catalog |
 | **Phase 8** | Observability + No-Code | ✅ | 53/53 | OpenTelemetry |
 | Phase 9 | **Benchmarking Suite & Dashboard** | ✅ | 12/12 | Visual Charts |
 | **Code Quality** | **96 Findings Fixed** | ✅ | - | 100% resolved |
@@ -264,77 +264,29 @@ print(result)
 
 ---
 
-## 🎯 46+ Claude Skills Available
+## 🎯 53+ Skills Available (46 Claude + 5 Explorer + 2 Planning)
 
 Piranha includes the largest collection of pre-built AI skills:
 
-### 📄 Document Processing (4 skills)
-- `docx` - Word document creation/editing
-- `pdf` - PDF extraction and manipulation
-- `pptx` - PowerPoint presentation generation
-- `xlsx` - Excel spreadsheet analysis
+### 📊 Complete Skill Breakdown
 
-### 💻 Development & Code (5 skills)
-- `frontend-design` - React + Tailwind + shadcn/ui
-- `mcp-builder` - MCP server creation
-- `test-driven-development` - TDD methodology
-- `code-review` - Code quality review
-- `software-architecture` - Clean Architecture, SOLID
+| Category | Count | Description |
+|----------|-------|-------------|
+| **Planning** | 2 | `draft_plan` (HITL), `get_plan` |
+| **Claude Code Explorer** | 5 | Source code exploration tools |
+| **Document Processing** | 4 | `docx`, `pdf`, `pptx`, `xlsx` |
+| **Development & Code** | 5 | `frontend-design`, `mcp-builder`, TDD, code-review |
+| **Research & Analysis** | 5 | `deep-research`, `root-cause-tracing`, etc. |
+| **Creative & Design** | 5 | `canvas-design`, `brand-guidelines`, etc. |
+| **Communication** | 5 | `internal-comms`, `article-extractor`, etc. |
+| **Data & Analytics** | 4 | `csv-data-summarizer`, `postgres`, etc. |
+| **Productivity** | 6 | `file-organizer`, `git-workflows`, etc. |
+| **Social Media** | 3 | `reddit-fetch`, `youtube-transcript`, etc. |
+| **Business** | 4 | `competitive-ads-extractor`, etc. |
+| **Reasoning** | 5 | `analyze_data`, `solve_math_problem`, etc. |
+| **TOTAL** | **53+** | **All categories covered** |
 
-### 🔍 Research & Analysis (5 skills)
-- `deep-research` - Multi-step autonomous research
-- `root-cause-tracing` - Error tracing and analysis
-- `lead-research-assistant` - Lead qualification
-- `analyze_complex_problem` - Systematic breakdown
-- `logical_reasoning` - Argument evaluation
-
-### 🎨 Creative & Design (5 skills)
-- `canvas-design` - Visual art (PNG/PDF)
-- `brand-guidelines` - Brand application
-- `brainstorming` - Idea development
-- `imagen` - AI image generation
-- `creative_writing` - Stories, poems, articles
-
-### ✍️ Communication (5 skills)
-- `internal-comms` - Status reports, newsletters
-- `article-extractor` - Web article extraction
-- `content-research-writer` - Research-backed content
-- `summarize_text` - Document summarization
-- `edit_improve_text` - Text editing
-
-### 📊 Data & Analytics (4 skills)
-- `csv-data-summarizer` - CSV analysis
-- `postgres` - Safe SQL queries
-- `statistical_analysis` - Statistical methods
-- `meeting-insights-analyzer` - Transcript analysis
-
-### 📁 Productivity (6 skills)
-- `file-organizer` - Intelligent organization
-- `git-workflows` - Git management
-- `skill-creator` - Interactive skill creation
-- `kaizen` - Continuous improvement
-- `extract_information` - Info extraction
-- `step_by_step_solver` - Problem solving
-
-### 🌐 Social Media (3 skills)
-- `reddit-fetch` - Reddit content
-- `youtube-transcript` - YouTube transcripts
-- `twitter-algorithm-optimizer` - Tweet optimization
-
-### 💼 Business (4 skills)
-- `competitive-ads-extractor` - Ad analysis
-- `domain-name-brainstormer` - Domain generation
-- `lead-research-assistant` - Lead research
-- `tailored-resume-generator` - Resume generation
-
-### 🧠 Reasoning (5 skills)
-- `analyze_data` - Data insights
-- `solve_math_problem` - Math solving
-- `explain_code` - Code explanation
-- `generate_code` - Code generation
-- `debug_code` - Bug fixing
-
-**📚 Full catalog:** [skills/CATEGORIZATION.md](skills/CATEGORIZATION.md)
+**📚 Full catalog:** [skills/CATEGORIZATION.md](skills/CATEGORIZATION.md) | [docs/SKILLS_REGISTRATION.md](docs/SKILLS_REGISTRATION.md)
 
 ---
 
