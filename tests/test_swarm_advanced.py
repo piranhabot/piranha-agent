@@ -1,4 +1,5 @@
 import pytest
+import re
 # import asyncio  # Not used directly
 # import os  # Not used directly
 # import shutil  # Not used directly
@@ -52,9 +53,8 @@ async def test_isolated_parallel_swarm_logic(tmp_path):
             # Ensure active tasks are being tracked after delegation
             assert hasattr(team, "active_tasks"), "team.active_tasks should be defined after launching tasks"
             assert len(team.active_tasks) == 2, "Expected 2 active tasks after delegation"
-            
+
             # Extract task IDs
-            import re
             task_ids = re.findall(r"task-[a-f0-9]+", launch_msg)
             assert len(task_ids) == 2
 
