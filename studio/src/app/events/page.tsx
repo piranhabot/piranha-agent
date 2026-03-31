@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Activity, Filter, Download, RefreshCw, Search, Clock } from 'lucide-react';
+import { Activity, Filter, Download, RefreshCw, Search, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 
 const API_BASE = 'http://localhost:8080/api';
 
@@ -23,10 +23,11 @@ export default function EventTimelinePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadEvents();
-    
+
     if (autoRefresh) {
       const interval = setInterval(loadEvents, 3000);
       return () => clearInterval(interval);
@@ -35,12 +36,22 @@ export default function EventTimelinePage() {
 
   const loadEvents = async () => {
     try {
+      setLoading(true);
+      setError(null);
       const response = await axios.get(`${API_BASE}/events/timeline`);
-      setEvents(response.data.events || getMockEvents());
+      
+      // Use real events from API
+      if (response.data && response.data.events && response.data.events.length > 0) {
+        setEvents(response.data.events);
+      } else {
+        // No events yet - show empty state
+        setEvents([]);
+      }
       setLoading(false);
-    } catch (error) {
-      console.error('Failed to load events:', error);
-      setEvents(getMockEvents());
+    } catch (err) {
+      console.error('Failed to load events:', err);
+      setError('Failed to connect to API. Make sure the server is running on port 8080.');
+      setEvents([]);
       setLoading(false);
     }
   };
@@ -162,6 +173,17 @@ export default function EventTimelinePage() {
         <div className="bg-piranha-800/30 backdrop-blur-sm rounded-xl border border-piranha-700 p-6">
           {loading ? (
             <p className="text-piranha-400 text-center py-8">Loading events...</p>
+          ) : error ? (
+            <div className="text-center py-8">
+              <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+              <p className="text-red-300 mb-4">{error}</p>
+              <button
+                onClick={loadEvents}
+                className="px-6 py-2 bg-piranha-600 hover:bg-piranha-500 text-white rounded-lg transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
           ) : filteredEvents.length === 0 ? (
             <p className="text-piranha-400 text-center py-8">No events found</p>
           ) : (
@@ -263,6 +285,23 @@ function EventCard({ event, index, onClick, colorClass, icon }: {
           Click for details →
         </div>
       </div>
+
+      {/* Empty State */}
+      {events.length === 0 && !loading && !error && (
+        <div className="text-center py-20">
+          <Activity className="w-20 h-20 text-piranha-500 mx-auto mb-4 opacity-50" />
+          <h3 className="text-xl font-semibold text-white mb-2">No Events Yet</h3>
+          <p className="text-piranha-300 mb-4">
+            Events will appear here as your agents execute tasks
+          </p>
+          <button
+            onClick={loadEvents}
+            className="px-6 py-2 bg-piranha-600 hover:bg-piranha-500 text-white rounded-lg transition-colors"
+          >
+            Refresh
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -274,23 +313,4 @@ function DetailItem({ label, value }: { label: string; value: string }) {
       <p className="text-white font-mono text-sm">{value}</p>
     </div>
   );
-}
-
-// Mock data for demo
-function getMockEvents(): Event[] {
-  const eventTypes = ['LlmCall', 'CacheHit', 'CacheMiss', 'SkillInvoked', 'SkillCompleted', 'GuardrailCheck', 'AgentSpawn', 'AgentCompleted'];
-  
-  return Array.from({ length: 50 }, (_, i) => ({
-    id: `event-${i}`,
-    sequence: i + 1,
-    event_type: eventTypes[Math.floor(Math.random() * eventTypes.length)],
-    timestamp: new Date(Date.now() - (50 - i) * 60000).toISOString(),
-    agent_id: `agent-${Math.floor(Math.random() * 5) + 1}`,
-    session_id: `session-${Math.floor(Math.random() * 3) + 1}`,
-    payload: {
-      model: 'llama3',
-      tokens: Math.floor(Math.random() * 1000) + 100,
-      cost: Math.random() * 0.001
-    }
-  }));
 }
