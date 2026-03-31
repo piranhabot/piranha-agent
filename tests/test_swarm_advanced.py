@@ -6,12 +6,12 @@ from unittest.mock import MagicMock, patch
 from piranha_agent.orchestration import create_orchestrated_team
 from piranha_agent.agent import Agent, LLMResponse
 
-# Constants for test data
-MOCK_WORKSPACE_PATH = "/tmp/mock-workspace"
-
 
 @pytest.mark.asyncio
-async def test_isolated_parallel_swarm_logic():
+async def test_isolated_parallel_swarm_logic(tmp_path):
+    # Use pytest's tmp_path for cross-platform compatibility
+    MOCK_WORKSPACE_PATH = str(tmp_path / "mock-workspace")
+    
     # 1. Setup Team
     team = create_orchestrated_team(name="TestSwarm")
     coordinator = team.coordinator
@@ -34,6 +34,11 @@ async def test_isolated_parallel_swarm_logic():
 
             workspace_msg = skills["git_create_isolated_workspace"](branch="main")
             assert MOCK_WORKSPACE_PATH in workspace_msg
+            
+            # Verify that the underlying GitWorktreeManager received the expected branch argument
+            mock_create.assert_called_once()
+            _, kwargs = mock_create.call_args
+            assert kwargs.get("branch") == "main", "Expected branch='main' to be passed to create_worktree"
 
             # 4. Test Parallel Delegation
             assignments = [
@@ -44,19 +49,25 @@ async def test_isolated_parallel_swarm_logic():
             launch_msg = skills["delegate_parallel_tasks"](assignments=assignments)
             assert "Launched 2 tasks" in launch_msg
 
+            # Ensure active tasks are being tracked after delegation
+            assert hasattr(team, "active_tasks"), "team.active_tasks should be defined after launching tasks"
+            assert len(team.active_tasks) == 2, "Expected 2 active tasks after delegation"
+            
             # Extract task IDs
             import re
             task_ids = re.findall(r"task-[a-f0-9]+", launch_msg)
             assert len(task_ids) == 2
 
             # 5. Test Wait and Synchronization
-            # We need to ensure the async tasks we created are awaited
-            # Use asyncio.to_thread to properly handle async execution
-            results = await asyncio.to_thread(skills["wait_for_tasks"], task_ids=task_ids)
+            # wait_for_tasks is a synchronous skill that internally handles async tasks
+            # Call it directly (it handles async internally)
+            results = skills["wait_for_tasks"](task_ids=task_ids)
 
             assert "Coder result" in results
             assert "Tester result" in results
-            assert len(team.active_tasks) == 0
+            
+            # Verify tasks were cleared after completion
+            assert len(team.active_tasks) == 0, "Expected active_tasks to be cleared after completion"
 
             # 6. Verify sub-agent configuration via Agent.run calls
             # Ensure that Agent.run was invoked once per assignment with the expected task descriptions
@@ -77,7 +88,10 @@ async def test_isolated_parallel_swarm_logic():
 
 
 @pytest.mark.asyncio
-async def test_git_workspace_cleanup():
+async def test_git_workspace_cleanup(tmp_path):
+    # Use pytest's tmp_path for cross-platform compatibility
+    MOCK_WORKSPACE_PATH = str(tmp_path / "mock-workspace")
+    
     team = create_orchestrated_team(name="CleanupTeam")
     coordinator = team.coordinator
     skills = {s.name: s for s in coordinator.skills}
