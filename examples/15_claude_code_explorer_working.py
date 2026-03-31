@@ -60,19 +60,19 @@ async def main():
             
             # 2. List commands
             print("2. Listing commands...")
-            commands = await session.call_tool("list_commands", {})
+            await session.call_tool("list_commands", {})
             print(f"   ✅ Commands retrieved")
             print()
             
             # 3. Get architecture
             print("3. Getting architecture...")
-            arch = await session.call_tool("get_architecture", {})
+            await session.call_tool("get_architecture", {})
             print(f"   ✅ Architecture retrieved")
             print()
             
             # 4. Search source
             print("4. Searching source...")
-            search = await session.call_tool(
+            await session.call_tool(
                 "search_source",
                 {"pattern": "class.*Tool", "limit": 3}
             )

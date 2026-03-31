@@ -139,7 +139,7 @@ class ClaudeCodeExplorer:
             read, write = await client_context.__aenter__()
 
             self._session = ClientSession(read, write)
-            initialization = await self._session.initialize()
+            await self._session.initialize()
             
             logger.info(f"Connected to Claude Code Explorer MCP server (src: {self.config.src_root})")
 

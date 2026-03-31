@@ -74,8 +74,8 @@ TEMPLATES = {
 
 def generate_code(workflow):
     """Generate functional Python code using Piranha SDK."""
-    nodes = workflow.get("nodes", [])
-    connections = workflow.get("connections", [])
+    # nodes = workflow.get("nodes", [])  # Reserved for future use
+    # connections = workflow.get("connections", [])  # Reserved for future use
     
     lines = [
         '#!/usr/bin/env python3',
@@ -124,8 +124,8 @@ def generate_code(workflow):
 
 def render_canvas(workflow):
     """Render workflow canvas."""
-    nodes = workflow.get("nodes", [])
-    connections = workflow.get("connections", [])
+    # nodes = workflow.get("nodes", [])  # Reserved for future use
+    # connections = workflow.get("connections", [])  # Reserved for future use
     
     if not nodes:
         return '''<div style="width:100%;height:450px;background:linear-gradient(135deg,#0d1117 0%,#161b22 100%);display:flex;align-items:center;justify-content:center;flex-direction:column;color:#8b949e;">

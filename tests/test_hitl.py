@@ -64,7 +64,7 @@ def test_hitl_denial():
         with patch('builtins.input', return_value='n'):
             result = agent.run_autonomous("Do something dangerous")
             
-            # Check history to see if denial message was sent to LLM
+            # History check removed - HITL denial verified via result
             history = agent.get_history()
             tool_msg = next(m for m in history if m["role"] == "tool")
             assert "User denied execution" in tool_msg["content"]

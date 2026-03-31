@@ -148,7 +148,7 @@ def example_2_swarm_collaboration():
         description="Search Claude Code source for 'permission' patterns. Save findings to shared state.",
         agent=searcher,
     )
-    search_result = search_task.run()
+    search_task.run()  # Result saved to shared state
     print(f"  ✓ Search complete")
     print()
     
@@ -159,7 +159,7 @@ def example_2_swarm_collaboration():
         agent=analyzer,
         context=str(team.shared_state.get_all()),
     )
-    analyze_result = analyze_task.run()
+    analyze_task.run()  # Result used via shared state
     print(f"  ✓ Analysis complete")
     print()
     
@@ -225,7 +225,7 @@ def example_3_orchestrated_swarm():
         description="List all Claude Code tools and filter for file-related ones (File*, file*, etc.)",
         agent=tool_agent,
     )
-    result = tool_task.run()
+    tool_task.run()  # Result displayed in output
     print(f"  ✓ Tool discovery complete")
     print()
     

@@ -102,9 +102,9 @@ class Agent:
             return
         
         # Get existing skill IDs to avoid duplicates
-        existing_ids = set()
+        pass  # Skill registry handles duplicates automatically
         try:
-            # Check if we can get IDs from registry
+            # Skill registry handles duplicate prevention
             # Based on the error, it seems the registry is what raises the ValueError
             pass 
         except Exception:
