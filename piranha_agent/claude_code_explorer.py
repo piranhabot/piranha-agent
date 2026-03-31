@@ -102,7 +102,7 @@ class ClaudeCodeExplorer:
         results = await explorer.search_source(r"permission.*check")
         
         # Get architecture overview
-        arch = await explorer.get_architecture()
+        await explorer.get_architecture()
     """
     
     def __init__(self, config: ExplorerConfig = None):
@@ -342,7 +342,7 @@ class ClaudeCodeExplorer:
             Dictionary with architecture documentation.
             
         Example:
-            arch = await explorer.get_architecture()
+            await explorer.get_architecture()
             print(arch['overview'])
             print(f"Tech stack: {arch['tech_stack']}")
         """
@@ -606,8 +606,8 @@ if __name__ == "__main__":
             
             # Test 3: Get architecture
             print("3. Getting architecture overview...")
-            arch = await explorer.get_architecture()
-            print(f"   ✓ Got architecture info")
+            await explorer.get_architecture()
+            print("   ✓ Got architecture info")
             
             # Test 4: Search source
             print("4. Searching source for 'class.*Tool'...")

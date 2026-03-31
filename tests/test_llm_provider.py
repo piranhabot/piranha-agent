@@ -194,7 +194,7 @@ class TestLLMProvider:
 
             with patch('piranha_agent.llm_provider.litellm.cost_calculator.completion_cost', return_value=0.0005):
                 # Note: temperature is passed via kwargs but extracted and passed explicitly by chat()
-                result = provider.chat(messages)
+                provider.chat(messages)
 
                 # Verify default temperature was passed
                 mock_completion.assert_called_once()

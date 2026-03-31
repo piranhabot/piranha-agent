@@ -37,7 +37,7 @@ def test_hitl_approval():
             assert result == "Final answer"
             
             # Check history to see if skill result is there
-            history = agent.get_history()
+            # agent.get_history()  # Removed - not used
             tool_msg = next(m for m in history if m["role"] == "tool")
             assert tool_msg["content"] == "Action performed!"
 
@@ -65,6 +65,6 @@ def test_hitl_denial():
             result = agent.run_autonomous("Do something dangerous")
             
             # History check removed - HITL denial verified via result
-            history = agent.get_history()
+            # agent.get_history()  # Removed - not used
             tool_msg = next(m for m in history if m["role"] == "tool")
             assert "User denied execution" in tool_msg["content"]
