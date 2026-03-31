@@ -11,7 +11,7 @@ import asyncio
 import logging
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, cast
+from typing import Any
 
 from piranha_agent.agent import Agent
 from piranha_agent.collaboration import (
