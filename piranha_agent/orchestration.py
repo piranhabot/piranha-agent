@@ -11,7 +11,13 @@ import asyncio
 import logging
 import uuid
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
+
+# Optional dependency for nested event loop support
+try:
+    import nest_asyncio as _nest_asyncio  # type: ignore[import]
+except ImportError:
+    _nest_asyncio = None  # type: ignore[assignment]
 
 from piranha_agent.agent import Agent
 from piranha_agent.collaboration import (
@@ -223,28 +229,38 @@ class OrchestrationSkillProvider:
     def wait_for_tasks(self, task_ids: list[str]) -> str:
         """Wait for specific parallel tasks to finish."""
         results = []
-        
+
         async def gather_results():
             for tid in task_ids:
                 if tid in self.team.active_tasks:
-                    res = await self.team.active_tasks[tid]
-                    results.append(f"Task {tid}: {res}")
-                    del self.team.active_tasks[tid]
+                    try:
+                        res = await self.team.active_tasks[tid]
+                        results.append(f"Task {tid}: {res}")
+                    except Exception as e:
+                        logger.exception("Task %s failed with exception", tid)
+                        results.append(f"Task {tid}: Error - {str(e)}")
+                    finally:
+                        if tid in self.team.active_tasks:
+                            del self.team.active_tasks[tid]
                 else:
                     results.append(f"Task {tid}: Error - Task not found or already completed.")
-        
-        # We need to run this async gather in the current loop
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            # This is tricky if called from synchronous code.
-            # In run_autonomous_parallel, we should use await.
-            # For now, simulate blocking wait if possible.
-            import nest_asyncio
-            nest_asyncio.apply()
+
+        # Handle both running and non-running event loop cases
+        try:
+            loop = asyncio.get_running_loop()
+            # A loop is already running (we're inside async context)
+            if _nest_asyncio is None:
+                raise RuntimeError(
+                    "wait_for_tasks was called while an event loop is already running, "
+                    "but the optional 'nest_asyncio' dependency is not installed. "
+                    "Install 'nest_asyncio' or call this skill from synchronous code."
+                )
+            _nest_asyncio.apply()
             loop.run_until_complete(gather_results())
-        else:
-            loop.run_until_complete(gather_results())
-            
+        except RuntimeError:
+            # No running event loop; create and run one for this call
+            asyncio.run(gather_results())
+
         return "\n".join(results)
 
     @skill(
