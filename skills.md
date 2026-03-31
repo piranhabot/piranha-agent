@@ -9,6 +9,77 @@ Skills are the capabilities that agents can use to interact with the world. They
 
 ---
 
+## 🆕 NEW: Planning Skills (v0.4.2)
+
+Architecture-First Workflow skills for Plan Mode:
+
+| Skill | Description | Confirmation Required |
+|-------|-------------|----------------------|
+| `draft_plan` | Write architectural strategy to PLAN.md | ✅ Yes (HITL) |
+| `get_plan` | Retrieve and review current plan | ❌ No |
+
+**Usage:**
+```python
+from piranha_agent import Agent
+
+agent = Agent(name="architect")
+
+# Plan Mode forces agent to draft plan first
+result = agent.run_autonomous(
+    task="Build REST API",
+    plan_first=True
+)
+```
+
+**Full Documentation:** [docs/PLAN_MODE.md](docs/PLAN_MODE.md)
+
+---
+
+## 🆕 Claude Code Explorer Skills (v0.4.1)
+
+Explore Claude Code's 512K+ lines of source code directly from your agents!
+
+| Skill | Description |
+|-------|-------------|
+| `claude_code.list_tools` | List all 40+ Claude Code agent tools |
+| `claude_code.list_commands` | List all 50+ Claude Code slash commands |
+| `claude_code.get_tool_source` | Get source code for a specific tool |
+| `claude_code.search_source` | Search source with regex patterns |
+| `claude_code.get_architecture` | Get full architecture overview |
+
+**Requirements:** `pip install mcp`
+
+**Quick Start:**
+```python
+from piranha_agent import Agent
+from piranha_agent.claude_code_explorer import create_claude_explorer_skill
+
+# Create agent with explorer skills
+agent = Agent(
+    name="code-explorer",
+    skills=create_claude_explorer_skill(),
+)
+
+# Explore Claude Code internals
+result = agent.run("List all Claude Code tools and explain BashTool")
+```
+
+**Full Documentation:** [docs/CLAUDE_CODE_EXPLORER.md](docs/CLAUDE_CODE_EXPLORER.md)
+
+---
+
+## 🛡️ Orchestration Skills (Autonomous Swarms)
+
+These skills allow a **Coordinator** agent to manage a team of sub-agents autonomously, similar to Claude Code's agent swarms.
+
+| Skill | Description | Parameters |
+|-------|-------------|------------|
+| `delegate_task` | Delegates a sub-task to a specialized sub-agent (created on-the-fly if needed). | `agent_name`, `task_description`, `role`, `model` |
+| `get_team_status` | Returns a summary of all active team members and shared memory keys. | None |
+| `broadcast_message` | Sends a message to all team members via the shared message bus. | `message` |
+
+---
+
 ## Static Skills
 
 Static skills are built into the Piranha framework and available to all agents by default.

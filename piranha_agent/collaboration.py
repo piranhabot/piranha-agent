@@ -100,6 +100,54 @@ class MessageBus:
         self._topics[topic].append(handler)
 
 
+class PersistentMessageBus(MessageBus):
+    """Persistent message bus backed by SQLite."""
+    
+    def __init__(self, db_path: str = "swarm_messages.db"):
+        super().__init__()
+        self.db_path = db_path
+        self._init_db()
+        self._load_history()
+        
+    def _init_db(self):
+        import sqlite3
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS messages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    topic TEXT,
+                    sender TEXT,
+                    message TEXT,
+                    timestamp TEXT
+                )
+            """)
+            
+    def _load_history(self):
+        import sqlite3
+        import json
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.execute("SELECT topic, sender, message, timestamp FROM messages ORDER BY id")
+            for topic, sender, message, timestamp in cursor:
+                self._history.append({
+                    "topic": topic,
+                    "sender": sender,
+                    "message": json.loads(message),
+                    "timestamp": timestamp
+                })
+                
+    def publish(self, topic: str, sender: str, message: Any):
+        import sqlite3
+        import json
+        # Save to DB first
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                "INSERT INTO messages (topic, sender, message, timestamp) VALUES (?, ?, ?, ?)",
+                (topic, sender, json.dumps(message), datetime.now().isoformat())
+            )
+        # Then trigger handlers
+        super().publish(topic, sender, message)
+
+
 class SharedState:
     """Shared data store ('whiteboard') for agents in a collaboration."""
     
@@ -117,6 +165,45 @@ class SharedState:
     def get_all(self) -> dict[str, Any]:
         """Get all shared data."""
         return self._data.copy()
+
+
+class PersistentSharedState(SharedState):
+    """Persistent shared data store backed by SQLite."""
+    
+    def __init__(self, db_path: str = "swarm_state.db"):
+        super().__init__()
+        self.db_path = db_path
+        self._init_db()
+        self._load_all()
+        
+    def _init_db(self):
+        import sqlite3
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS shared_state (
+                    key TEXT PRIMARY KEY,
+                    value TEXT,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+    def _load_all(self):
+        import sqlite3
+        import json
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.execute("SELECT key, value FROM shared_state")
+            for key, value in cursor:
+                self._data[key] = json.loads(value)
+                
+    def set(self, key: str, value: Any):
+        import sqlite3
+        import json
+        super().set(key, value)
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute(
+                "INSERT OR REPLACE INTO shared_state (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)",
+                (key, json.dumps(value))
+            )
 
 
 class MultiAgentCollaboration:

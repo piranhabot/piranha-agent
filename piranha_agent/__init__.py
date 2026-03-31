@@ -23,6 +23,12 @@ from piranha_agent.agent import Agent
 
 from piranha_agent.async_agent import AgentGroup, AsyncAgent
 from piranha_agent.claude_skills import get_all_claude_skills, register_claude_skills
+from piranha_agent.claude_code_explorer import (
+    ClaudeCodeExplorer,
+    ExplorerConfig,
+    create_claude_explorer_skill,
+    add_claude_explorer_to_agent,
+)
 from piranha_agent.collaboration import (
     create_collaboration,
     run_collaboration,
@@ -73,6 +79,11 @@ __all__ = [
     "Task",
     "Session",
     "AgentGroup",
+    # Claude Code Explorer
+    "ClaudeCodeExplorer",
+    "ExplorerConfig",
+    "create_claude_explorer_skill",
+    "add_claude_explorer_to_agent",
     # Skills
     "Skill",
     "skill",

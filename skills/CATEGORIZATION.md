@@ -1,6 +1,6 @@
 # Piranha Agent Skills - Complete Categorization
 
-Comprehensive categorization of all 46+ Claude Skills available in Piranha Agent.
+Comprehensive categorization of all 51+ Claude Skills available in Piranha Agent.
 
 ---
 
@@ -8,6 +8,7 @@ Comprehensive categorization of all 46+ Claude Skills available in Piranha Agent
 
 | Category | Count | Module |
 |----------|-------|--------|
+| 🔍 Claude Code Explorer | 5 | claude_code_explorer |
 | 📄 Document Processing | 4 | official_claude_skills |
 | 💻 Development & Code | 5 | official_claude_skills + complete_claude_skills |
 | 🔍 Research & Analysis | 5 | complete_claude_skills |
@@ -18,7 +19,31 @@ Comprehensive categorization of all 46+ Claude Skills available in Piranha Agent
 | 🌐 Social Media | 3 | complete_claude_skills |
 | 💼 Business & Marketing | 4 | complete_claude_skills |
 | 🧠 Reasoning & Problem Solving | 5 | claude_skills |
-| **TOTAL** | **46+** | **3 modules** |
+| **TOTAL** | **51+** | **4 modules** |
+
+---
+
+## 🔍 Category 0: Claude Code Explorer (5 skills) [NEW!]
+
+*Explore Claude Code's 512K+ lines of source code*
+
+| Skill | Function | Module | Usage |
+|-------|----------|--------|-------|
+| `claude_code.list_tools` | List all 40+ Claude Code agent tools | claude_code_explorer | `await explorer.list_tools()` |
+| `claude_code.list_commands` | List all 50+ slash commands | claude_code_explorer | `await explorer.list_commands()` |
+| `claude_code.get_tool_source` | Get source code for a specific tool | claude_code_explorer | `await explorer.get_tool_source("BashTool")` |
+| `claude_code.search_source` | Search source with regex patterns | claude_code_explorer | `await explorer.search_source(r"class.*Tool")` |
+| `claude_code.get_architecture` | Get full architecture overview | claude_code_explorer | `await explorer.get_architecture()` |
+
+**Use Cases:**
+- Learn from Claude Code's implementation
+- Port tools to Piranha Agent
+- Understand agent architecture
+- Search for specific patterns
+
+**Requirements:** `pip install mcp`
+
+**Documentation:** [docs/CLAUDE_CODE_EXPLORER.md](../docs/CLAUDE_CODE_EXPLORER.md)
 
 ---
 

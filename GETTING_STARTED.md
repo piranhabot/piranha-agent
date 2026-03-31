@@ -41,8 +41,34 @@ if __name__ == "__main__":
 
 - **Time-Travel Debugging**: Go back in time to inspect state.
 - **Wasm Sandbox**: Execute untrusted code safely.
-- **46+ Skills**: Built-in skills for various tasks.
+- **51+ Skills**: Built-in skills including Claude Code Explorer.
+- **Claude Code Explorer**: Explore 512K+ lines of Claude Code source.
 - **Rust Core**: Fast, secure, and robust execution.
+
+## Claude Code Explorer (NEW!)
+
+Explore Claude Code's source code directly from your agents:
+
+```python
+from piranha_agent import Agent, create_claude_explorer_skill
+
+agent = Agent(
+    name="claude-expert",
+    skills=create_claude_explorer_skill(),  # 5 explorer skills
+)
+
+result = agent.run("List all Claude Code tools")
+print(result)
+```
+
+Or use the CLI:
+```bash
+piranha-agent explore --list-tools
+piranha-agent explore --tool BashTool
+piranha-agent explore --search "class.*Tool"
+```
+
+See [docs/CLAUDE_CODE_EXPLORER.md](docs/CLAUDE_CODE_EXPLORER.md) for full documentation.
 
 ## Next Steps
 

@@ -23,19 +23,32 @@ from litellm import acompletion, completion
 class LLMMessage:
     """A message in an LLM conversation."""
     
-    role: str  # "system", "user", "assistant"
-    content: str
+    role: str  # "system", "user", "assistant", "tool"
+    content: str | None = None
+    tool_calls: list[dict[str, Any]] | None = None
+    tool_call_id: str | None = None
+    name: str | None = None
     
-    def to_dict(self) -> dict[str, str]:
-        return {"role": self.role, "content": self.content}
+    def to_dict(self) -> dict[str, Any]:
+        d = {"role": self.role}
+        if self.content is not None:
+            d["content"] = self.content
+        if self.tool_calls is not None:
+            d["tool_calls"] = self.tool_calls
+        if self.tool_call_id is not None:
+            d["tool_call_id"] = self.tool_call_id
+        if self.name is not None:
+            d["name"] = self.name
+        return d
 
 
 @dataclass
 class LLMResponse:
     """Response from an LLM call."""
     
-    content: str
+    content: str | None
     model: str
+    tool_calls: list[dict[str, Any]] | None = None
     prompt_tokens: int = 0
     completion_tokens: int = 0
     total_tokens: int = 0
@@ -46,7 +59,7 @@ class LLMResponse:
     
     @property
     def is_complete(self) -> bool:
-        return self.finish_reason == "stop"
+        return self.finish_reason == "stop" or self.finish_reason is None
 
 
 class LLMProvider:
@@ -189,9 +202,25 @@ class LLMProvider:
         # Check for cache hit (LiteLLM specific)
         cache_hit = getattr(response, "cache_hit", False)
         
+        # Extract tool calls if any
+        tool_calls = None
+        if hasattr(choice.message, "tool_calls") and choice.message.tool_calls:
+            tool_calls = [
+                {
+                    "id": tc.id,
+                    "type": tc.type,
+                    "function": {
+                        "name": tc.function.name,
+                        "arguments": tc.function.arguments,
+                    },
+                }
+                for tc in choice.message.tool_calls
+            ]
+        
         return LLMResponse(
-            content=choice.message.content or "",
+            content=choice.message.content,
             model=response.model,
+            tool_calls=tool_calls,
             prompt_tokens=usage.prompt_tokens,
             completion_tokens=usage.completion_tokens,
             total_tokens=usage.total_tokens,

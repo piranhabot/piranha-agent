@@ -16,6 +16,16 @@ To install the latest stable version of Piranha Agent, run:
 pip install piranha-agent
 ```
 
+## Claude Code Explorer (Optional)
+
+To use the Claude Code Explorer features:
+
+```bash
+pip install "piranha-agent[claude-explorer]"
+```
+
+This installs the `mcp` package required for Model Context Protocol support.
+
 ## Development Installation
 
 If you want to contribute or build from source:

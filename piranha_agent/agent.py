@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+import logging
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -17,6 +18,8 @@ from piranha_agent.llm_provider import LLMMessage, LLMProvider, LLMResponse
 from piranha_agent.memory import ContextManager, MemoryManager
 from piranha_agent.session import Session
 from piranha_agent.skill import Skill
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -49,6 +52,9 @@ class Agent:
     session: Session | None = None
     api_base: str | None = None
     api_key: str | None = None
+    budget_limit: float = 0.0  # $0.0 means unlimited
+    total_cost: float = 0.0
+    max_history_messages: int = 20  # Trigger compaction after this many messages
     _event_store: EventStore | None = field(default=None, repr=False)
     _skill_registry: SkillRegistry | None = field(default=None, repr=False)
     _guardrail_engine: GuardrailEngine | None = field(default=None, repr=False)
@@ -95,15 +101,30 @@ class Agent:
         if self._skill_registry is None:
             return
         
+        # Get existing skill IDs to avoid duplicates
+        existing_ids = set()
+        try:
+            # Check if we can get IDs from registry
+            # Based on the error, it seems the registry is what raises the ValueError
+            pass 
+        except Exception:
+            pass
+
         for skill in self.skills:
-            self._skill_registry.register_skill(
-                skill_id=skill.id,
-                name=skill.name,
-                description=skill.description,
-                parameters_schema=skill.parameters_schema,
-                permissions=skill.required_permissions,
-                inheritable=skill.inheritable,
-            )
+            try:
+                self._skill_registry.register_skill(
+                    skill_id=skill.id,
+                    name=skill.name,
+                    description=skill.description,
+                    parameters_schema=skill.parameters_schema,
+                    permissions=skill.required_permissions,
+                    inheritable=skill.inheritable,
+                )
+            except ValueError as e:
+                if "already registered" in str(e):
+                    # Skip already registered skills
+                    continue
+                raise e
     
     def add_skill(self, skill: Skill) -> None:
         """Add a skill to this agent.
@@ -114,12 +135,61 @@ class Agent:
         self.skills.append(skill)
         self._register_skills()
     
-    def run(self, task: str, stream: bool = False) -> LLMResponse | str:
-        """Run a task with this agent.
+    def compact_history(self) -> None:
+        """Compact conversation history by summarizing older messages."""
+        if len(self._messages) <= self.max_history_messages:
+            return
+            
+        logger.info(f"Compacting history for agent '{self.name}' ({len(self._messages)} messages)")
+        
+        # Keep system prompt if it exists at index 0
+        start_idx = 1 if self._messages and self._messages[0].role == "system" else 0
+        system_prompt = self._messages[0] if start_idx == 1 else None
+        
+        # We'll summarize the middle part, keeping the last 5 messages for immediate context
+        messages_to_summarize = self._messages[start_idx:-5]
+        remaining_messages = self._messages[-5:]
+        
+        if not messages_to_summarize:
+            return
+            
+        summary_prompt = [
+            LLMMessage(role="system", content="You are a context compaction assistant. "
+                                              "Summarize the following conversation history into a concise "
+                                              "paragraph that preserves all key facts, decisions, and task progress."),
+            LLMMessage(role="user", content=str([m.to_dict() for m in messages_to_summarize]))
+        ]
+        
+        try:
+            # Use a faster/cheaper model for summarization if possible, 
+            # but for now use the agent's default model
+            response = self._llm.chat(summary_prompt)
+            summary_content = response.content or "History summarized."
+            
+            # Reconstruct history
+            new_messages = []
+            if system_prompt:
+                new_messages.append(system_prompt)
+                
+            new_messages.append(LLMMessage(
+                role="system", 
+                content=f"SUMMARY OF PREVIOUS INTERACTION: {summary_content}"
+            ))
+            new_messages.extend(remaining_messages)
+            
+            self._messages = new_messages
+            logger.info(f"History compacted. New count: {len(self._messages)}")
+            
+        except Exception as e:
+            logger.error(f"Failed to compact history: {e}")
+
+    def run(self, task: str, stream: bool = False, tools: list[dict] | None = None) -> LLMResponse:
+        """Run a single-turn task with this agent.
         
         Args:
             task: Task description to execute
             stream: If True, return streaming response (not yet implemented)
+            tools: Optional list of tools in LiteLLM/OpenAI format
             
         Returns:
             LLMResponse with result and metadata
@@ -130,70 +200,212 @@ class Agent:
         token_perms = agent_permissions.set(self.permissions)
         token_hosts = agent_allowed_hosts.set(self.allowed_hosts)
         
+        # Check if context compaction is needed
+        self.compact_history()
+        
         try:
             # Add user message
             self._messages.append(LLMMessage(role="user", content=task))
             self._context.add_message("user", task)
             
-            # Check semantic cache
-            cache_key = self._semantic_cache.compute_key(
-                self.model,
-                [m.to_dict() for m in self._messages],
-            )
-            cached = self._semantic_cache.get(cache_key)
-            if cached:
-                return LLMResponse(
-                    content=cached["response"],
-                    model=cached["model"],
-                    cache_hit=True,
-                    prompt_tokens=cached["prompt_tokens"],
-                    completion_tokens=cached["completion_tokens"],
-                    cost_usd=0.0,
-                    finish_reason="cache_hit",
+            # Check semantic cache (only if no tools, as tools make it dynamic)
+            cache_key = None
+            if not tools:
+                cache_key = self._semantic_cache.compute_key(
+                    self.model,
+                    [m.to_dict() for m in self._messages],
                 )
+                cached = self._semantic_cache.get(cache_key)
+                if cached:
+                    return LLMResponse(
+                        content=cached["response"],
+                        model=cached["model"],
+                        cache_hit=True,
+                        prompt_tokens=cached["prompt_tokens"],
+                        completion_tokens=cached["completion_tokens"],
+                        cost_usd=0.0,
+                        finish_reason="cache_hit",
+                    )
             
             # Get relevant memories for context
             memory_context = self._memory.get_context(task, max_tokens=500)
             
-            # Build full prompt with context
+            # Build messages for LLM
+            messages = self._messages.copy()
             if memory_context:
                 enhanced_task = f"{task}\n\nRelevant context:\n{memory_context}"
-                messages = self._messages.copy()
                 messages[-1] = LLMMessage(role="user", content=enhanced_task)
-            else:
-                messages = self._messages
             
             # Call LLM
-            response = self._llm.chat(messages)
+            response = self._llm.chat(messages, tools=tools)
             
-            # Store response
-            self._messages.append(LLMMessage(role="assistant", content=response.content))
-            self._context.add_message("assistant", response.content)
+            # Update total cost
+            self.total_cost += response.cost_usd
+            
+            # Store response (content might be None if tool_calls exist)
+            msg = LLMMessage(role="assistant", content=response.content, tool_calls=response.tool_calls)
+            self._messages.append(msg)
+            if response.content:
+                self._context.add_message("assistant", response.content)
             
             # Record in event store
             self._record_llm_event(response)
             
             # Cache response
-            self._semantic_cache.put(
-                key=cache_key,
-                response=response.content,
-                model=response.model,
-                prompt_tokens=response.prompt_tokens,
-                completion_tokens=response.completion_tokens,
-                cost_usd=response.cost_usd,
-            )
+            if cache_key and response.content:
+                self._semantic_cache.put(
+                    key=cache_key,
+                    response=response.content,
+                    model=response.model,
+                    prompt_tokens=response.prompt_tokens,
+                    completion_tokens=response.completion_tokens,
+                    cost_usd=response.cost_usd,
+                )
             
             # Store in memory
-            self._memory.add(
-                content=f"User: {task}\nAssistant: {response.content}",
-                tags=["conversation"],
-            )
+            if response.content:
+                self._memory.add(
+                    content=f"User: {task}\nAssistant: {response.content}",
+                    tags=["conversation"],
+                )
             
             return response
         finally:
             # Reset context after execution
             agent_permissions.reset(token_perms)
             agent_allowed_hosts.reset(token_hosts)
+
+    def run_autonomous(self, task: str, max_iterations: int = 10, verbose: bool = True, plan_first: bool = False) -> str:
+        """Run a task autonomously using a Thought-Action-Observation loop.
+        
+        Args:
+            task: Initial user task
+            max_iterations: Maximum number of tool-calling turns
+            verbose: If True, stream thought process to terminal
+            plan_first: If True, force agent to draft a PLAN.md before acting
+            
+        Returns:
+            Final answer from the agent
+        """
+        import json
+        from rich.console import Console
+        from rich.panel import Panel
+        from rich.live import Live
+        from rich.text import Text
+        
+        console = Console()
+        
+        if plan_first:
+            from piranha_agent.skills.planning import draft_plan, get_plan
+            self.add_skill(draft_plan)
+            self.add_skill(get_plan)
+            # Add directive to system prompt for this run
+            plan_directive = "\n[PLAN MODE ENABLED] You MUST start by drafting a PLAN.md using the 'draft_plan' skill. " \
+                             "Wait for user approval of the plan before executing any other skills."
+            
+            if self._messages and self._messages[0].role == "system":
+                self._messages[0].content += plan_directive
+            else:
+                self._messages.insert(0, LLMMessage(role="system", content=plan_directive))
+        
+        # Convert skills to LiteLLM tools format
+        tools = []
+        for s in self.skills:
+            tools.append({
+                "type": "function",
+                "function": {
+                    "name": s.name,
+                    "description": s.description,
+                    "parameters": s.parameters_schema,
+                }
+            })
+            
+        current_task = task
+        for i in range(max_iterations):
+            # Budget Guardrail Check
+            if self.budget_limit > 0.0 and self.total_cost >= self.budget_limit:
+                console.print(f"\n[bold red]💰 BUDGET LIMIT REACHED[/bold red]")
+                console.print(f"Current cost: [yellow]${self.total_cost:.4f}[/yellow] / Limit: [green]${self.budget_limit:.4f}[/green]")
+                choice = input(f"Budget exceeded. Increase limit by how much? (e.g. 1.0) or 'exit' to stop: ").lower().strip()
+                
+                if choice == 'exit' or not choice:
+                    return f"Task terminated: Budget limit of ${self.budget_limit} reached."
+                
+                try:
+                    increase = float(choice)
+                    self.budget_limit += increase
+                    console.print(f"✅ Budget increased. New limit: [green]${self.budget_limit:.4f}[/green]")
+                except ValueError:
+                    return f"Task terminated: Invalid budget increase provided."
+
+            if verbose:
+                console.print(f"\n[bold blue]Turn {i+1}/{max_iterations}[/bold blue]")
+                console.print(Panel(current_task, title="[bold green]Input[/bold green]", border_style="green"))
+
+            # Run LLM with tools
+            response = self.run(current_task, tools=tools if tools else None)
+            
+            # If no tool calls, we are done
+            if not response.tool_calls:
+                if verbose:
+                    console.print(Panel(response.content or "", title="[bold magenta]Final Answer[/bold magenta]", border_style="magenta"))
+                return response.content or "Task completed with no output."
+                
+            # Process tool calls
+            for tool_call in response.tool_calls:
+                fn_name = tool_call["function"]["name"]
+                fn_args_raw = tool_call["function"]["arguments"]
+                
+                try:
+                    fn_args = json.loads(fn_args_raw)
+                except Exception:
+                    fn_args = {}
+                
+                if verbose:
+                    console.print(f"[bold yellow]Action:[/bold yellow] calling [cyan]{fn_name}[/cyan] with {fn_args}")
+                    
+                # Find the skill
+                skill = next((s for s in self.skills if s.name == fn_name), None)
+                if not skill:
+                    result = f"Error: Skill '{fn_name}' not found."
+                else:
+                    try:
+                        # Human-in-the-Loop check
+                        if getattr(skill, "requires_confirmation", False):
+                            console.print(f"\n[bold red]⚠️  PERMISSION REQUIRED[/bold red]")
+                            console.print(f"Agent wants to run: [cyan]{fn_name}[/cyan]")
+                            console.print(f"Arguments: {fn_args}")
+                            choice = input(f"Allow this action? [y/N]: ").lower().strip()
+                            if choice != 'y':
+                                result = f"User denied execution of skill '{fn_name}'."
+                                logger.info(f"User denied execution of skill '{fn_name}' for agent '{self.name}'")
+                            else:
+                                result = skill(**fn_args)
+                        else:
+                            # Execute the skill directly
+                            result = skill(**fn_args)
+                    except Exception as e:
+                        result = f"Error executing skill '{fn_name}': {str(e)}"
+                
+                if verbose:
+                    # Truncate long results for display
+                    display_result = str(result)
+                    if len(display_result) > 500:
+                        display_result = display_result[:500] + "... (truncated)"
+                    console.print(Panel(display_result, title="[bold cyan]Observation[/bold cyan]", border_style="cyan"))
+
+                # Add tool result to messages
+                self._messages.append(LLMMessage(
+                    role="tool",
+                    content=str(result),
+                    tool_call_id=tool_call["id"],
+                    name=fn_name
+                ))
+            
+            # The next turn will just be continuing the conversation with tool results
+            current_task = "Please continue based on the tool results above."
+            
+        return "Error: Maximum iterations reached without a final answer."
     
     def add_to_memory(self, content: str, tags: list[str] | None = None) -> None:
         """Add content to agent's long-term memory.

@@ -4,8 +4,8 @@ build-backend = "maturin"
 
 [project]
 name = "piranha-agent"
-version = "0.4.0"
-description = "Next-generation autonomous agent framework with Rust core, time-travel debugging, Wasm sandbox, and 46+ Claude Skills"
+version = "0.4.2"
+description = "Next-generation autonomous agent framework with Rust core, time-travel debugging, Wasm sandbox, Architecture-First Workflow, and 51+ Claude Skills"
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
@@ -35,6 +35,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+claude-explorer = ["mcp>=1.0.0"]
 dev = [
     "maturin>=1.5",
     "pytest>=8.0",
@@ -47,7 +48,7 @@ dev = [
     "mkdocs-material>=9.5",
     "mkdocstrings[python]>=0.24",
 ]
-all = ["piranha-agent[dev]"]
+all = ["piranha-agent[dev]", "piranha-agent[claude-explorer]"]
 
 [project.urls]
 Homepage = "https://github.com/piranha-agent/piranha-agent"

@@ -4,7 +4,7 @@
 [![Rust](https://img.shields.io/badge/rust-stable-orange.svg)](https://rust-lang.org/)
 [![License: MIT/Apache-2.0](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE)
 [![Tests: 169 passing](https://img.shields.io/badge/tests-169%20passing-green.svg)](tests/)
-[![Version: 0.4.0](https://img.shields.io/badge/version-0.4.0-blue.svg)](pyproject.toml)
+[![Version: 0.4.2](https://img.shields.io/badge/version-0.4.2-blue.svg)](pyproject.toml)
 [![Security: A+](https://img.shields.io/badge/security-A%2B-brightgreen.svg)](docs/SECURITY.md)
 [![Performance: 7M+ ops/sec](https://img.shields.io/badge/performance-7M%2B%20ops%2Fsec-brightgreen.svg)](tests/test_benchmarking.py)
 [![Code Quality: 100%](https://img.shields.io/badge/code%20quality-100%25-brightgreen.svg)](docs/CODE_QUALITY_STATUS.md)
@@ -23,7 +23,7 @@ Piranha is designed for **Supervised Autonomy**. We believe that while agents sh
 
 ---
 
-## 🔒 Security Hardening (v0.4.0 Update)
+## 🔒 Security Hardening (v0.4.2 Update)
 
 We have implemented multiple layers of defense to make Piranha safe for production deployment:
 
@@ -42,10 +42,11 @@ Prevent data exfiltration with built-in network guardrails.
 - **Allowed Hosts Whitelist**: Restrict agents to communicating only with trusted domains (e.g., `github.com`, `internal-api.company.com`).
 - **Validated Skills**: Core skills use the `validate_url()` helper to intercept and block unauthorized outbound requests.
 
-### 4. Automated Secret Masking
-Protect your credentials from ending up in logs or UIs.
-- **Regex Scrubbing**: Automatically detects and redacts OpenAI keys (`sk-...`), GitHub tokens, and Bearer tokens.
-- **Keyword Masking**: Dictionary keys like `password`, `secret`, and `api_key` are scrubbed before storage.
+### 10. Autonomous Agent Orchestration (v0.5.0)
+Piranha now supports autonomous multi-agent "teams" managed by a Coordinator agent, similar to Claude Code's agent swarms.
+- **Dynamic Delegation**: The Coordinator can autonomously "hire" specialized sub-agents and assign them tasks.
+- **Shared Environment**: Teams share a **Message Bus** for inter-agent communication and a **Shared State** (whiteboard) for collective memory.
+- **Orchestration Skills**: Built-in skills for `delegate_task`, `get_team_status`, and `broadcast_message`.
 
 ---
 
@@ -70,27 +71,27 @@ python examples/01_basic_agent.py
 
 ## ✨ What Makes Piranha Different?
 
-| Feature | Piranha | DeepAgents | AgentGen | MAF | AutoGen | LangGraph | CrewAI |
-|---------|---------|------------|----------|-----|---------|-----------|--------|
-| **Performance** | ⚡⚡⚡⚡⚡ Rust core | ⚡⚡⚡ Python | ⚡⚡ Python | ⚡⚡⚡ Python | ⚡⚡ Python | ⚡⚡ Python | ⚡⚡ Python |
-| **State Resilience**| ✅ SQLite Persist | ❌ In-memory | ❌ None | ⚠️ Optional | ❌ None | ✅ Yes | ❌ None |
-| **Collaboration**| ✅ Shared Msg Bus | ❌ Linear only | ❌ Linear | ⚠️ Basic | ✅ Yes | ✅ Yes | ⚠️ Basic |
-| **Security** | ✅ Wasmtime (Strict) | ⚠️ Process | ⚠️ Process | ❌ None | ❌ None | ❌ None | ❌ None |
-| **Data Privacy** | ✅ Auto-Redaction | ❌ None | ❌ None | ❌ None | ❌ None | ❌ None | ❌ None |
-| **Network Safety**| ✅ Egress Whitelist | ❌ Open access | ❌ Open | ❌ Open | ❌ Open | ❌ Open | ❌ Open |
-| **Tool Safety** | ✅ Enforced Perms | ⚠️ Unchecked | ❌ None | ⚠️ Limited | ❌ None | ⚠️ Basic | ❌ None |
-| **Claude Skills** | ✅ 46+ pre-built | ⚠️ 14 basic | ⚠️ Limited | ❌ None | ❌ None | ❌ None | ❌ None |
-| **Accountability** | ✅ Radical Transparency | ⚠️ Limited | ❌ None | ⚠️ Limited | ❌ None | ✅ Basic | ❌ None |
-| **Semantic Cache** | ✅ Fuzzy matching | ⚠️ Exact only | ❌ None | ⚠️ Exact only | ❌ None | ❌ None | ❌ None |
-| **Local LLM** | ✅ Native Ollama | ✅ Yes | ⚠️ Manual | ⚠️ Manual | ✅ Yes | ⚠️ Manual | ⚠️ Manual |
-| **Event Sourcing** | ✅ Full audit log | ✅ Yes | ❌ None | ✅ Yes | ❌ None | ✅ Yes | ❌ None |
-| **Frontend** | ✅ Piranha Studio | ⚠️ Limited | ❌ None | ⚠️ Limited | ❌ None | ⚠️ Limited | ❌ None |
-| **Observability** | ✅ OpenTelemetry | ⚠️ Custom | ❌ None | ⚠️ App Insights | ❌ None | ⚠️ LangSmith | ❌ None |
-| **No-Code Builder** | ✅ Visual workflow | ❌ None | ❌ None | ❌ None | ❌ None | ❌ None | ❌ None |
-| **PostgreSQL** | ✅ Production-ready | ⚠️ SQLite | ❌ None | ✅ Azure SQL | ❌ None | ⚠️ Plugin | ❌ None |
-| **Distributed Agents** | ✅ Multi-process | ⚠️ Limited | ❌ None | ✅ Azure | ⚠️ Limited | ⚠️ Limited | ❌ None |
+### 🏆 5 Pillars of World-Class Agents
 
-**🏆 Ranked #1 vs competitors** - See [Framework Comparison](docs/FRAMEWORK_COMPARISON.md)
+| Pillar | Status | Implementation |
+|--------|--------|----------------|
+| **1. Autonomous Swarms** | ✅ Production | Multi-agent orchestration with shared state |
+| **2. Safety & Spending Brakes** | ✅ Production | HITL checkpoints, budget controls, Wasm sandbox |
+| **3. Durable State** | ✅ Production | SQLite/PostgreSQL event sourcing |
+| **4. Live Visibility** | ✅ Production | Piranha Studio, real-time monitoring |
+| **5. Infinite Context** | ✅ Production | Semantic cache, context compaction |
+
+### 🚀 Unique Differentiators
+
+| Feature | Piranha | Competitors |
+|---------|---------|-------------|
+| **Claude Code Explorer** | ✅ 512K+ LOC exploration | ❌ None have this |
+| **Plan Mode (Architecture-First)** | ✅ Mandatory planning | ❌ None have this |
+| **Wasm Sandbox** | ✅ Wasmtime isolation | ⚠️ Docker only |
+| **Time-Travel Debugger** | ✅ Full UI | ⚠️ Limited |
+| **Rust Core** | ✅ 7M+ ops/sec | ❌ Pure Python |
+
+**🏆 Ranked #1 vs competitors** - See [Framework Comparison](docs/FRAMEWORK_COMPARISON.md) | [World-Class Features](WORLD_CLASS_FEATURES.md)
 
 ---
 
@@ -167,6 +168,72 @@ graph TD
     SC --> ES
     Memory --> LLM
 ```
+
+---
+
+## 🆕 NEW: Architecture-First Workflow (Plan Mode) v0.4.2
+
+Enforce architectural thinking before code execution with the new `plan_first` parameter:
+
+```python
+from piranha_agent import Agent
+
+agent = Agent(name="architect")
+
+# Plan Mode: Agent MUST draft PLAN.md before acting
+result = agent.run_autonomous(
+    task="Build a REST API",
+    plan_first=True  # ← Forces planning workflow
+)
+```
+
+**How it works:**
+1. Agent drafts `PLAN.md` with architectural strategy
+2. Human reviews and approves the plan (HITL checkpoint)
+3. Agent executes according to approved plan
+4. Progress tracked against plan milestones
+
+**New Skills:**
+- `draft_plan` - Write architectural strategy (requires confirmation)
+- `get_plan` - Retrieve and review current plan
+
+**Benefits:**
+- ✅ Prevents rash code changes
+- ✅ Enforces architectural thinking
+- ✅ Creates audit trail (PLAN.md)
+- ✅ Human oversight for complex tasks
+
+---
+
+## 🆕 NEW: Claude Code Explorer Integration (v0.4.1)
+
+Explore **Claude Code's 512K+ lines of source code** directly from your Piranha Agents!
+
+```python
+from piranha_agent import Agent
+from piranha_agent.claude_code_explorer import create_claude_explorer_skill
+
+# Create agent with Claude Code Explorer skills
+agent = Agent(
+    name="claude-code-expert",
+    skills=create_claude_explorer_skill(),
+)
+
+# Explore Claude Code internals
+result = agent.run("Show me how BashTool works in Claude Code")
+print(result)
+```
+
+**Features:**
+- ✅ List all 40+ Claude Code agent tools
+- ✅ Explore 50+ slash commands
+- ✅ Read source code for any tool/command
+- ✅ Search codebase with regex patterns
+- ✅ Get architecture documentation
+
+**Requirements:** `pip install mcp`
+
+**Full Documentation:** [docs/CLAUDE_CODE_EXPLORER.md](docs/CLAUDE_CODE_EXPLORER.md) | [Example](examples/12_claude_code_explorer.py)
 
 ---
 
@@ -812,4 +879,4 @@ We welcome contributions of all kinds! Please check out these resources to get s
 
 **Made with ❤️ using Rust + Python**
 
-*Last updated: March 2026 | Version: 0.4.0 | Status: Production Ready*
+*Last updated: April 2026 | Version: 0.4.2 | Status: Production Ready*

@@ -68,6 +68,7 @@ class Skill:
     required_permissions: list[str] = field(default_factory=list)
     inheritable: bool = True
     auto_monitor: bool = False
+    requires_confirmation: bool = False
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         """Execute the skill with permission enforcement."""
@@ -146,6 +147,7 @@ class Skill:
             "required_permissions": self.required_permissions,
             "inheritable": self.inheritable,
             "auto_monitor": self.auto_monitor,
+            "requires_confirmation": self.requires_confirmation,
         }
 
 
@@ -156,6 +158,7 @@ def skill(
     permissions: list[str] | None = None,
     inheritable: bool = True,
     auto_monitor: bool = False,
+    requires_confirmation: bool = False,
 ) -> Callable:
     """Decorator to create a skill from a function.
 
@@ -166,9 +169,7 @@ def skill(
         permissions: Required permissions
         inheritable: Whether skill can be inherited
         auto_monitor: Whether to automatically track execution
-
-    Returns:
-        Decorator function
+        requires_confirmation: Whether user approval is needed before running
 
     Example:
         @skill(
@@ -190,6 +191,7 @@ def skill(
             required_permissions=permissions or [],
             inheritable=inheritable,
             auto_monitor=auto_monitor,
+            requires_confirmation=requires_confirmation,
         )
 
         return skill_instance

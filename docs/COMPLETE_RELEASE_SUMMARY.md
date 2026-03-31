@@ -305,7 +305,7 @@ for keyword argument 'temperature'
 1. ✅ Review this summary
 2. ⏳ Create v0.4.0 release tag
    ```bash
-   git tag -a v0.4.0 -m "Piranha Agent v0.4.0 - Production Ready"
+   git tag -a v0.4.1 -m "Piranha Agent v0.4.1 - Claude Code Explorer Integration"
    git push origin v0.4.0
    ```
 3. ⏳ Create GitHub Release
@@ -352,7 +352,7 @@ for keyword argument 'temperature'
 
 ## 🎊 CONCLUSION
 
-### **PIRANHA AGENT v0.4.0 IS PRODUCTION READY** 🚀
+### **PIRANHA AGENT v0.4.1 IS PRODUCTION READY** 🚀
 
 **What We Achieved:**
 - ✅ Fixed 23 failing tests
