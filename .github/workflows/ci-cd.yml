@@ -60,6 +60,7 @@ jobs:
 
     - name: Run tests
       run: |
+        export PYTHONPATH="${{ github.workspace }}:$PYTHONPATH"
         pytest tests/ -v --tb=short -x
       env:
         SECRET_KEY: test-secret-key-for-ci

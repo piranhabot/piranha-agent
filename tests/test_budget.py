@@ -1,7 +1,8 @@
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
+
 from piranha_agent.agent import Agent
-from piranha_agent.llm_provider import LLMResponse, LLMProvider
+from piranha_agent.llm_provider import LLMProvider, LLMResponse
+
 
 def test_budget_limit_trigger():
     # Set a very small budget

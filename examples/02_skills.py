@@ -66,7 +66,7 @@ def calculator(expression: str) -> str:
 def read_file(path: str) -> str:
     """Read a file and return its contents."""
     try:
-        with open(path, "r") as f:
+        with open(path) as f:
             return f.read()
     except Exception as e:
         return f"Error reading file: {e}"

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import uuid
 import logging
+import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -194,7 +194,7 @@ class Agent:
         Returns:
             LLMResponse with result and metadata
         """
-        from piranha_agent.skill import agent_permissions, agent_allowed_hosts
+        from piranha_agent.skill import agent_allowed_hosts, agent_permissions
         
         # Set agent permissions and allowed hosts for this execution context
         token_perms = agent_permissions.set(self.permissions)
@@ -288,10 +288,9 @@ class Agent:
             Final answer from the agent
         """
         import json
+
         from rich.console import Console
         from rich.panel import Panel
-        from rich.live import Live
-        from rich.text import Text
         
         console = Console()
         
@@ -324,9 +323,9 @@ class Agent:
         for i in range(max_iterations):
             # Budget Guardrail Check
             if self.budget_limit > 0.0 and self.total_cost >= self.budget_limit:
-                console.print(f"\n[bold red]💰 BUDGET LIMIT REACHED[/bold red]")
+                console.print("\n[bold red]💰 BUDGET LIMIT REACHED[/bold red]")
                 console.print(f"Current cost: [yellow]${self.total_cost:.4f}[/yellow] / Limit: [green]${self.budget_limit:.4f}[/green]")
-                choice = input(f"Budget exceeded. Increase limit by how much? (e.g. 1.0) or 'exit' to stop: ").lower().strip()
+                choice = input("Budget exceeded. Increase limit by how much? (e.g. 1.0) or 'exit' to stop: ").lower().strip()
                 
                 if choice == 'exit' or not choice:
                     return f"Task terminated: Budget limit of ${self.budget_limit} reached."
@@ -336,7 +335,7 @@ class Agent:
                     self.budget_limit += increase
                     console.print(f"✅ Budget increased. New limit: [green]${self.budget_limit:.4f}[/green]")
                 except ValueError:
-                    return f"Task terminated: Invalid budget increase provided."
+                    return "Task terminated: Invalid budget increase provided."
 
             if verbose:
                 console.print(f"\n[bold blue]Turn {i+1}/{max_iterations}[/bold blue]")
@@ -372,10 +371,10 @@ class Agent:
                     try:
                         # Human-in-the-Loop check
                         if getattr(skill, "requires_confirmation", False):
-                            console.print(f"\n[bold red]⚠️  PERMISSION REQUIRED[/bold red]")
+                            console.print("\n[bold red]⚠️  PERMISSION REQUIRED[/bold red]")
                             console.print(f"Agent wants to run: [cyan]{fn_name}[/cyan]")
                             console.print(f"Arguments: {fn_args}")
-                            choice = input(f"Allow this action? [y/N]: ").lower().strip()
+                            choice = input("Allow this action? [y/N]: ").lower().strip()
                             if choice != 'y':
                                 result = f"User denied execution of skill '{fn_name}'."
                                 logger.info(f"User denied execution of skill '{fn_name}' for agent '{self.name}'")

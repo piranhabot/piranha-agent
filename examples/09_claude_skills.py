@@ -10,16 +10,16 @@ Usage:
 from piranha_agent import Agent
 from piranha_agent.claude_skills import (
     analyze_complex_problem,
-    logical_reasoning,
-    explain_code,
-    generate_code,
+    compare_options,
     debug_code,
-    summarize_text,
+    explain_code,
     extract_information,
+    generate_code,
+    logical_reasoning,
     solve_math_problem,
     statistical_analysis,
-    compare_options,
     step_by_step_solver,
+    summarize_text,
 )
 
 

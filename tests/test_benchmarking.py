@@ -18,14 +18,15 @@ Environment variables:
   this value if running on slower hardware or under constrained environments.
 """
 
-import time
-import statistics
 import logging
-from typing import Callable
-from dataclasses import dataclass, field
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import threading
 import os
+import statistics
+import threading
+import time
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass, field
+
 import httpx
 import pytest
 
@@ -107,8 +108,9 @@ def benchmark_semantic_cache_get(runner: "BenchmarkRunner", semantic_cache):
 
 def benchmark_skill_registry_authorize(runner: "BenchmarkRunner"):
     """Benchmark: Skill registry authorization performance."""
-    from piranha_core import SkillRegistry
     import uuid
+
+    from piranha_core import SkillRegistry
     registry = SkillRegistry()
     agent_id = str(uuid.uuid4())
     registry.register_skill(
@@ -128,8 +130,9 @@ def benchmark_skill_registry_authorize(runner: "BenchmarkRunner"):
 
 def benchmark_guardrail_check(runner: "BenchmarkRunner"):
     """Benchmark: Guardrail check performance."""
-    from piranha_core import GuardrailEngine
     import uuid
+
+    from piranha_core import GuardrailEngine
     engine = GuardrailEngine(token_budget=DEFAULT_GUARDRAIL_TOKEN_BUDGET)
     agent_id = str(uuid.uuid4())
     session_id = str(uuid.uuid4())
@@ -634,7 +637,7 @@ def run_all_benchmarks():
     runner = BenchmarkRunner()
 
     # Create components manually for standalone run
-    from piranha_core import SemanticCache, EventStore
+    from piranha_core import EventStore, SemanticCache
 
     semantic_cache = SemanticCache(
         ttl_hours=DEFAULT_SEMANTIC_CACHE_TTL_HOURS,

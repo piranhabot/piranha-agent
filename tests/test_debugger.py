@@ -1,11 +1,11 @@
 """Tests for Phase 3: Time-Travel Debugger."""
 
-import pytest
-import tempfile
 import os
-from fastapi.testclient import TestClient
+import tempfile
 
+import pytest
 from debugger_api.app import app
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture

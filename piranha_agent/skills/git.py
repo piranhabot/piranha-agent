@@ -6,12 +6,11 @@ Git worktrees, allowing multiple agents to work on the same
 repository without file system conflicts.
 """
 
+import logging
 import os
 import shutil
 import subprocess
 import tempfile
-import logging
-from typing import Optional
 
 from piranha_agent.skill import skill
 
@@ -24,7 +23,7 @@ class GitWorktreeManager:
         self.repo_path = os.path.abspath(repo_path)
         self.worktrees = {}
 
-    def create_worktree(self, branch: str, name: Optional[str] = None) -> str:
+    def create_worktree(self, branch: str, name: str | None = None) -> str:
         """Create a new temporary Git worktree.
         
         Args:
@@ -94,7 +93,7 @@ class GitWorktreeManager:
         "required": ["branch"]
     }
 )
-def git_create_isolated_workspace(branch: str, workspace_name: Optional[str] = None) -> str:
+def git_create_isolated_workspace(branch: str, workspace_name: str | None = None) -> str:
     """Skill to create an isolated Git workspace."""
     manager = GitWorktreeManager()
     path = manager.create_worktree(branch, workspace_name)

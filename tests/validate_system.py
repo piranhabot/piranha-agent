@@ -15,20 +15,20 @@ MAIN_MONITOR_PORT = 8080
 INTEGRATION_MONITOR_PORT = 8081
 WORKFLOW_MONITOR_PORT = 8082
 
-from piranha_agent import (
-    Agent,
-    Task,
-    skill,
-    # Real-time monitoring
-    RealtimeMonitor,
-    start_monitoring,
-    monitor_agent,
-    get_monitor,
-)
-from piranha_agent.memory import MemoryManager, ContextManager
-from typing import Optional, List
 import asyncio
 import inspect
+
+from piranha_agent import (
+    Agent,
+    # Real-time monitoring
+    RealtimeMonitor,
+    Task,
+    get_monitor,
+    monitor_agent,
+    skill,
+    start_monitoring,
+)
+from piranha_agent.memory import ContextManager, MemoryManager
 
 
 def _execute_task_run(task: Task):
@@ -159,7 +159,7 @@ print("\n5. Validating Multi-Agent Collaboration...")
 class MultiAgentCollaboration:
     """Enhanced multi-agent collaboration system."""
     
-    def __init__(self, monitor: Optional[RealtimeMonitor] = None):
+    def __init__(self, monitor: RealtimeMonitor | None = None):
         self.agents = []
         self.tasks = []
         self.monitor = monitor if monitor else get_monitor()
@@ -184,7 +184,7 @@ class MultiAgentCollaboration:
         
         self.collaboration_log.append(f"Added {role} agent: {agent.name}")
     
-    def create_task_chain(self, description: str, agent_roles: List[str]):
+    def create_task_chain(self, description: str, agent_roles: list[str]):
         """Create a chain of tasks for multiple agents."""
         task_id = f"chain-{len(self.tasks) + 1}"
         
@@ -268,7 +268,7 @@ try:
     collaboration.add_agent(researcher, "researcher")
     collaboration.add_agent(writer, "writer")
     collaboration.add_agent(reviewer, "reviewer")
-    print(f"   ✓ Added 3 agents with roles")
+    print("   ✓ Added 3 agents with roles")
     
     # Create task chain
     task_id = collaboration.create_task_chain(

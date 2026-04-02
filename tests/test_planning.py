@@ -1,8 +1,9 @@
-import pytest
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
+
 from piranha_agent.agent import Agent
-from piranha_agent.llm_provider import LLMResponse, LLMProvider
+from piranha_agent.llm_provider import LLMProvider, LLMResponse
+
 
 def test_plan_mode_injection():
     agent = Agent(name="planner", system_prompt="Help me.")
@@ -30,7 +31,7 @@ def test_plan_mode_injection():
             
             # Verify plan file was created
             assert os.path.exists("PLAN.md")
-            with open("PLAN.md", "r") as f:
+            with open("PLAN.md") as f:
                 assert f.read() == "# My Plan"
             
             os.remove("PLAN.md")

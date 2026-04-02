@@ -38,7 +38,7 @@ def main():
     
     # Or use default (no tracing exporter)
     obs = get_observability()
-    print(f"✓ Observability manager initialized")
+    print("✓ Observability manager initialized")
     print()
 
     # -------------------------------------------------------------------------
@@ -118,7 +118,7 @@ def main():
 
     # Get token stats
     token_stats = obs.metrics.get_histogram_stats("tokens_total")
-    print(f"  Token Usage Statistics:")
+    print("  Token Usage Statistics:")
     print(f"    - Count: {token_stats.get('count', 0)}")
     print(f"    - Total: {token_stats.get('sum', 0):.0f} tokens")
     print(f"    - Average: {token_stats.get('avg', 0):.1f} tokens/request")
@@ -127,7 +127,7 @@ def main():
 
     # Get latency stats
     latency_stats = obs.metrics.get_histogram_stats("agent_chat_latency")
-    print(f"  Latency Statistics:")
+    print("  Latency Statistics:")
     print(f"    - Count: {latency_stats.get('count', 0)}")
     print(f"    - Average: {latency_stats.get('avg', 0):.1f}ms")
     print(f"    - Min: {latency_stats.get('min', 0):.1f}ms")
@@ -137,7 +137,7 @@ def main():
 
     # Get cost stats
     cost_stats = obs.cost_detector.get_cost_stats()
-    print(f"  Cost Statistics:")
+    print("  Cost Statistics:")
     print(f"    - Current: ${cost_stats.get('current', 0):.6f}")
     print(f"    - Mean: ${cost_stats.get('mean', 0):.6f}")
     print(f"    - Min: ${cost_stats.get('min', 0):.6f}")
@@ -178,7 +178,7 @@ def main():
     anomaly = obs.cost_detector.record_cost(0.01)  # Anomaly: $0.01 (10x normal)
     
     if anomaly:
-        print(f"  ⚠️  ANOMALY DETECTED!")
+        print("  ⚠️  ANOMALY DETECTED!")
         print(f"      Cost: ${anomaly['cost']:.4f}")
         print(f"      Baseline: ${anomaly['baseline_mean']:.4f}")
         print(f"      Z-Score: {anomaly['z_score']:.2f}")

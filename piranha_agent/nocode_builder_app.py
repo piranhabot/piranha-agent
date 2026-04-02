@@ -1,8 +1,20 @@
 import gradio as gr
+
 # import time  # Not used
 # import asyncio  # Not used
 # import json  # Not used
-from piranha_agent.nocode_builder import NODE_CATEGORIES, TEMPLATES, generate_code, render_canvas, add_node, update_node_config, delete_node, load_template, clear_canvas, populate_sidebar
+from piranha_agent.nocode_builder import (
+    NODE_CATEGORIES,
+    TEMPLATES,
+    add_node,
+    clear_canvas,
+    delete_node,
+    load_template,
+    populate_sidebar,
+    render_canvas,
+    update_node_config,
+)
+
 
 def create_builder_ui():
     """Create functional UI."""

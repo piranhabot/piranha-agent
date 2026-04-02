@@ -16,10 +16,9 @@ from typing import Any
 from piranha_core import EventStore, GuardrailEngine, SemanticCache, SkillRegistry
 
 from piranha_agent.llm_provider import LLMMessage, LLMProvider, LLMResponse
+from piranha_agent.memory import ContextManager, MemoryManager
 from piranha_agent.session import Session
 from piranha_agent.skill import Skill
-from piranha_agent.memory import ContextManager, MemoryManager
-
 
 logger = logging.getLogger(__name__)
 
@@ -145,7 +144,7 @@ class AsyncAgent:
         Returns:
             LLMResponse or async generator for streaming
         """
-        from piranha_agent.skill import agent_permissions, agent_allowed_hosts
+        from piranha_agent.skill import agent_allowed_hosts, agent_permissions
         
         # Set agent permissions and allowed hosts for this execution context
         token_perms = agent_permissions.set(self.permissions)

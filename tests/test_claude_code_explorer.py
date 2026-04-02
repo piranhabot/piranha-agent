@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Tests for Claude Code Explorer skill."""
 
+from unittest.mock import AsyncMock, patch
+
 import pytest
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+
 
 # Test that the module can be imported
 def test_import_module():

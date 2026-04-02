@@ -9,6 +9,7 @@ Usage:
 """
 
 import click
+
 from piranha_agent import __version__
 
 
@@ -99,6 +100,7 @@ def version() -> None:
 def explore(tool, command, search, architecture, list_tools, list_commands):
     """Explore Claude Code source code."""
     import asyncio
+
     from piranha_agent.claude_code_explorer import ClaudeCodeExplorer
     
     if not any([tool, command, search, architecture, list_tools, list_commands]):

@@ -49,7 +49,7 @@ def main():
         agent=researcher,
     )
     research_result = research_task.run()
-    print(f"  ✓ Research complete")
+    print("  ✓ Research complete")
     
     # Step 2: Write
     print("Step 2: Writing content...")
@@ -59,7 +59,7 @@ def main():
         context=research_result.result,
     )
     writing_result = writing_task.run()
-    print(f"  ✓ Writing complete")
+    print("  ✓ Writing complete")
     
     # Step 3: Review
     print("Step 3: Reviewing content...")
@@ -69,7 +69,7 @@ def main():
         context=writing_result.result,
     )
     review_result = review_task.run()
-    print(f"  ✓ Review complete")
+    print("  ✓ Review complete")
     
     print()
     print("=" * 60)
@@ -79,7 +79,7 @@ def main():
     print(f"\n🔍 Review:\n{review_result.result}")
     
     # Show session info
-    print(f"\n📊 Session Statistics:")
+    print("\n📊 Session Statistics:")
     print(f"  Researcher session: {researcher.session}")
     print(f"  Writer session: {writer.session}")
     print(f"  Reviewer session: {reviewer.session}")

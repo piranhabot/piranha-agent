@@ -32,7 +32,7 @@ def main():
     print()
 
     cache = SemanticCache(ttl_hours=24, max_entries=10000)
-    print(f"Created SemanticCache (TTL: 24h, Max entries: 10000)")
+    print("Created SemanticCache (TTL: 24h, Max entries: 10000)")
     print()
 
     # Add entries with embeddings for fuzzy matching
@@ -170,7 +170,7 @@ def main():
 
     original_result = cache.get(key)
     if original_result:
-        print(f"Retrieved using original get() API:")
+        print("Retrieved using original get() API:")
         print(f"  Response: {original_result['response']}")
         print(f"  Model: {original_result['model']}")
     print()

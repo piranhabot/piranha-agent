@@ -12,7 +12,7 @@ Usage:
     python examples/07_wasm_sandbox.py
 """
 
-from piranha_agent import WasmRunner, DynamicSkillCompiler
+from piranha_agent import DynamicSkillCompiler, WasmRunner
 
 
 def main():
@@ -30,7 +30,7 @@ def main():
     print()
 
     runner = WasmRunner()
-    print(f"Created WasmRunner")
+    print("Created WasmRunner")
     print()
 
     # Create a minimal valid Wasm binary
@@ -53,7 +53,7 @@ def main():
         function_name="main",
         input="Hello from Python!"
     )
-    print(f"Execution result:")
+    print("Execution result:")
     print(f"  Success: {result['success']}")
     print(f"  Output: {result['output']}")
     print(f"  Execution time: {result['execution_time_ms']}ms")
@@ -66,7 +66,7 @@ def main():
         wasm_bytes=wasm_bytes,
         input="Test input data"
     )
-    print(f"I/O result:")
+    print("I/O result:")
     print(f"  Success: {result_io['success']}")
     print(f"  Output: {result_io['output']}")
     print(f"  Execution time: {result_io['execution_time_ms']}ms")
@@ -77,7 +77,7 @@ def main():
     invalid_bytes = b"not a wasm module"
     try:
         result_invalid = runner.execute(invalid_bytes, "main", "input")
-        print(f"Invalid Wasm result:")
+        print("Invalid Wasm result:")
         print(f"  Success: {result_invalid['success']}")
         print(f"  Error: {result_invalid['error']}")
     except RuntimeError as e:
@@ -93,7 +93,7 @@ def main():
     print()
 
     compiler = DynamicSkillCompiler()
-    print(f"Created DynamicSkillCompiler")
+    print("Created DynamicSkillCompiler")
     print()
 
     # Register a pre-compiled Wasm skill
@@ -116,7 +116,7 @@ def main():
         skill_code=skill_code,
         input="calculate(2 + 2)"
     )
-    print(f"Compile & execute result:")
+    print("Compile & execute result:")
     print(f"  Success: {compile_result['success']}")
     print(f"  Output: {compile_result['output']}")
     print(f"  Execution time: {compile_result['execution_time_ms']}ms")
@@ -129,7 +129,7 @@ def main():
             skill_code="not valid base64!!!",
             input="test"
         )
-        print(f"Invalid base64 result:")
+        print("Invalid base64 result:")
         print(f"  Success: {invalid_result['success']}")
         print(f"  Error: {invalid_result['error']}")
     except RuntimeError as e:

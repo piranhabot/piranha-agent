@@ -6,7 +6,9 @@ enforcing a 'Plan-First' architectural workflow.
 """
 
 import os
+
 from piranha_agent.skill import skill
+
 
 @skill(
     name="draft_plan",
@@ -45,7 +47,7 @@ def get_plan(filename: str = "PLAN.md") -> str:
     if not os.path.exists(filename):
         return f"No plan found at {filename}. Use 'draft_plan' first."
     try:
-        with open(filename, "r") as f:
+        with open(filename) as f:
             return f.read()
     except Exception as e:
         return f"Error reading plan: {str(e)}"

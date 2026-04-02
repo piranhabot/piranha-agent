@@ -9,9 +9,9 @@ Provides:
 
 from __future__ import annotations
 
+import re
 import statistics
 import time
-import re
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass, field

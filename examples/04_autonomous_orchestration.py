@@ -7,6 +7,7 @@ tasks to sub-agents and aggregate results using the run_autonomous loop.
 
 from piranha_agent.orchestration import create_orchestrated_team
 
+
 def main():
     print("🚀 Initializing Autonomous Orchestrated Team...")
     

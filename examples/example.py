@@ -23,6 +23,8 @@ console = Console()
 try:
     from piranha_agent import (
         AsyncAgent as Agent,
+    )
+    from piranha_agent import (
         Task,
         skill,
     )

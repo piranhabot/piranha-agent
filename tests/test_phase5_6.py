@@ -1,6 +1,6 @@
 """Tests for Phase 5: PostgreSQL Backend and Phase 6: Distributed Agents."""
 
-from piranha_agent import PostgresEventStore, AgentOrchestrator, DistributedAgent
+from piranha_agent import AgentOrchestrator, DistributedAgent, PostgresEventStore
 
 
 class TestPhase5PostgresStore:

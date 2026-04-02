@@ -11,7 +11,7 @@ import asyncio
 import logging
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, cast
+from typing import cast
 
 # Optional dependency for nested event loop support
 try:
@@ -21,7 +21,6 @@ except ImportError:
 
 from piranha_agent.agent import Agent
 from piranha_agent.collaboration import (
-    AgentRole,
     MessageBus,
     SharedState,
     SupportsCollaboration,
@@ -86,8 +85,8 @@ class OrchestrationSkillProvider:
     def get_skills(self) -> list:
         """Get the orchestration skills."""
         import copy
-        import uuid
         import functools
+        import uuid
         
         # We need to return fresh instances with unique IDs and bound methods
         # to avoid registry conflicts and TypeErrors.
@@ -306,8 +305,8 @@ Shared State Keys: {', '.join(shared_keys) if shared_keys else 'None'}
 
 def create_orchestrated_team(name: str, coordinator_model: str = "ollama/llama3:latest", is_persistent: bool = False) -> Team:
     """Helper to create a team with an autonomous coordinator."""
-    from piranha_agent.skills.git import git_create_isolated_workspace, git_cleanup_workspace
     from piranha_agent.collaboration import PersistentMessageBus, PersistentSharedState
+    from piranha_agent.skills.git import git_cleanup_workspace, git_create_isolated_workspace
     
     coordinator = Agent(
         name="coordinator",

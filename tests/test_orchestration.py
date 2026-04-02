@@ -1,7 +1,8 @@
-import pytest
 from unittest.mock import MagicMock
+
 from piranha_agent.agent import Agent
-from piranha_agent.orchestration import create_orchestrated_team, Team
+from piranha_agent.orchestration import create_orchestrated_team
+
 
 def test_orchestrated_team_creation():
     team = create_orchestrated_team("TestTeam")

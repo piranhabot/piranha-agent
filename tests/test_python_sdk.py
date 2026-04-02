@@ -1,7 +1,7 @@
 """Tests for Piranha Python SDK."""
 
 import pytest
-from piranha_agent import Agent, Task, Session, Skill
+from piranha_agent import Agent, Session, Skill, Task
 from piranha_agent.skill import skill
 
 

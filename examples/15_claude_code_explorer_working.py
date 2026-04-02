@@ -7,6 +7,7 @@ with the MCP server built from source.
 
 import asyncio
 import os
+
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
@@ -61,13 +62,13 @@ async def main():
             # 2. List commands
             print("2. Listing commands...")
             await session.call_tool("list_commands", {})
-            print(f"   ✅ Commands retrieved")
+            print("   ✅ Commands retrieved")
             print()
             
             # 3. Get architecture
             print("3. Getting architecture...")
             await session.call_tool("get_architecture", {})
-            print(f"   ✅ Architecture retrieved")
+            print("   ✅ Architecture retrieved")
             print()
             
             # 4. Search source
@@ -76,7 +77,7 @@ async def main():
                 "search_source",
                 {"pattern": "class.*Tool", "limit": 3}
             )
-            print(f"   ✅ Search completed")
+            print("   ✅ Search completed")
             print()
             
             print("=" * 70)

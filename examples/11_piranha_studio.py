@@ -7,13 +7,14 @@ Usage:
     python examples/11_piranha_studio.py
 """
 
+import time
+
 from piranha_agent import (
     Agent,
     Task,
-    start_monitoring,
     monitor_agent,
+    start_monitoring,
 )
-import time
 
 
 def main():
@@ -66,7 +67,7 @@ def main():
         print(f"Task {i}: {description}")
         task = Task(description=description, agent=agent)
         _ = task.run()
-        print(f"  ✓ Completed")
+        print("  ✓ Completed")
         
         # Small delay to see updates in dashboard
         time.sleep(1)

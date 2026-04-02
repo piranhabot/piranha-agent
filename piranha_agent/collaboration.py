@@ -15,13 +15,14 @@ Features:
 
 from __future__ import annotations
 
-import uuid
 import inspect
+import uuid
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Protocol, runtime_checkable, cast
+from typing import Any, Protocol, cast, runtime_checkable
 
 from piranha_agent import Agent
 from piranha_agent.realtime import RealtimeMonitor, get_monitor
@@ -123,8 +124,8 @@ class PersistentMessageBus(MessageBus):
             """)
             
     def _load_history(self):
-        import sqlite3
         import json
+        import sqlite3
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute("SELECT topic, sender, message, timestamp FROM messages ORDER BY id")
             for topic, sender, message, timestamp in cursor:
@@ -136,8 +137,8 @@ class PersistentMessageBus(MessageBus):
                 })
                 
     def publish(self, topic: str, sender: str, message: Any):
-        import sqlite3
         import json
+        import sqlite3
         # Save to DB first
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
@@ -188,16 +189,16 @@ class PersistentSharedState(SharedState):
             """)
             
     def _load_all(self):
-        import sqlite3
         import json
+        import sqlite3
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.execute("SELECT key, value FROM shared_state")
             for key, value in cursor:
                 self._data[key] = json.loads(value)
                 
     def set(self, key: str, value: Any):
-        import sqlite3
         import json
+        import sqlite3
         super().set(key, value)
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(

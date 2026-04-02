@@ -1,7 +1,8 @@
-import pytest
 import os
-from piranha_agent.collaboration import PersistentSharedState, PersistentMessageBus
+
+from piranha_agent.collaboration import PersistentMessageBus, PersistentSharedState
 from piranha_agent.orchestration import create_orchestrated_team
+
 
 def test_persistent_shared_state():
     db_name = "test_state.db"

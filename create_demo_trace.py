@@ -3,6 +3,7 @@
 
 import json
 import uuid
+
 from piranha_core import EventStore
 
 
@@ -81,8 +82,8 @@ def create_demo_trace():
     print(f"✓ Created {trace['event_count']} events")
     print()
     print("To view in debugger:")
-    print(f"  1. Start API: python debugger_api/app.py")
-    print(f"  2. Start UI: cd debugger_ui && npm run dev")
+    print("  1. Start API: python debugger_api/app.py")
+    print("  2. Start UI: cd debugger_ui && npm run dev")
     print(f"  3. Enter Session ID: {session_id}")
     print(f"  4. Enter Agent ID: {agent_id}")
     print(f"  5. Enter Database Path: {db_path}")

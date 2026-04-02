@@ -6,9 +6,11 @@ which provides a rich terminal dashboard of the agent's actions.
 """
 
 from unittest.mock import patch
+
 from piranha_agent.agent import Agent, LLMResponse
-from piranha_agent.skill import skill
 from piranha_agent.llm_provider import LLMProvider
+from piranha_agent.skill import skill
+
 
 @skill(name="fetch_data", description="Fetch data from a source")
 def fetch_data(source: str):

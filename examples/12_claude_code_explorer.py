@@ -12,6 +12,7 @@ Usage:
 """
 
 import asyncio
+
 from piranha_agent import Agent, Task
 from piranha_agent.claude_code_explorer import ClaudeCodeExplorer, create_claude_explorer_skill
 
@@ -49,7 +50,7 @@ async def explore_directly():
         # 3. Get architecture overview
         print("3. 🏗️  Getting architecture overview...")
         arch = await explorer.get_architecture()
-        print(f"   ✓ Got architecture documentation")
+        print("   ✓ Got architecture documentation")
         if 'overview' in arch:
             print(f"      Overview: {arch['overview'][:100]}...")
         print()
@@ -72,7 +73,7 @@ async def explore_directly():
             source = await explorer.get_tool_source("BashTool")
             lines = source.split('\n')
             print(f"   ✓ Got BashTool source: {len(lines)} lines")
-            print(f"      Preview (first 5 lines):")
+            print("      Preview (first 5 lines):")
             for i, line in enumerate(lines[:5], 1):
                 print(f"        {i}. {line[:80]}")
         except Exception as e:

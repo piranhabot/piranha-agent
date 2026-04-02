@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """No-Code Visual Agent Builder - Clean categorized UI."""
 
-import json
 import time
 
 import gradio as gr
@@ -74,9 +73,8 @@ TEMPLATES = {
 
 def generate_code(workflow):
     """Generate functional Python code using Piranha SDK."""
-    # nodes = workflow.get("nodes", [])  # Reserved for future use
-    # connections = workflow.get("connections", [])  # Reserved for future use
-    
+    nodes = workflow.get("nodes", [])
+
     lines = [
         '#!/usr/bin/env python3',
         '"""Auto-generated Workflow using Piranha Agent"""',
@@ -88,23 +86,23 @@ def generate_code(workflow):
         "async def main():",
         "    # Initialize Agents and Tools",
     ]
-    
+
     # Instantiate agents
     agent_nodes = [n for n in nodes if n["type"] == "agent"]
     for node in agent_nodes:
         nid, name = node["id"], node.get("name", "Assistant")
         lines.append(f'    agent_{nid} = Agent(name="{name}", model="ollama/llama3:latest")')
         lines.append(f'    register_complete_claude_skills(agent_{nid})')
-    
+
     lines.append("")
     lines.append("    # Define Workflow Execution")
-    
+
     # Simplified execution logic based on connections
     for node in nodes:
         nid, ntype, name = node["id"], node["type"], node.get("name", "Node")
         if ntype == "trigger":
             lines.append(f'    # {name}: Entry point')
-            lines.append(f'    input_data = "Start workflow"')
+            lines.append('    input_data = "Start workflow"')
         elif ntype == "agent":
             lines.append(f'    # {name}: Processing')
             lines.append(f'    task_{nid} = Task(description=input_data, agent=agent_{nid})')
@@ -112,8 +110,8 @@ def generate_code(workflow):
             lines.append(f'    input_data = result_{nid}.content')
         elif ntype == "output":
             lines.append(f'    # {name}: Final Result')
-            lines.append(f'    print(f"--- Workflow Result ---\\n{{input_data}}")')
-            
+            lines.append('    print("--- Workflow Result ---\\n", input_data)')
+
     lines.extend([
         "",
         "if __name__ == \"__main__\":",
@@ -124,16 +122,16 @@ def generate_code(workflow):
 
 def render_canvas(workflow):
     """Render workflow canvas."""
-    # nodes = workflow.get("nodes", [])  # Reserved for future use
-    # connections = workflow.get("connections", [])  # Reserved for future use
-    
+    nodes = workflow.get("nodes", [])
+    connections = workflow.get("connections", [])
+
     if not nodes:
         return '''<div style="width:100%;height:450px;background:linear-gradient(135deg,#0d1117 0%,#161b22 100%);display:flex;align-items:center;justify-content:center;flex-direction:column;color:#8b949e;">
             <div style="font-size:48px;margin-bottom:16px;">🎨</div>
             <div style="font-size:18px;font-weight:600;">Start Building Your Workflow</div>
             <div style="font-size:14px;margin-top:8px;">Click a template or add nodes from the sidebar</div>
         </div>'''
-    
+
     # Build connection SVG
     node_map = {n["id"]: n for n in nodes}
     conn_paths = ['<svg style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1;">']
@@ -249,6 +247,17 @@ def clear_canvas():
     return wf, render_canvas(wf), generate_code(wf), gr.update(choices=[], value=None)
 
 
+def update_stats(workflow):
+    """Update workflow stats."""
+    nodes = workflow.get("nodes", [])
+    connections = workflow.get("connections", [])
+    return {
+        "total_nodes": len(nodes),
+        "total_connections": len(connections),
+        "node_types": list(set(n["type"] for n in nodes)),
+    }
+
+
 def populate_sidebar(workflow, node_id):
     """Populate sidebar with node data."""
     if not node_id:
@@ -258,6 +267,48 @@ def populate_sidebar(workflow, node_id):
             return node["name"], node["type"]
     return "", ""
 
+
+def create_builder_ui():
+    """Create the Gradio UI."""
+    with gr.Blocks(title="🚀 Piranha Agent Builder") as ui:
+        workflow_state = gr.State({"nodes": [], "connections": []})
+
+        gr.Markdown("# 🚀 Piranha No-Code Agent Builder")
+
+        with gr.Row():
+            with gr.Column(scale=1):
+                gr.Markdown("### Node Library")
+                node_buttons = []
+                for category, nodes in NODE_CATEGORIES.items():
+                    gr.Markdown(f"**{category}**")
+                    for ntype, info in nodes.items():
+                        btn = gr.Button(f"{info['icon']} {info['label']}", variant="secondary")
+                        node_buttons.append((btn, ntype))
+
+                gr.Markdown("### Templates")
+                template_dd = gr.Dropdown(
+                    choices=list(TEMPLATES.keys()), label="Load Template", interactive=True
+                )
+
+            with gr.Column(scale=3):
+                gr.Markdown("### Workflow Canvas")
+                canvas = gr.Textbox(label="Workflow Visualization", lines=10, interactive=False)
+
+                with gr.Row():
+                    clear_btn = gr.Button("🗑️ Clear", variant="stop")
+                    run_btn = gr.Button("▶️ Run", variant="primary")
+
+            with gr.Column(scale=1):
+                gr.Markdown("### Node Config")
+                node_selector = gr.Dropdown(choices=[], label="Select Node", interactive=True)
+                cfg_name = gr.Textbox(label="Name")
+                cfg_type = gr.Textbox(label="Type", interactive=False)
+                with gr.Row():
+                    update_btn = gr.Button("💾 Update", variant="primary")
+                    delete_btn = gr.Button("🗑️ Delete", variant="stop")
+
+        code_out = gr.Code(label="Generated Python Code", language="python", lines=20)
+        stats_out = gr.JSON(label="Workflow Stats")
 
         # Bind Node Library Events
         for btn, ntype in node_buttons:
@@ -297,7 +348,7 @@ def populate_sidebar(workflow, node_id):
         ).then(update_stats, workflow_state, stats_out)
 
         run_btn.click(fn=lambda wf: gr.Info("Workflow execution started! Check console for output."), inputs=[workflow_state])
-    
+
     return ui
 
 

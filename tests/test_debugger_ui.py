@@ -1,9 +1,10 @@
 """Tests for Gradio-based Time-Travel Debugger UI."""
 
-import pytest
 import json
-import tempfile
 import os
+import tempfile
+
+import pytest
 from piranha_core import EventStore
 
 

@@ -1,7 +1,8 @@
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
+
 from piranha_agent.agent import Agent, LLMMessage
-from piranha_agent.llm_provider import LLMResponse, LLMProvider
+from piranha_agent.llm_provider import LLMProvider, LLMResponse
+
 
 def test_compact_history_trigger():
     # Set threshold to 10

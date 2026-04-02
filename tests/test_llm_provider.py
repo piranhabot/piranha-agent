@@ -3,12 +3,12 @@
 Target: Increase llm_provider.py coverage from 68% to 90%+
 """
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from piranha_agent.llm_provider import (
-    LLMProvider,
     LLMMessage,
+    LLMProvider,
     LLMResponse,
     create_provider,
 )

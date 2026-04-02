@@ -7,10 +7,12 @@ This example demonstrates the 'Swarm' pattern:
 3. Aggregate results and cleanup.
 """
 
-import os
 import asyncio
-from piranha_agent.orchestration import create_orchestrated_team
+import os
 import subprocess
+
+from piranha_agent.orchestration import create_orchestrated_team
+
 
 def run_git(args):
     return subprocess.run(["git"] + args, capture_output=True, text=True, check=True)

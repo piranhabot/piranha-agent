@@ -23,39 +23,39 @@ Usage:
 
 from __future__ import annotations
 
+import argparse
 import asyncio
 import json
 import logging
+import os
+import random
 import threading
 import uuid
-import random
-import argparse
 from dataclasses import asdict
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
-import os
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Request
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-# Import security module
-from .security import (
-    get_limiter,
-    verify_websocket_token,
-    get_cors_origins,
-    run_security_check,
-    create_access_token,
-)
-
+from piranha_agent.agent import Agent
 from piranha_agent.memory import MemoryManager
 from piranha_agent.observability import SecretMasker
-from piranha_agent.agent import Agent
+
+# Import security module
+from .security import (
+    create_access_token,
+    get_cors_origins,
+    get_limiter,
+    run_security_check,
+    verify_websocket_token,
+)
 
 # Get limiter instance
 limiter = get_limiter()
@@ -185,7 +185,7 @@ class RealtimeMonitor:
         host: str = "127.0.0.1",
         port: int = 8080,
         dashboard_path: str | None = None,
-        memory_manager: 'MemoryManager' | None = None,
+        memory_manager: MemoryManager | None = None,
         db_path: str | None = None
     ):
         """Initialize real-time monitor.
@@ -813,7 +813,6 @@ class RealtimeMonitor:
     
     def rehydrate_from_db(self, db_path: str):
         """Rehydrate state from persistent EventStore."""
-        from piranha_core import EventStore
         try:
             # This is a structural foundation for state resilience.
             # In a full implementation, we would query the EventStore for all active 

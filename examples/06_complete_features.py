@@ -14,7 +14,6 @@ from piranha_agent import (
     AsyncAgent,
 )
 
-
 # =============================================================================
 # Feature 1: LiteLLM Integration
 # =============================================================================
@@ -106,7 +105,7 @@ def demo_memory():
     results = memory.search("What is Python?", top_k=2)
     
     if results:
-        print(f"✓ Search results for 'What is Python?':")
+        print("✓ Search results for 'What is Python?':")
         for mem, score in results:
             print(f"  - {mem.content[:60]}... (score: {score:.2f})")
     

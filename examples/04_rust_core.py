@@ -10,8 +10,8 @@ This example demonstrates:
 
 from piranha_core import (
     EventStore,
-    SemanticCache,
     GuardrailEngine,
+    SemanticCache,
     SkillRegistry,
 )
 
@@ -29,7 +29,7 @@ def main():
     print("-" * 40)
     
     store = EventStore()
-    print(f"   Created in-memory event store")
+    print("   Created in-memory event store")
     
     # Record some events
     session_id = "550e8400-e29b-41d4-a716-446655440000"
@@ -59,7 +59,7 @@ def main():
     print("-" * 40)
     
     cache = SemanticCache(ttl_hours=24, max_entries=10000)
-    print(f"   Created cache (TTL: 24h, Max entries: 10000)")
+    print("   Created cache (TTL: 24h, Max entries: 10000)")
     
     # Compute a cache key
     messages = [{"role": "user", "content": "What is Python?"}]
@@ -75,7 +75,7 @@ def main():
         completion_tokens=8,
         cost_usd=0.0003,
     )
-    print(f"   Cached a response")
+    print("   Cached a response")
     
     # Get from cache
     cached = cache.get(cache_key)
@@ -94,7 +94,7 @@ def main():
     print("-" * 40)
     
     guardrails = GuardrailEngine(token_budget=100000)
-    print(f"   Created guardrail engine (budget: 100000 tokens)")
+    print("   Created guardrail engine (budget: 100000 tokens)")
     
     # Check a request
     verdict = guardrails.check(
@@ -114,7 +114,7 @@ def main():
     print("-" * 40)
     
     registry = SkillRegistry()
-    print(f"   Created skill registry")
+    print("   Created skill registry")
     
     # Register a skill
     registry.register_skill(
@@ -125,16 +125,16 @@ def main():
         permissions=["network_read"],
         inheritable=True,
     )
-    print(f"   Registered skill: web_search")
+    print("   Registered skill: web_search")
     
     # Grant skill to agent
     registry.grant_skills(agent_id, ["skill_web_search"])
-    print(f"   Granted skill to agent")
+    print("   Granted skill to agent")
     
     # Authorize invocation
     try:
         registry.authorize(agent_id, "skill_web_search")
-        print(f"   Agent authorized to use web_search ✓")
+        print("   Agent authorized to use web_search ✓")
     except Exception as e:
         print(f"   Authorization failed: {e}")
     

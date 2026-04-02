@@ -2,6 +2,7 @@
 """Test Claude Code Explorer - Working Version."""
 
 import asyncio
+
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
@@ -47,13 +48,13 @@ async def main():
             print("2. Listing commands...")
             await session.call_tool("list_commands", {})
             # commands retrieved
-            print(f"   ✅ Found commands (response received)")
+            print("   ✅ Found commands (response received)")
             print()
             
             # Get architecture
             print("3. Getting architecture...")
             await session.call_tool("get_architecture", {})
-            print(f"   ✅ Architecture retrieved")
+            print("   ✅ Architecture retrieved")
             print()
             
             # Search source
@@ -62,7 +63,7 @@ async def main():
                 "search_source",
                 {"pattern": "class.*Tool", "limit": 5}
             )
-            print(f"   ✅ Search completed")
+            print("   ✅ Search completed")
             print()
             
             print("=" * 70)

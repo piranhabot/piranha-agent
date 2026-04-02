@@ -13,8 +13,8 @@ Usage:
 
 from piranha_agent import Agent, Task
 from piranha_agent.claude_code_explorer import create_claude_explorer_skill
-from piranha_agent.orchestration import create_orchestrated_team, Team
 from piranha_agent.collaboration import MessageBus, SharedState
+from piranha_agent.orchestration import Team, create_orchestrated_team
 
 
 def example_1_sequential_exploration():
@@ -62,7 +62,7 @@ def example_1_sequential_exploration():
         agent=tool_researcher,
     )
     tools_result = tools_task.run()
-    print(f"  ✓ Found tools")
+    print("  ✓ Found tools")
     print()
     
     # Step 2: Discover commands
@@ -72,7 +72,7 @@ def example_1_sequential_exploration():
         agent=command_researcher,
     )
     commands_result = commands_task.run()
-    print(f"  ✓ Found commands")
+    print("  ✓ Found commands")
     print()
     
     # Step 3: Analyze architecture
@@ -82,7 +82,7 @@ def example_1_sequential_exploration():
         agent=architecture_analyst,
     )
     arch_result = arch_task.run()
-    print(f"  ✓ Analyzed architecture")
+    print("  ✓ Analyzed architecture")
     print()
     
     print("=" * 70)
@@ -133,7 +133,7 @@ def example_2_swarm_collaboration():
     team.add_member(analyzer, "analyzer")
     
     print(f"Created team '{team.name}':")
-    print(f"  - Coordinator (leads exploration)")
+    print("  - Coordinator (leads exploration)")
     print(f"  - {searcher.name}: {searcher.description}")
     print(f"  - {analyzer.name}: {analyzer.description}")
     print()
@@ -149,7 +149,7 @@ def example_2_swarm_collaboration():
         agent=searcher,
     )
     search_task.run()  # Result saved to shared state
-    print(f"  ✓ Search complete")
+    print("  ✓ Search complete")
     print()
     
     # Step 2: Analyze findings
@@ -160,13 +160,13 @@ def example_2_swarm_collaboration():
         context=str(team.shared_state.get_all()),
     )
     analyze_task.run()  # Result used via shared state
-    print(f"  ✓ Analysis complete")
+    print("  ✓ Analysis complete")
     print()
     
     print("=" * 70)
     print("SWARM RESULTS")
     print("=" * 70)
-    print(f"\n📊 Shared State:")
+    print("\n📊 Shared State:")
     for key, value in team.shared_state.get_all().items():
         print(f"  {key}: {str(value)[:100]}...")
     print()
@@ -226,7 +226,7 @@ def example_3_orchestrated_swarm():
         agent=tool_agent,
     )
     tool_task.run()  # Result displayed in output
-    print(f"  ✓ Tool discovery complete")
+    print("  ✓ Tool discovery complete")
     print()
     
     print("=" * 70)
@@ -244,6 +244,7 @@ def example_4_parallel_exploration():
     print()
     
     import asyncio
+
     from piranha_agent.claude_code_explorer import ClaudeCodeExplorer
     
     async def explore_tools():
@@ -288,9 +289,9 @@ def example_4_parallel_exploration():
     tools_count, commands_count, arch_ok = loop.run_until_complete(results)
     loop.close()
     
-    print(f"✓ Parallel exploration complete!")
+    print("✓ Parallel exploration complete!")
     print()
-    print(f"Results:")
+    print("Results:")
     print(f"  - Tools discovered: {tools_count}")
     print(f"  - Commands discovered: {commands_count}")
     print(f"  - Architecture analyzed: {'✓' if arch_ok else '✗'}")

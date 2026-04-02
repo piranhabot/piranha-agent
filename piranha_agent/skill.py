@@ -6,12 +6,12 @@ Supports auto-monitoring for skill execution tracking.
 
 from __future__ import annotations
 
+import contextvars
+import logging
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
-import contextvars
-import logging
 
 logger = logging.getLogger(__name__)
 

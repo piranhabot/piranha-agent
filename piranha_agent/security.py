@@ -10,16 +10,15 @@ This module provides security utilities:
 
 import asyncio
 import os
+import secrets
+import warnings
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 
 import jwt
-from fastapi import WebSocket, HTTPException, Request, status
+from fastapi import HTTPException, Request, WebSocket, status
 from fastapi.security import HTTPBearer
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-import secrets
-import warnings
 
 # Minimum length for API keys to be considered valid.
 MIN_API_KEY_LENGTH = 32
@@ -89,7 +88,7 @@ if _env_api_keys:
 #     @get_limiter().limit(f"{RATE_LIMIT_PER_MINUTE}/minute")
 #     async def list_items():
 #         ...
-_limiter: Optional[Limiter] = None
+_limiter: Limiter | None = None
 
 
 def is_development_environment() -> bool:
@@ -112,7 +111,7 @@ def get_limiter() -> Limiter:
 security = HTTPBearer()
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     """Create JWT access token."""
     to_encode = data.copy()
 
@@ -143,7 +142,7 @@ def verify_token(token: str) -> dict:
         )
 
 
-async def verify_websocket_token(websocket: WebSocket) -> Optional[dict]:
+async def verify_websocket_token(websocket: WebSocket) -> dict | None:
     """Verify WebSocket connection token.
 
     The authentication token is expected to be provided as the first WebSocket

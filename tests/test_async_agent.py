@@ -4,12 +4,12 @@ Target: Increase async_agent.py coverage from 26% to 80%+
 """
 
 import asyncio
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from piranha_agent.async_agent import AsyncAgent, AgentGroup
-from piranha_agent.skill import Skill, skill
+import pytest
+from piranha_agent.async_agent import AgentGroup, AsyncAgent
 from piranha_agent.llm_provider import LLMResponse
+from piranha_agent.skill import Skill, skill
 
 
 class TestAsyncAgent:

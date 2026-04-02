@@ -5,14 +5,12 @@ FastAPI backend for the React + React Flow debugger UI.
 """
 
 import json
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-
 from piranha_core import EventStore
-
+from pydantic import BaseModel
 
 app = FastAPI(
     title="Piranha Time-Travel Debugger API",
@@ -36,7 +34,7 @@ app.add_middleware(
 
 class LoadTraceRequest(BaseModel):
     session_id: str
-    db_path: Optional[str] = ":memory:"
+    db_path: str | None = ":memory:"
 
 
 class LoadTraceResponse(BaseModel):
@@ -49,7 +47,7 @@ class RollbackRequest(BaseModel):
     session_id: str
     agent_id: str
     target_sequence: int
-    db_path: Optional[str] = ":memory:"
+    db_path: str | None = ":memory:"
 
 
 class RollbackResponse(BaseModel):
@@ -63,7 +61,7 @@ class EventNode(BaseModel):
     event_type: str
     timestamp: str
     agent_id: str
-    parent_event_id: Optional[str]
+    parent_event_id: str | None
     payload: dict[str, Any]
     cost_usd: float
     tokens: int
@@ -107,14 +105,14 @@ async def load_trace(request: LoadTraceRequest):
         store = EventStore(request.db_path) if request.db_path != ":memory:" else EventStore()
         trace_json = store.export_trace(request.session_id)
         trace = json.loads(trace_json)
-        
+
         return LoadTraceResponse(
             trace=trace,
             event_count=trace.get("event_count", 0),
             status=f"Loaded {trace.get('event_count', 0)} events",
         )
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @app.get("/api/trace/load")
@@ -124,7 +122,7 @@ async def load_trace_get(session_id: str, db_path: str = ":memory:"):
 
 
 @app.get("/api/trace/{session_id}/events")
-async def get_events(session_id: str, db_path: Optional[str] = ":memory:"):
+async def get_events(session_id: str, db_path: str | None = ":memory:"):
     """Get events for a session as React Flow nodes.
     
     Args:
@@ -183,15 +181,15 @@ async def get_events(session_id: str, db_path: Optional[str] = ":memory:"):
                     "animated": False,
                     "style": {"stroke": "#666", "strokeWidth": 2},
                 })
-        
+
         return {"nodes": nodes, "edges": edges}
-        
+
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @app.get("/api/trace/{session_id}/costs")
-async def get_costs(session_id: str, db_path: Optional[str] = ":memory:"):
+async def get_costs(session_id: str, db_path: str | None = ":memory:"):
     """Get cost data for timeline chart.
     
     Args:
@@ -233,11 +231,11 @@ async def get_costs(session_id: str, db_path: Optional[str] = ":memory:"):
             "cache_hits": sum(1 for e in cost_data if e["event_type"] == "CacheHit"),
             "estimated_savings": round(sum(e["cost"] for e in cost_data if e["event_type"] == "CacheHit"), 6),
         }
-        
+
         return {"data": cost_data, "summary": summary}
-        
+
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @app.post("/api/trace/rollback", response_model=RollbackResponse)
@@ -265,17 +263,17 @@ async def rollback_trace(request: RollbackRequest):
             snapshot = json.loads(snapshot_json)
         else:
             snapshot = snapshot_json
-        
+
         return RollbackResponse(
             snapshot=snapshot,
             status=f"Rolled back to sequence {request.target_sequence}",
         )
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @app.get("/api/sessions")
-async def list_sessions(db_path: Optional[str] = ":memory:"):
+async def list_sessions(db_path: str | None = ":memory:"):
     """List all sessions in the database.
     
     Note: This is a simplified implementation.
