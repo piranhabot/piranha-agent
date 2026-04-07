@@ -103,12 +103,6 @@ class Agent:
         
         # Get existing skill IDs to avoid duplicates
         pass  # Skill registry handles duplicates automatically
-        try:
-            # Skill registry handles duplicate prevention
-            # Based on the error, it seems the registry is what raises the ValueError
-            pass 
-        except Exception:
-            pass
 
         for skill in self.skills:
             try:
