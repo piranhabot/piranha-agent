@@ -680,6 +680,7 @@ class RealtimeMonitor:
                 try:
                     await websocket.send_json({"error": "Authentication failed"})
                 except Exception:
+                    # Connection may already be closed, ignore send error
                     pass
                 finally:
                     await websocket.close(code=1008)
