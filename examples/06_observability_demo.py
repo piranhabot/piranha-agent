@@ -32,23 +32,26 @@ def main():
             content=None,
             model="gpt-4",
             tool_calls=[{
-                "id": "c1", "type": "function", 
+                "id": "c1", "type": "function",
                 "function": {"name": "fetch_data", "arguments": '{"source": "database"}'}
-            }]
+            }],
+            finish_reason="tool_calls",
         ),
         # Turn 2: Call analyze_results
         LLMResponse(
             content=None,
             model="gpt-4",
             tool_calls=[{
-                "id": "c2", "type": "function", 
+                "id": "c2", "type": "function",
                 "function": {"name": "analyze_results", "arguments": '{"data": "Result A, Result B, Result C"}'}
-            }]
+            }],
+            finish_reason="tool_calls",
         ),
         # Turn 3: Final Answer
         LLMResponse(
             content="I have fetched and analyzed the data. There are 3 items: A, B, and C.",
-            model="gpt-4"
+            model="gpt-4",
+            finish_reason="stop",
         )
     ]
     
