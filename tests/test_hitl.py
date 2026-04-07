@@ -64,8 +64,9 @@ def test_hitl_denial():
         # Mock input to return 'n' (denied)
         with patch('builtins.input', return_value='n'):
             result = agent.run_autonomous("Do something dangerous")
-            
+
             # Verify HITL denial via both result and history
+            assert "no" in result.lower() or "couldn't" in result.lower()
             history = agent.get_history()
             tool_msg = next(m for m in history if m["role"] == "tool")
             assert "User denied execution" in tool_msg["content"]

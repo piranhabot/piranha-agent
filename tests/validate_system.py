@@ -222,9 +222,7 @@ class MultiAgentCollaboration:
             agent_data = next((a for a in self.agents if a["role"] == role), None)
             if not agent_data:
                 raise ValueError(f"No agent with role: {role}")
-            
-            agent = agent_data["agent"]
-            
+
             # Execute task (placeholder - would use agent.run in real implementation)
             result = f"[{role}] Completed: {task['description']}"
             results.append(result)
