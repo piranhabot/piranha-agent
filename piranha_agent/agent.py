@@ -100,9 +100,6 @@ class Agent:
         """Register all skills with the skill registry."""
         if self._skill_registry is None:
             return
-        
-        # Get existing skill IDs to avoid duplicates
-        pass  # Skill registry handles duplicates automatically
 
         for skill in self.skills:
             try:
