@@ -9,10 +9,16 @@ This example shows:
 - Multi-agent coordination
 """
 
+import asyncio
+
 from piranha_agent import (
     Agent,
+    AgentGroup,
     AsyncAgent,
+    ContextManager,
+    MemoryManager,
 )
+from piranha_agent.llm_provider import LLMMessage, LLMProvider
 
 # =============================================================================
 # Feature 1: LiteLLM Integration
@@ -29,9 +35,7 @@ def demo_llm_provider():
         model="ollama/llama3:latest",
         api_base="http://localhost:11434",
     )
-    
-    from piranha_agent.llm_provider import LLMMessage
-    
+
     messages = [LLMMessage(role="user", content="Say hello in one word")]
     
     try:
