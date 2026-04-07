@@ -18,7 +18,7 @@ Usage:
     monitor.start()
     
     # Or run as standalone
-    python -m piranha.realtime
+    python -m piranha_agent.realtime
 """
 
 from __future__ import annotations
@@ -35,6 +35,7 @@ from dataclasses import asdict
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
+from hmac import compare_digest
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
@@ -270,49 +271,49 @@ class RealtimeMonitor:
             }
         
         @self.app.get("/api/agents")
-        @get_limiter().limit("30/minute")
+        @limiter.limit("30/minute")
         async def get_agents(request: Request):
             """Get all agents."""
             return {"agents": list(self.agents.values())}
-        
+
         @self.app.get("/api/agents/{agent_id}")
-        @get_limiter().limit("60/minute")
+        @limiter.limit("60/minute")
         async def get_agent(request: Request, agent_id: str):
             """Get specific agent."""
             if agent_id not in self.agents:
                 raise HTTPException(status_code=404, detail="Agent not found")
             return self.agents[agent_id]
-        
+
         @self.app.get("/api/tasks")
-        @get_limiter().limit("30/minute")
+        @limiter.limit("30/minute")
         async def get_tasks(request: Request, status: str | None = None):
             """Get all tasks, optionally filtered by status."""
             tasks = list(self.tasks.values())
             if status:
                 tasks = [t for t in tasks if t.status == status]
             return {"tasks": tasks}
-        
+
         @self.app.get("/api/metrics")
-        @get_limiter().limit("60/minute")
+        @limiter.limit("60/minute")
         async def get_metrics(request: Request):
             """Get system metrics."""
             self.update_metrics()
             return self.metrics
         
         @self.app.get("/api/events")
-        @get_limiter().limit("30/minute")
+        @limiter.limit("30/minute")
         async def get_events(request: Request, limit: int = 100):
             """Get recent events."""
             return {"events": self.events[-limit:]}
         
         @self.app.get("/api/benchmarks")
-        @get_limiter().limit("30/minute")
+        @limiter.limit("30/minute")
         async def get_benchmarks(request: Request):
             """Get benchmark history."""
             return {"benchmarks": self.benchmarks}
         
         @self.app.post("/api/benchmarks")
-        @get_limiter().limit("10/minute")
+        @limiter.limit("10/minute")
         async def add_benchmark(benchmark: BenchmarkData, request: Request):
             """Add a benchmark result."""
             self.benchmarks.append(benchmark)
@@ -325,13 +326,13 @@ class RealtimeMonitor:
             return {"status": "ok"}
 
         @self.app.get("/api/security/check")
-        @get_limiter().limit("10/minute")
+        @limiter.limit("10/minute")
         async def security_check(request: Request):
             """Run security check."""
             return run_security_check()
         
         @self.app.get("/api/security/token")
-        @get_limiter().limit("5/minute")
+        @limiter.limit("5/minute")
         async def get_token(request: Request):
             """Get authentication token (for demo purposes only)."""
             # Only allow this endpoint in explicit demo mode to avoid
@@ -339,7 +340,20 @@ class RealtimeMonitor:
             demo_mode = os.getenv("PIRANHA_DEMO_MODE", "").lower() in {"1", "true", "yes"}
             if not demo_mode:
                 raise HTTPException(status_code=403, detail="Token endpoint disabled")
-            
+
+            # Require a demo secret to be configured to avoid accidental exposure
+            demo_secret = os.getenv("PIRANHA_DEMO_SECRET")
+            if not demo_secret:
+                logging.warning(
+                    "Refusing /api/security/token request: PIRANHA_DEMO_SECRET is not set"
+                )
+                raise HTTPException(status_code=403, detail="Token endpoint disabled")
+            # Obtain the secret provided by the caller (header preferred, query as fallback)
+            provided_secret = request.headers.get("X-Demo-Secret") or request.query_params.get(
+                "demo_secret"
+            )
+            if not provided_secret or not compare_digest(str(provided_secret), str(demo_secret)):
+                raise HTTPException(status_code=403, detail="Invalid demo credentials")
             # Issue a non-admin token even in demo mode to reduce impact
             token = create_access_token(data={"sub": "demo-user", "role": "user"})
             return {"token": token, "expires_in": 3600}
@@ -353,7 +367,7 @@ class RealtimeMonitor:
             }
         
         @self.app.get("/api/wasm")
-        @get_limiter().limit("30/minute")
+        @limiter.limit("30/minute")
         async def get_wasm_executions(request: Request):
             """Get Wasm execution history."""
             # Filter events for Wasm-related events
@@ -364,7 +378,7 @@ class RealtimeMonitor:
             return {"executions": wasm_events[-50:]}  # Last 50 executions
         
         @self.app.post("/api/wasm/execute")
-        @get_limiter().limit("60/minute")
+        @limiter.limit("60/minute")
         async def execute_wasm(request_data: WasmExecutionRequest, request: Request):
             """Track Wasm execution."""
             # Record Wasm execution event
@@ -380,7 +394,7 @@ class RealtimeMonitor:
             return {"status": "ok"}
         
         @self.app.get("/api/skills")
-        @get_limiter().limit("30/minute")
+        @limiter.limit("30/minute")
         async def get_skills(request: Request):
             """Get all available skills."""
             # Mock data for demo
@@ -394,19 +408,19 @@ class RealtimeMonitor:
             }
         
         @self.app.post("/api/skills/{skill_id}/install")
-        @get_limiter().limit("10/minute")
+        @limiter.limit("10/minute")
         async def install_skill(request: Request, skill_id: str):
             """Install a skill."""
             return {"status": "ok", "message": f"Skill {skill_id} installed"}
         
         @self.app.delete("/api/skills/{skill_id}/uninstall")
-        @get_limiter().limit("10/minute")
+        @limiter.limit("10/minute")
         async def uninstall_skill(request: Request, skill_id: str):
             """Uninstall a skill."""
             return {"status": "ok", "message": f"Skill {skill_id} uninstalled"}
         
         @self.app.get("/api/cache/stats")
-        @get_limiter().limit("30/minute")
+        @limiter.limit("30/minute")
         async def get_cache_stats(request: Request):
             """Get cache statistics."""
             return {
@@ -420,7 +434,7 @@ class RealtimeMonitor:
             }
         
         @self.app.get("/api/cache/entries")
-        @get_limiter().limit("10/minute")
+        @limiter.limit("10/minute")
         async def get_cache_entries(request: Request):
             """Get cache entries."""
             entries = []
@@ -438,13 +452,13 @@ class RealtimeMonitor:
             return {"entries": entries}
         
         @self.app.delete("/api/cache/clear")
-        @get_limiter().limit("5/minute")
+        @limiter.limit("5/minute")
         async def clear_cache(request: Request):
             """Clear cache."""
             return {"status": "ok", "message": "Cache cleared"}
         
         @self.app.get("/api/llm/providers")
-        @get_limiter().limit("30/minute")
+        @limiter.limit("30/minute")
         async def get_llm_providers(request: Request):
             """Get all LLM providers."""
             return {
@@ -458,31 +472,31 @@ class RealtimeMonitor:
             }
         
         @self.app.post("/api/llm/providers")
-        @get_limiter().limit("10/minute")
+        @limiter.limit("10/minute")
         async def add_llm_provider(provider: LLMProviderRequest, request: Request):
             """Add LLM provider."""
             return {"status": "ok", "message": f"Provider {provider.name} added"}
         
         @self.app.delete("/api/llm/providers/{provider_id}")
-        @get_limiter().limit("10/minute")
+        @limiter.limit("10/minute")
         async def delete_llm_provider(request: Request, provider_id: str):
             """Delete LLM provider."""
             return {"status": "ok", "message": f"Provider {provider_id} deleted"}
         
         @self.app.put("/api/llm/providers/{provider_id}/default")
-        @get_limiter().limit("10/minute")
+        @limiter.limit("10/minute")
         async def set_default_provider(request: Request, provider_id: str):
             """Set default provider."""
             return {"status": "ok", "message": f"Provider {provider_id} set as default"}
         
         @self.app.post("/api/llm/providers/{provider_id}/test")
-        @get_limiter().limit("10/minute")
+        @limiter.limit("10/minute")
         async def test_llm_provider(request: Request, provider_id: str):
             """Test LLM provider connection."""
             return {"status": "ok", "success": True, "message": "Connection successful"}
         
         @self.app.get("/api/costs/analytics")
-        @get_limiter().limit("30/minute")
+        @limiter.limit("30/minute")
         async def get_cost_analytics(request: Request, range: str = '7d'):
             """Get advanced cost analytics."""
             days_map = {'7d': 7, '30d': 30, '90d': 90}
@@ -516,7 +530,7 @@ class RealtimeMonitor:
             }
         
         @self.app.get("/api/events/timeline")
-        @get_limiter().limit("30/minute")
+        @limiter.limit("30/minute")
         async def get_events_timeline(request: Request):
             """Get event timeline."""
             event_types = ['LlmCall', 'CacheHit', 'CacheMiss', 'SkillInvoked', 'SkillCompleted', 'GuardrailCheck']
@@ -539,7 +553,7 @@ class RealtimeMonitor:
             return {"events": events}
         
         @self.app.get("/api/collaborations")
-        @get_limiter().limit("30/minute")
+        @limiter.limit("30/minute")
         async def get_collaborations(request: Request):
             """Get multi-agent collaborations."""
             return {
@@ -582,7 +596,7 @@ class RealtimeMonitor:
             }
         
         @self.app.get("/api/guardrails")
-        @get_limiter().limit("30/minute")
+        @limiter.limit("30/minute")
         async def get_guardrails(request: Request):
             """Get guardrail configuration."""
             return {
@@ -594,13 +608,13 @@ class RealtimeMonitor:
             }
         
         @self.app.put("/api/guardrails")
-        @get_limiter().limit("10/minute")
+        @limiter.limit("10/minute")
         async def update_guardrails(config: GuardrailsConfig, request: Request):
             """Update guardrail configuration."""
             return {"status": "ok", "message": "Guardrails updated"}
         
         @self.app.get("/api/guardrails/stats")
-        @get_limiter().limit("30/minute")
+        @limiter.limit("30/minute")
         async def get_guardrails_stats(request: Request):
             """Get guardrails statistics."""
             return {
@@ -613,14 +627,14 @@ class RealtimeMonitor:
             }
         
         @self.app.get("/api/memory")
-        @get_limiter().limit("30/minute")
+        @limiter.limit("30/minute")
         async def get_memory(request: Request):
             """Get all memories."""
-            memories = [m.to_dict() for m in self.memory_manager._memories.values()]
+            memories = [m.to_dict() for m in self.memory_manager.get_all()]
             return {"memories": memories}
         
         @self.app.post("/api/memory/search")
-        @get_limiter().limit("60/minute")
+        @limiter.limit("60/minute")
         async def search_memory(search_request: MemorySearchRequest, request: Request):
             """Search memories."""
             query = search_request.query
@@ -638,7 +652,7 @@ class RealtimeMonitor:
             return {"results": formatted_results, "query": query, "top_k": top_k}
         
         @self.app.post("/api/memory")
-        @get_limiter().limit("30/minute")
+        @limiter.limit("30/minute")
         async def add_memory(memory_request: MemoryCreateRequest, request: Request):
             """Add memory."""
             content = memory_request.content
@@ -652,7 +666,7 @@ class RealtimeMonitor:
             return {"status": "ok", "memory_id": memory.id}
         
         @self.app.delete("/api/memory/{memory_id}")
-        @get_limiter().limit("30/minute")
+        @limiter.limit("30/minute")
         async def delete_memory(request: Request, memory_id: str):
             """Delete memory."""
             success = self.memory_manager.remove(memory_id)
@@ -661,7 +675,7 @@ class RealtimeMonitor:
             return {"status": "ok"}
         
         @self.app.delete("/api/memory/clear")
-        @get_limiter().limit("5/minute")
+        @limiter.limit("5/minute")
         async def clear_memory(request: Request):
             """Clear all memories."""
             self.memory_manager.clear()
@@ -702,11 +716,17 @@ class RealtimeMonitor:
                 # Keep connection alive
                 while True:
                     try:
-                        await asyncio.wait_for(
+                        message = await asyncio.wait_for(
                             websocket.receive_text(),
                             timeout=30.0
                         )
-                        # Handle incoming messages if needed
+                        # This endpoint is server-push only; incoming messages are
+                        # acknowledged but not processed to avoid silent drops.
+                        logger.debug("Received WebSocket message (ignored): %s", message)
+                        await websocket.send_json({
+                            "type": "info",
+                            "message": "Incoming messages are not processed by this endpoint."
+                        })
                     except asyncio.TimeoutError:
                         # Send heartbeat
                         await websocket.send_json({"type": "heartbeat"})

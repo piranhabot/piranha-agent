@@ -431,7 +431,11 @@ class MemoryManager:
     def get(self, memory_id: str) -> Memory | None:
         """Get memory by ID."""
         return self._memories.get(memory_id)
-    
+
+    def get_all(self) -> list[Memory]:
+        """Get all memories."""
+        return list(self._memories.values())
+
     def remove(self, memory_id: str) -> bool:
         """Remove a memory."""
         if memory_id in self._memories:
