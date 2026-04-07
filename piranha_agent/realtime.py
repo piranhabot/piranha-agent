@@ -31,8 +31,9 @@ import os
 import random
 import threading
 import uuid
+from collections import deque
 from dataclasses import asdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from hmac import compare_digest
@@ -206,7 +207,7 @@ class RealtimeMonitor:
         # State
         self.agents: dict[str, AgentStatus] = {}
         self.tasks: dict[str, TaskStatus] = {}
-        self.events: list[Event] = []
+        self.events = deque(maxlen=1000)
         self.benchmarks: list[BenchmarkData] = []
         self.metrics = SystemMetrics()
         self.start_time = datetime.now()
@@ -379,16 +380,16 @@ class RealtimeMonitor:
         
         @self.app.post("/api/wasm/execute")
         @limiter.limit("60/minute")
-        async def execute_wasm(request_data: WasmExecutionRequest, request: Request):
+        async def execute_wasm(execution_request: WasmExecutionRequest, request: Request):
             """Track Wasm execution."""
             # Record Wasm execution event
             self.record_event(
                 "wasm.executed",
                 {
-                    "function_name": request_data.function_name,
-                    "execution_time_ms": request_data.execution_time_ms,
-                    "success": request_data.success,
-                    "error": request_data.error,
+                    "function_name": execution_request.function_name,
+                    "execution_time_ms": execution_request.execution_time_ms,
+                    "success": execution_request.success,
+                    "error": execution_request.error,
                 }
             )
             return {"status": "ok"}
@@ -447,7 +448,7 @@ class RealtimeMonitor:
                     "completion_tokens": random.randint(5, 50),
                     "cost_usd": random.random() * 0.001,
                     "hits": random.randint(0, 20),
-                    "created_at": (datetime.now() - timedelta(hours=random.randint(0, 24))).isoformat()
+                    "created_at": (datetime.now(timezone.utc) - timedelta(hours=random.randint(0, 24))).isoformat()
                 })
             return {"entries": entries}
         
@@ -539,8 +540,8 @@ class RealtimeMonitor:
                 events.append({
                     "id": f"event-{i}",
                     "sequence": i + 1,
-                    "event_type": event_types[random.randint(0, len(event_types) - 1)],
-                    "timestamp": (datetime.now() - timedelta(minutes=(50 - i))).isoformat(),
+                    "event_type": random.choice(event_types),
+                    "timestamp": (datetime.now(timezone.utc) - timedelta(minutes=(50 - i))).isoformat(),
                     "agent_id": f"agent-{random.randint(1, 5)}",
                     "session_id": f"session-{random.randint(1, 3)}",
                     "payload": {
@@ -736,45 +737,30 @@ class RealtimeMonitor:
                 self.active_connections.remove(websocket)
     
     def execute_wasm(self, wasm_bytes: bytes, function_name: str = "main", input_data: str = "") -> dict:
-        """Execute Wasm and track in monitor."""
+        """Execute Wasm and track in monitor.
+
+        Note: This is currently a non-functional placeholder. It does not
+        execute the provided WebAssembly module and will always report
+        a failure result. When a real Wasm runtime is integrated, this
+        method should be updated to invoke it using ``wasm_bytes``.
+        """
         result = {
             "function_name": function_name,
-            "success": True,
+            "success": False,
             "execution_time_ms": 0,
             "output": "",
-            "error": None
+            "error": "execute_wasm is not implemented; no WebAssembly runtime is configured"
         }
-        
-        try:
-            start = datetime.now().timestamp()
-            
-            # Execute Wasm (placeholder - would use actual Wasm execution)
-            # In production, this would call the actual WasmRunner
-            output = f"Executed {function_name} with input: {input_data}"
-            
-            end = datetime.now().timestamp()
-            result["execution_time_ms"] = int((end - start) * 1000)
-            result["output"] = output
-            
-            # Track execution
-            self.record_event(
-                "wasm.executed",
-                result
-            )
-            
-        except Exception as e:
-            result["success"] = False
-            result["error"] = str(e)
-            
-            # Track failure
-            self.record_event(
-                "wasm.failed",
-                {
-                    "function_name": function_name,
-                    "error": str(e)
-                }
-            )
 
+        # Track failure explicitly so monitoring stays accurate and callers
+        # are not misled into thinking Wasm execution succeeded.
+        self.record_event(
+            "wasm.failed",
+            {
+                "function_name": function_name,
+                "error": result["error"],
+            },
+        )
         return result
 
     def update_metrics(self):
@@ -960,11 +946,7 @@ class RealtimeMonitor:
             data=masked_data
         )
         self.events.append(event)
-        
-        # Keep only last 1000 events
-        if len(self.events) > 1000:
-            self.events = self.events[-1000:]
-        
+
         # Broadcast event
         self._broadcast_sync({
             "type": "event",
