@@ -198,7 +198,7 @@ class MultiAgentCollaboration:
         
         # Register with monitor
         if self.monitor:
-            self.monitor.register_task(task_id, description)
+            self.monitor.register_task(task_id, description, agent_id=None)
         
         self.collaboration_log.append(f"Created task chain: {description}")
         
@@ -347,7 +347,10 @@ try:
             for e in workflow_monitor.events
             if hasattr(e, "type") and isinstance(e.type, str) and "agent" in e.type.lower()
         ]
-        # This is optional - events may not be recorded in all implementations
+        # This is optional - events may not be recorded in all implementations,
+        # but if events are present, we expect at least one agent-related event.
+        assert len(agent_events) > 0, "No agent-related events found in workflow_monitor.events"
+
     if hasattr(workflow_monitor, "agent_events"):
         # Expect each agent to have at least one recorded event
         agent_events = workflow_monitor.agent_events
@@ -355,6 +358,11 @@ try:
         assert agent2.id in agent_events, "No events recorded for agent2 in workflow monitor"
         assert len(agent_events[agent1.id]) > 0, "Empty event list for agent1 in workflow monitor"
         assert len(agent_events[agent2.id]) > 0, "Empty event list for agent2 in workflow monitor"
+    else:
+        # This monitor implementation does not expose per-agent events.
+        # Workflow event tracking validation is skipped for this monitor.
+        print("   (i) Workflow monitor does not support per-agent event tracking; "
+              "skipping event validation.")
 
     print("   ✓ Complete workflow validated")
     
