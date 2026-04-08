@@ -25,7 +25,6 @@ try:
         AsyncAgent as Agent,
     )
     from piranha_agent import (
-        Task,
         skill,
     )
 except ImportError:

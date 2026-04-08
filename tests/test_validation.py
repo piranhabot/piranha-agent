@@ -1,6 +1,5 @@
 """Tests for HITL and Guardrails validation."""
 
-import pytest
 from unittest.mock import patch
 from piranha_agent import Agent
 from piranha_agent.llm_provider import LLMProvider, LLMResponse

@@ -1,6 +1,5 @@
 """Tests for SkillRegistry functionality."""
 
-import pytest
 from piranha_agent import Agent
 from piranha_agent.skill import skill
 

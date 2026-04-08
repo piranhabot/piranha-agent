@@ -1,6 +1,5 @@
 """Tests for AgentGroup functionality."""
 
-import pytest
 from piranha_agent import Agent, AgentGroup
 
 
