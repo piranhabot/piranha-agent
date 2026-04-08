@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Activity, Download, RefreshCw, Search, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Activity, Download, RefreshCw, Search, CheckCircle, XCircle, AlertCircle, Clock } from 'lucide-react';
 
 const API_BASE = 'http://localhost:8080/api';
 
@@ -285,23 +285,6 @@ function EventCard({ event, index, onClick, colorClass, icon }: {
           Click for details →
         </div>
       </div>
-
-      {/* Empty State */}
-      {events.length === 0 && !loading && !error && (
-        <div className="text-center py-20">
-          <Activity className="w-20 h-20 text-piranha-500 mx-auto mb-4 opacity-50" />
-          <h3 className="text-xl font-semibold text-white mb-2">No Events Yet</h3>
-          <p className="text-piranha-300 mb-4">
-            Events will appear here as your agents execute tasks
-          </p>
-          <button
-            onClick={loadEvents}
-            className="px-6 py-2 bg-piranha-600 hover:bg-piranha-500 text-white rounded-lg transition-colors"
-          >
-            Refresh
-          </button>
-        </div>
-      )}
     </div>
   );
 }
