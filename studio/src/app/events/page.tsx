@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import { Activity, Download, RefreshCw, Search, CheckCircle, XCircle, AlertCircle, Clock } from 'lucide-react';
 
@@ -25,21 +25,12 @@ export default function EventTimelinePage() {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadEvents();
-
-    if (autoRefresh) {
-      const interval = setInterval(loadEvents, 3000);
-      return () => clearInterval(interval);
-    }
-  }, [autoRefresh]);
-
-  const loadEvents = async () => {
+  const loadEvents = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const response = await axios.get(`${API_BASE}/events/timeline`);
-      
+
       // Use real events from API
       if (response.data && response.data.events && response.data.events.length > 0) {
         setEvents(response.data.events);
@@ -54,7 +45,16 @@ export default function EventTimelinePage() {
       setEvents([]);
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadEvents();
+
+    if (autoRefresh) {
+      const interval = setInterval(loadEvents, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [autoRefresh, loadEvents]);
 
   const handleExport = () => {
     const dataStr = JSON.stringify(events, null, 2);
@@ -64,9 +64,13 @@ export default function EventTimelinePage() {
       const link = document.createElement('a');
       link.href = url;
       link.download = `events-timeline-${new Date().toISOString()}.json`;
+      document.body.appendChild(link);
       link.click();
     } finally {
       URL.revokeObjectURL(url);
+      if (link.parentNode) {
+        document.body.removeChild(link);
+      }
     }
   };
 
