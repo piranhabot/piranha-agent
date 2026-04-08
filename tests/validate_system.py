@@ -31,18 +31,41 @@ from piranha_agent import (
 from piranha_agent.memory import ContextManager, MemoryManager
 
 
+def _get_event_type(event):
+    """Return normalized event type string, or None if unavailable/invalid."""
+    event_type = getattr(event, "type", None)
+    if isinstance(event_type, str):
+        return event_type
+    if isinstance(event, dict):
+        dict_type = event.get("type")
+        if isinstance(dict_type, str):
+            return dict_type
+    return None
+
+
 def _execute_task_run(task: Task):
     """
     Execute task.run() whether it is defined as a synchronous or async method.
     Returns the final result of the call (or None if run() is not present).
+
+    Raises RuntimeError if called from an already-running event loop.
+    This function must only be called from synchronous contexts.
     """
     if not hasattr(task, "run"):
         return None
     run_method = task.run
     result = run_method()
-    # If Task.run returns a coroutine/awaitable, run it via asyncio
+    # If Task.run returns a coroutine/awaitable, run it via asyncio when safe.
     if inspect.iscoroutine(result) or inspect.isawaitable(result):
-        return asyncio.run(result)
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(result)
+        raise RuntimeError(
+            "_execute_task_run() cannot run awaitables with asyncio.run() "
+            "while an event loop is already running. Await task.run() from "
+            "the async caller instead."
+        )
     return result
 
 
@@ -135,9 +158,11 @@ print("\n4. Validating Skill Template with Monitoring...")
     },
     auto_monitor=True  # NEW: Auto-monitoring flag
 )
-def monitored_skill(input: str) -> str:
+def monitored_skill(input_text: str = None, **kwargs) -> str:
     """Skill with automatic monitoring."""
-    return f"Processed: {input}"
+    if input_text is None and "input" in kwargs:
+        input_text = kwargs["input"]
+    return f"Processed: {input_text}"
 
 try:
     # Test skill execution
@@ -315,16 +340,12 @@ try:
 
     # Execute tasks to ensure they participate in the monitored workflow
     # Use helper function to handle both sync and async Task.run() methods
-    if hasattr(task1, "run"):
-        result1 = _execute_task_run(task1)
-        # If run() returns an explicit status, ensure it does not indicate failure
-        if result1 is not None:
-            assert result1 is not False, "Task 1 run() returned failure status"
-    if hasattr(task2, "run"):
-        result2 = _execute_task_run(task2)
-        # If run() returns an explicit status, ensure it does not indicate failure
-        if result2 is not None:
-            assert result2 is not False, "Task 2 run() returned failure status"
+    for task, task_label in [(task1, "Task 1"), (task2, "Task 2")]:
+        if hasattr(task, "run"):
+            result = _execute_task_run(task)
+            # If run() returns an explicit status, ensure it does not indicate failure
+            if result is not None:
+                assert result is not False, f"{task_label} run() returned failure status"
 
     # Verify tasks were created and associated correctly
     assert task1.agent is agent1
@@ -341,11 +362,10 @@ try:
     # during agent registration or task execution.
     if hasattr(workflow_monitor, "events") and len(workflow_monitor.events) > 0:
         # Events are being tracked - verify agent-related events exist
-        # Add guards to check that events have a 'type' attribute
         agent_events = [
             e
             for e in workflow_monitor.events
-            if hasattr(e, "type") and isinstance(e.type, str) and "agent" in e.type.lower()
+            if (event_type := _get_event_type(e)) is not None and "agent" in event_type.lower()
         ]
         # This is optional - events may not be recorded in all implementations,
         # but if events are present, we expect at least one agent-related event.
