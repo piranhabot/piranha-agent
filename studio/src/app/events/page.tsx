@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { Activity, Download, RefreshCw, Search, CheckCircle, XCircle, AlertCircle, Clock } from 'lucide-react';
 
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8080/api';
 
 interface Event {
   id: string;
@@ -13,7 +13,7 @@ interface Event {
   timestamp: string;
   agent_id: string;
   session_id: string;
-  payload: any;
+  payload: unknown;
 }
 
 export default function EventTimelinePage() {
@@ -60,19 +60,25 @@ export default function EventTimelinePage() {
     const dataStr = JSON.stringify(events, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `events-timeline-${new Date().toISOString()}.json`;
-    link.click();
+    try {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `events-timeline-${new Date().toISOString()}.json`;
+      link.click();
+    } finally {
+      URL.revokeObjectURL(url);
+    }
   };
 
-  const filteredEvents = events.filter(event => {
+  const filteredEvents = useMemo(() => events.filter(event => {
     const matchesFilter = filter === 'all' || event.event_type === filter;
-    const matchesSearch = searchQuery === '' || 
+    const matchesSearch = searchQuery === '' ||
                          event.agent_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          event.event_type.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
-  });
+  }), [events, filter, searchQuery]);
+
+  const visibleEvents = useMemo(() => filteredEvents.slice(0, 100), [filteredEvents]);
 
   const eventTypes = Array.from(new Set(events.map(e => e.event_type)));
 
@@ -188,7 +194,7 @@ export default function EventTimelinePage() {
             <p className="text-piranha-400 text-center py-8">No events found</p>
           ) : (
             <div className="space-y-4">
-              {filteredEvents.slice(0, 100).map((event, index) => (
+              {visibleEvents.map((event, index) => (
                 <EventCard
                   key={event.id}
                   event={event}
