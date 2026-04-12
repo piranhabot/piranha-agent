@@ -13,7 +13,7 @@
     "react-dom": "^18.2.0",
     "reactflow": "^11.10.0",
     "recharts": "^3.0.0",
-    "axios": "^1.6.0"
+    "axios": "^1.15.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",
