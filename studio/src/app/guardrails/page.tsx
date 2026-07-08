@@ -33,7 +33,6 @@ export default function GuardrailsPage() {
   });
 
   const [stats, setStats] = useState<GuardrailsStats | null>(null);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
 
@@ -55,13 +54,11 @@ export default function GuardrailsPage() {
       
       setConfig(configRes.data);
       setStats(statsRes.data);
-      setLoading(false);
     } catch (error) {
       console.error('Failed to load guardrails data:', error);
       // Use mock data for demo
       setConfig(getMockConfig());
       setStats(getMockStats());
-      setLoading(false);
     }
   };
 
