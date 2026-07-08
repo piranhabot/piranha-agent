@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Tool, Download, Trash2, Search, Activity } from 'lucide-react';
+import { Wrench, Download, Trash2, Search, Activity, CheckCircle } from 'lucide-react';
 
 const API_BASE = 'http://localhost:8080/api';
 
@@ -85,7 +85,7 @@ export default function SkillsPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-white mb-2 flex items-center gap-3">
-            <Tool className="w-10 h-10" />
+            <Wrench className="w-10 h-10" />
             Skills Marketplace
           </h1>
           <p className="text-piranha-300">
@@ -103,7 +103,7 @@ export default function SkillsPage() {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <StatCard
-            icon={Tool}
+            icon={Wrench}
             title="Total Skills"
             value={stats.total}
             color="blue"
@@ -211,7 +211,7 @@ function StatCard({ icon: Icon, title, value, color }: {
   return (
     <div className="bg-piranha-800/50 backdrop-blur-sm rounded-xl border border-piranha-700 p-6">
       <div className="flex items-center justify-between mb-4">
-        <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
+        <div className={`p-3 rounded-lg ${colorClasses[color as keyof typeof colorClasses]}`}>
           <Icon className="w-6 h-6" />
         </div>
       </div>
@@ -232,7 +232,7 @@ function SkillCard({ skill, onInstall, onUninstall }: {
     }`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Tool className="w-5 h-5 text-piranha-400" />
+          <Wrench className="w-5 h-5 text-piranha-400" />
           <h3 className="text-white font-bold text-lg">{skill.name}</h3>
         </div>
         <span className={`text-xs px-2 py-1 rounded font-semibold ${

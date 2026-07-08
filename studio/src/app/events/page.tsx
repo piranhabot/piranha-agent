@@ -60,18 +60,16 @@ export default function EventTimelinePage() {
     const dataStr = JSON.stringify(events, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
-    try {
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `events-timeline-${new Date().toISOString()}.json`;
-      document.body.appendChild(link);
-      link.click();
-    } finally {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `events-timeline-${new Date().toISOString()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    // Defer cleanup so the download can be triggered reliably by the browser.
+    setTimeout(() => {
+      document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      if (link.parentNode) {
-        document.body.removeChild(link);
-      }
-    }
+    }, 0);
   };
 
   const filteredEvents = useMemo(() => events.filter(event => {

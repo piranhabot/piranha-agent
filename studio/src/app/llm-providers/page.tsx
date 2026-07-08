@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Cloud, Server, Plus, Trash2, Zap } from 'lucide-react';
+import { Cloud, Server, Plus, Trash2, Zap, CheckCircle, Key } from 'lucide-react';
 
 const API_BASE = 'http://localhost:8080/api';
 
@@ -353,7 +353,7 @@ function StatCard({ icon: Icon, title, value, color }: {
   return (
     <div className="bg-piranha-800/50 backdrop-blur-sm rounded-xl border border-piranha-700 p-6">
       <div className="flex items-center justify-between mb-4">
-        <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
+        <div className={`p-3 rounded-lg ${colorClasses[color as keyof typeof colorClasses]}`}>
           <Icon className="w-6 h-6" />
         </div>
       </div>
