@@ -1,6 +1,6 @@
 """Tests for AgentGroup functionality."""
 
-import threading
+import asyncio
 
 from piranha_agent import Agent, AgentGroup
 
@@ -42,23 +42,33 @@ def test_agent_group_run():
 
 
 def test_agent_group_parallel():
-    """Test parallel execution of AgentGroup."""
-    agent1 = Agent(name="ParallelAgent1")
-    agent2 = Agent(name="ParallelAgent2")
+    """Test that AgentGroup.run_parallel runs the task on all agents concurrently."""
+    num_agents = 2
+    all_started = asyncio.Event()
+    started_count = 0
+
+    class _FakeAsyncAgent:
+        def __init__(self, name):
+            self.name = name
+            self.ran_tasks = []
+
+        async def run(self, task):
+            nonlocal started_count
+            self.ran_tasks.append(task)
+            started_count += 1
+            if started_count == num_agents:
+                all_started.set()
+            # Blocks until every agent has started; times out if the group
+            # runs agents sequentially instead of in parallel.
+            await asyncio.wait_for(all_started.wait(), timeout=5)
+            return f"{self.name}:{task}"
+
+    agent1 = _FakeAsyncAgent("ParallelAgent1")
+    agent2 = _FakeAsyncAgent("ParallelAgent2")
     group = AgentGroup([agent1, agent2])
-    barrier = threading.Barrier(2)
-    completed = []
 
-    def _worker(name):
-        barrier.wait()
-        completed.append(name)
+    results = asyncio.run(group.run_parallel("parallel-task"))
 
-    t1 = threading.Thread(target=_worker, args=(agent1.name,))
-    t2 = threading.Thread(target=_worker, args=(agent2.name,))
-    t1.start()
-    t2.start()
-    t1.join()
-    t2.join()
-
-    assert len(group.agents) == 2
-    assert sorted(completed) == sorted([agent1.name, agent2.name])
+    assert results == ["ParallelAgent1:parallel-task", "ParallelAgent2:parallel-task"]
+    assert agent1.ran_tasks == ["parallel-task"]
+    assert agent2.ran_tasks == ["parallel-task"]
