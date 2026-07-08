@@ -16,6 +16,7 @@ INTEGRATION_MONITOR_PORT = 8081
 WORKFLOW_MONITOR_PORT = 8082
 
 import asyncio
+import sys
 import inspect
 
 from piranha_agent import (
@@ -87,7 +88,7 @@ try:
     print("   ✓ All core imports successful")
 except (NameError, AssertionError) as e:
     print(f"   ✗ Import failed: {e}")
-    exit(1)
+    sys.exit(1)
 
 # =============================================================================
 # 2. Validating Real-Time Monitor
@@ -114,7 +115,7 @@ try:
     
 except Exception as e:
     print(f"   ✗ Monitor validation failed: {e}")
-    exit(1)
+    sys.exit(1)
 
 # =============================================================================
 # 3. Validating Agent-Monitor Integration
@@ -139,7 +140,7 @@ try:
     
 except Exception as e:
     print(f"   ✗ Integration validation failed: {e}")
-    exit(1)
+    sys.exit(1)
 
 # =============================================================================
 # 4. Validating Skill Template with Monitoring
@@ -174,7 +175,7 @@ try:
     
 except Exception as e:
     print(f"   ✗ Skill validation failed: {e}")
-    exit(1)
+    sys.exit(1)
 
 # =============================================================================
 # 5. Validating Multi-Agent Collaboration
@@ -316,7 +317,7 @@ except Exception as e:
     print(f"   ✗ Multi-agent validation failed: {e}")
     import traceback
     traceback.print_exc()
-    exit(1)
+    sys.exit(1)
 
 # =============================================================================
 # 6. Validating Complete Workflow
@@ -388,7 +389,7 @@ try:
     
 except Exception as e:
     print(f"   ✗ Workflow validation failed: {e}")
-    exit(1)
+    sys.exit(1)
 
 # =============================================================================
 # Summary

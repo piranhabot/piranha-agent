@@ -6,6 +6,7 @@ Run:
 """
 
 import asyncio
+import sys
 import json
 import os
 
@@ -32,7 +33,7 @@ except ImportError:
         "[red]piranha not found.[/red]\n"
         "Run: pip install -e ."
     )
-    exit(1)
+    sys.exit(1)
 
 
 # ---------------------------------------------------------------------------
