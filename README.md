@@ -509,34 +509,41 @@ ui.launch()
 
 ### Piranha vs Leading Frameworks
 
-| Feature | Piranha | DeepAgents | AgentGen | MAF | AutoGen | LangGraph | CrewAI | Semantic Kernel |
-|---------|---------|------------|----------|-----|---------|-----------|--------|-----------------|
-| **Performance** | ⚡⚡⚡⚡⚡ | ⚡⚡⚡ | ⚡⚡ | ⚡⚡⚡ | ⚡⚡ | ⚡⚡ | ⚡⚡ | ⚡⚡⚡ |
-| **Wasm Sandbox** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Time-Travel Debug** | ✅ | ⚠️ | ❌ | ⚠️ | ❌ | ✅ | ❌ | ❌ |
-| **Semantic Cache** | ✅ | ⚠️ | ❌ | ⚠️ | ❌ | ❌ | ❌ | ⚠️ |
-| **Claude Skills** | ✅ 46+ | ⚠️ 14 | ⚠️ 20 | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Local LLM** | ✅ | ✅ | ⚠️ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ |
-| **Event Sourcing** | ✅ | ✅ | ❌ | ✅ | ❌ | ✅ | ❌ | ❌ |
-| **Multi-Cloud** | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ | ✅ | ✅ |
-| **No-Code Builder** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **OpenTelemetry** | ✅ | ❌ | ❌ | ⚠️ | ❌ | ⚠️ | ❌ | ⚠️ |
+*Last fact-checked: August 2026. Feature marks below are based on each project's public docs/repo, not on Piranha's own claims. "Performance" is a relative, unverified self-assessment — see [Performance Benchmarks](#-performance-benchmarks) below for Piranha's own measured numbers.*
 
-**🏆 Overall Scores:**
-1. **Piranha Agent** - 9.5/10 🥇
-2. **DeepAgents** - 8.6/10 🥈
-3. **Microsoft Agent Framework** - 8.8/10 🥈
-4. **AgentGen** - 8.2/10
-5. **LangGraph** - 8.5/10 🥉
-6. **Pydantic Deep Agents** - 8.3/10
-7. **Semantic Kernel** - 8.0/10
-8. **AutoGen** - 7.5/10
-9. **CrewAI** - 7.0/10
+| Feature | Piranha | DeepAgents | MAF | AutoGen¹ | LangGraph | CrewAI | Semantic Kernel¹ |
+|---------|---------|------------|-----|----------|-----------|--------|-------------------|
+| **Performance** | ⚡⚡⚡⚡⚡ | ⚡⚡⚡ | ⚡⚡⚡ | ⚡⚡ | ⚡⚡ | ⚡⚡ | ⚡⚡⚡ |
+| **Wasm Sandbox** | ✅ | ❌ | ⚠️ (adjacent tools, not core) | ❌ | ❌ | ❌² | ❌ |
+| **Time-Travel Debug** | ✅ | ⚠️ (inherited from LangGraph) | ⚠️ (replay via durability, no rewind UI) | ❌ | ✅ | ❌ | ❌ |
+| **Semantic Cache** | ✅ | ❌ | ⚠️ (exact-match only) | ❌ | Unverified | Unverified | ⚠️ |
+| **Skills/Tools Ecosystem** | ✅ 56 built-in skills | ⚠️ bundled, no fixed count | ⚠️ inherits SK's plugin ecosystem | Unverified | Unverified (large integration ecosystem) | Unverified | ⚠️ |
+| **Local LLM (Ollama etc.)** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Event Sourcing** | ✅ | ❌ (checkpoint snapshots, not event log) | ⚠️ (durability/replay, not confirmed event-sourced) | ❌ | ✅ | ⚠️ (event-driven, not full event sourcing) | ❌ |
+| **Multi-Cloud** | ✅ | ⚠️ | ✅ (Bedrock, Gemini, Azure, Ollama) | Unverified | Unverified | ✅ | Unverified |
+| **No-Code Builder** | ✅ | ❌ | ❌ | ❌ | ⚠️ (LangGraph Studio is low-code, not no-code) | ✅ (CrewAI Studio v2) | ❌ |
+| **OpenTelemetry** | ✅ | ❌ | ✅ | Unverified | Unverified | ✅ | Unverified |
+
+¹ AutoGen and Semantic Kernel are both officially in **maintenance mode** as of 2026 — Microsoft merged both into Microsoft Agent Framework (GA'd April 2026), which is now their actively developed successor. Comparing against them as current "leading frameworks" is somewhat academic; MAF is the fairer comparison point going forward.
+
+² CrewAI's `CodeInterpreterTool` sandbox is Docker-based, not Wasm, and had critical 2026 CVEs (CVE-2026-2275, CVE-2026-2287) where it silently fell back from Docker to a bypassable mode enabling RCE — worth knowing if you're evaluating CrewAI's sandboxing specifically.
+
+*Note: the "AgentGen" framework previously listed here could not be identified in any current search — no project by that name was found, so the column was removed rather than left unverifiable.*
+
+**🏆 Overall Scores** (self-assessed composite; see [methodology](docs/COMPARISON_SCORES.md#detailed-scoring-breakdown)):
+1. **Piranha Agent** - 9.2/10 🥇
+2. **Microsoft Agent Framework** - 8.8/10 🥈
+3. **DeepAgents** - 8.6/10 🥉
+4. **LangGraph** - 8.5/10
+5. **Pydantic AI** - 8.3/10
+6. **Semantic Kernel** - 8.0/10 (maintenance mode)
+7. **AutoGen** - 7.5/10 (maintenance mode)
+8. **CrewAI** - 7.0/10
 
 **Detailed comparison:**
 - [vs All Frameworks](docs/FRAMEWORK_COMPARISON.md)
 - [vs Microsoft Frameworks](docs/MICROSOFT_FRAMEWORK_COMPARISON.md) (AutoGen, Semantic Kernel, MAF)
-- [vs DeepAgents & AgentGen](docs/FRAMEWORK_COMPARISON.md) - Full feature breakdown
+- [vs DeepAgents](docs/FRAMEWORK_COMPARISON.md) - Full feature breakdown
 - [Detailed Scores Breakdown](docs/COMPARISON_SCORES.md)
 
 ---
