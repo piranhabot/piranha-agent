@@ -35,6 +35,34 @@ result = agent.run_autonomous(
 
 ---
 
+## 🆕 GitHub Skills (v0.4.3)
+
+Real GitHub API operations (issues, PRs, branches, files), powered by
+[Agno](https://github.com/agno-agi/agno)'s `GithubTools` toolkit. Piranha's
+older `git_workflows` skill only returned a canned markdown template and
+never actually called GitHub's API — these are genuine, working replacements.
+
+39 skills covering repos, issues, pull requests, branches, and files
+(`github_create_issue`, `github_get_pull_request`, `github_create_branch`,
+`github_update_file`, etc.). All require the `github` permission tag; skills
+that mutate GitHub state (`create_issue`, `delete_repository`, `create_file`,
+etc.) additionally require confirmation.
+
+**Requires:** `pip install "piranha-agent[github]"` (installs `agno` +
+`pygithub`) and a GitHub access token.
+
+**Usage:**
+```python
+from piranha_agent import Agent
+from piranha_agent.skills.github_tools import get_github_skills
+
+agent = Agent(name="github_bot", permissions=["github"])
+for skill in get_github_skills(access_token="ghp_..."):
+    agent.add_skill(skill)
+```
+
+---
+
 ## 🆕 Model Compatibility Skill (v0.4.3)
 
 Check whether an LLM will run on this machine's hardware *before* pulling it.
