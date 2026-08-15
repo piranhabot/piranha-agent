@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
-"""No-Code Visual Agent Builder - Clean categorized UI."""
+"""No-Code Visual Agent Builder - workflow data model and code generation.
 
+The Gradio UI itself lives in nocode_builder_app.py, which imports the
+functions defined here.
+"""
+
+import os
+import subprocess
+import sys
+import tempfile
 import time
 
 import gradio as gr
@@ -106,8 +114,8 @@ def generate_code(workflow):
         elif ntype == "agent":
             lines.append(f'    # {name}: Processing')
             lines.append(f'    task_{nid} = Task(description=input_data, agent=agent_{nid})')
-            lines.append(f'    result_{nid} = await task_{nid}.run_async()')
-            lines.append(f'    input_data = result_{nid}.content')
+            lines.append(f'    result_{nid} = task_{nid}.run()')
+            lines.append(f'    input_data = result_{nid}.result')
         elif ntype == "output":
             lines.append(f'    # {name}: Final Result')
             lines.append('    print("--- Workflow Result ---\\n", input_data)')
@@ -268,90 +276,36 @@ def populate_sidebar(workflow, node_id):
     return "", ""
 
 
-def create_builder_ui():
-    """Create the Gradio UI."""
-    with gr.Blocks(title="🚀 Piranha Agent Builder") as ui:
-        workflow_state = gr.State({"nodes": [], "connections": []})
+def run_workflow(workflow: dict, timeout_seconds: int = 60) -> str:
+    """Actually execute a workflow's generated code and return its output.
 
-        gr.Markdown("# 🚀 Piranha No-Code Agent Builder")
+    Writes generate_code(workflow) to a temp file and runs it as a real
+    subprocess using the current Python interpreter (so it has access to
+    the installed piranha_agent package), rather than just claiming
+    execution "started" without doing anything.
+    """
+    if not workflow.get("nodes"):
+        return "No nodes in workflow - nothing to run."
 
-        with gr.Row():
-            with gr.Column(scale=1):
-                gr.Markdown("### Node Library")
-                node_buttons = []
-                for category, nodes in NODE_CATEGORIES.items():
-                    gr.Markdown(f"**{category}**")
-                    for ntype, info in nodes.items():
-                        btn = gr.Button(f"{info['icon']} {info['label']}", variant="secondary")
-                        node_buttons.append((btn, ntype))
+    code = generate_code(workflow)
 
-                gr.Markdown("### Templates")
-                template_dd = gr.Dropdown(
-                    choices=list(TEMPLATES.keys()), label="Load Template", interactive=True
-                )
+    fd, temp_path = tempfile.mkstemp(suffix=".py", prefix="piranha_workflow_")
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(code)
 
-            with gr.Column(scale=3):
-                gr.Markdown("### Workflow Canvas")
-                canvas = gr.Textbox(label="Workflow Visualization", lines=10, interactive=False)
-
-                with gr.Row():
-                    clear_btn = gr.Button("🗑️ Clear", variant="stop")
-                    run_btn = gr.Button("▶️ Run", variant="primary")
-
-            with gr.Column(scale=1):
-                gr.Markdown("### Node Config")
-                node_selector = gr.Dropdown(choices=[], label="Select Node", interactive=True)
-                cfg_name = gr.Textbox(label="Name")
-                cfg_type = gr.Textbox(label="Type", interactive=False)
-                with gr.Row():
-                    update_btn = gr.Button("💾 Update", variant="primary")
-                    delete_btn = gr.Button("🗑️ Delete", variant="stop")
-
-        code_out = gr.Code(label="Generated Python Code", language="python", lines=20)
-        stats_out = gr.JSON(label="Workflow Stats")
-
-        # Bind Node Library Events
-        for btn, ntype in node_buttons:
-            btn.click(
-                fn=add_node,
-                inputs=[workflow_state, gr.State(ntype)],
-                outputs=[workflow_state, canvas, code_out, node_selector],
-            ).then(update_stats, workflow_state, stats_out)
-
-        template_dd.change(
-            fn=load_template,
-            inputs=[template_dd],
-            outputs=[workflow_state, canvas, code_out, node_selector],
-        ).then(update_stats, workflow_state, stats_out)
-
-        clear_btn.click(
-            fn=clear_canvas,
-            outputs=[workflow_state, canvas, code_out, node_selector],
-        ).then(update_stats, workflow_state, stats_out)
-
-        node_selector.change(
-            fn=populate_sidebar,
-            inputs=[workflow_state, node_selector],
-            outputs=[cfg_name, cfg_type]
+        result = subprocess.run(
+            [sys.executable, temp_path],
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
         )
 
-        update_btn.click(
-            fn=update_node_config,
-            inputs=[workflow_state, node_selector, cfg_name],
-            outputs=[workflow_state, canvas, code_out]
-        ).then(update_stats, workflow_state, stats_out)
-
-        delete_btn.click(
-            fn=delete_node,
-            inputs=[workflow_state, node_selector],
-            outputs=[workflow_state, canvas, code_out, node_selector]
-        ).then(update_stats, workflow_state, stats_out)
-
-        run_btn.click(fn=lambda wf: gr.Info("Workflow execution started! Check console for output."), inputs=[workflow_state])
-
-    return ui
-
-
-if __name__ == "__main__":
-    ui = create_builder_ui()
-    ui.launch(server_name="127.0.0.1", server_port=7861, inbrowser=True)
+        output = result.stdout
+        if result.returncode != 0:
+            output += f"\n--- Workflow exited with code {result.returncode} ---\n{result.stderr}"
+        return output or "(workflow produced no output)"
+    except subprocess.TimeoutExpired:
+        return f"Workflow execution timed out after {timeout_seconds}s."
+    finally:
+        os.unlink(temp_path)

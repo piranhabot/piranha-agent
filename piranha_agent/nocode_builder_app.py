@@ -12,6 +12,7 @@ from piranha_agent.nocode_builder import (
     load_template,
     populate_sidebar,
     render_canvas,
+    run_workflow,
     update_node_config,
 )
 
@@ -46,6 +47,9 @@ def create_builder_ui():
                 
                 gr.Markdown("### 📄 Generated Code")
                 code_out = gr.Code(label="Python", language="python", lines=12)
+
+                gr.Markdown("### ▶️ Execution Output")
+                run_output = gr.Textbox(label="Output", lines=8, interactive=False)
             
             # Right sidebar - Configuration
             with gr.Column(scale=1, min_width=250):
@@ -103,7 +107,7 @@ def create_builder_ui():
             outputs=[workflow_state, canvas, code_out, node_selector]
         ).then(update_stats, workflow_state, stats_out)
 
-        run_btn.click(fn=lambda wf: gr.Info("Workflow execution started! Check console for output."), inputs=[workflow_state])
+        run_btn.click(fn=run_workflow, inputs=[workflow_state], outputs=[run_output])
     
     return ui
 
