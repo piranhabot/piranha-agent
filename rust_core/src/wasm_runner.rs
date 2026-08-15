@@ -132,36 +132,38 @@ impl Default for WasmRunner {
     }
 }
 
-/// Dynamic Skill Compiler - compiles Python-like code to Wasm
+/// Dynamic Skill Compiler - registers and runs pre-compiled Wasm skills.
+///
+/// Despite the name, this does not compile Python-like source into Wasm -
+/// no such compiler exists in this codebase. `skill_code` is expected to
+/// already be Wasm bytecode, base64-encoded; "compile" here just means
+/// "decode". Kept for backwards API compatibility.
 pub struct DynamicSkillCompiler {
-    _runner: WasmRunner,
+    runner: WasmRunner,
 }
 
 impl DynamicSkillCompiler {
     pub fn new() -> Result<Self> {
         Ok(Self {
-            _runner: WasmRunner::new()?,
+            runner: WasmRunner::new()?,
         })
     }
 
-    /// Compile and execute a skill (Experimental)
-    /// Note: This feature is under active development.
+    /// Decode base64-encoded Wasm bytecode and actually execute its
+    /// "_start" entry point (the same WASI convention WasmRunner's own
+    /// execute_with_io uses). `input` is accepted for API compatibility but,
+    /// like WasmRunner::execute, is not yet wired into the module's stdin.
     pub fn compile_and_execute(
         &self,
         skill_code: &str,
         _input: &str,
     ) -> Result<WasmExecutionResult> {
         use base64::{Engine as _, engine::general_purpose};
-        
+
         let wasm_bytes = general_purpose::STANDARD.decode(skill_code)
             .context("Failed to decode Wasm bytes (expected base64)")?;
 
-        Ok(WasmExecutionResult {
-            success: true,
-            output: format!("Compiled {} bytes", wasm_bytes.len()),
-            error: None,
-            execution_time_ms: 1,
-        })
+        self.runner.execute(&wasm_bytes, "_start")
     }
 
     /// Register a pre-compiled Wasm skill
@@ -170,7 +172,7 @@ impl DynamicSkillCompiler {
         _skill_id: &str,
         wasm_bytes: &[u8],
     ) -> Result<bool> {
-        self._runner.validate(wasm_bytes)?;
+        self.runner.validate(wasm_bytes)?;
         info!("Registered Wasm skill");
         Ok(true)
     }

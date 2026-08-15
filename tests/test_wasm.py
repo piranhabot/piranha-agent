@@ -120,26 +120,40 @@ class TestDynamicSkillCompiler:
             compiler.register_wasm_skill("bad_skill", invalid_bytes)
 
     def test_compile_and_execute_base64(self):
-        """Test compile_and_execute with base64 encoded Wasm."""
+        """Test compile_and_execute genuinely runs the decoded Wasm module
+        (it used to be a stub that only reported the decoded byte count
+        without actually executing anything)."""
         import base64
         compiler = DynamicSkillCompiler()
-        
-        # Create valid Wasm bytes and encode as base64
+
+        # compile_and_execute always targets the WASI "_start" entry point,
+        # same convention as WasmRunner.execute_with_io.
+        wasm_bytes = wasm_with_export("_start")
+        skill_code = base64.b64encode(wasm_bytes).decode('utf-8')
+
+        result = compiler.compile_and_execute(skill_code, "test input")
+
+        assert isinstance(result, dict)
+        assert result["success"] is True
+        assert result["output"] == "Execution successful"
+
+    def test_compile_and_execute_reports_missing_entry_point(self):
+        """A module with no "_start" export should fail execution, not
+        silently report success like the old byte-count stub did."""
+        import base64
+        compiler = DynamicSkillCompiler()
+
+        # Header-only module: no functions, so no "_start" to call.
         wasm_bytes = bytes([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00])
         skill_code = base64.b64encode(wasm_bytes).decode('utf-8')
-        
-        result = compiler.compile_and_execute(skill_code, "test input")
-        
-        assert isinstance(result, dict)
-        assert "success" in result
-        assert "output" in result
-        assert result["success"] is True
-        assert "bytes" in result["output"].lower()  # Should mention byte count
+
+        with pytest.raises(RuntimeError):
+            compiler.compile_and_execute(skill_code, "test input")
 
     def test_compile_and_execute_invalid_base64(self):
         """Test compile_and_execute with invalid base64 raises error."""
         compiler = DynamicSkillCompiler()
-        
+
         with pytest.raises(RuntimeError):
             compiler.compile_and_execute("not valid base64!!!", "input")
 
@@ -147,17 +161,17 @@ class TestDynamicSkillCompiler:
         """Test that compile_and_execute result has correct structure."""
         import base64
         compiler = DynamicSkillCompiler()
-        
-        wasm_bytes = bytes([0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00])
+
+        wasm_bytes = wasm_with_export("_start")
         skill_code = base64.b64encode(wasm_bytes).decode('utf-8')
-        
+
         result = compiler.compile_and_execute(skill_code, "input")
-        
+
         # Verify all expected keys are present
         expected_keys = ["success", "output", "error", "execution_time_ms"]
         for key in expected_keys:
             assert key in result, f"Missing key: {key}"
-        
+
         # Verify types
         assert isinstance(result["success"], bool)
         assert isinstance(result["output"], str)
