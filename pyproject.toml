@@ -37,6 +37,7 @@ dependencies = [
 [project.optional-dependencies]
 claude-explorer = ["mcp>=1.0.0"]
 github = ["agno>=1.0.0", "pygithub>=2.0.0"]
+slack = ["agno>=1.0.0", "slack-sdk>=3.27.0"]
 dev = [
     "maturin>=1.5",
     "pytest>=8.0",
@@ -49,7 +50,7 @@ dev = [
     "mkdocs-material>=9.5",
     "mkdocstrings[python]>=0.24",
 ]
-all = ["piranha-agent[dev]", "piranha-agent[claude-explorer]", "piranha-agent[github]"]
+all = ["piranha-agent[dev]", "piranha-agent[claude-explorer]", "piranha-agent[github]", "piranha-agent[slack]"]
 
 [project.urls]
 Homepage = "https://github.com/piranha-agent/piranha-agent"

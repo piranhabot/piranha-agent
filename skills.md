@@ -63,6 +63,36 @@ for skill in get_github_skills(access_token="ghp_..."):
 
 ---
 
+## 🆕 Slack Skills (v0.4.3)
+
+Real Slack API operations, powered by Agno's `SlackTools` toolkit. Same
+bridge as the GitHub skills above (shared internal adapter in
+`piranha_agent/skills/_agno_bridge.py`).
+
+10 skills: `slack_send_message`, `slack_send_message_thread`,
+`slack_list_channels`, `slack_get_channel_history`, `slack_upload_file`,
+`slack_download_file`, `slack_get_thread`, `slack_list_users`,
+`slack_get_user_info`, `slack_get_channel_info`. All require the `slack`
+permission tag; message-sending/upload operations additionally require
+confirmation. (One Agno tool, `search_workspace`, needs a
+framework-injected argument Piranha can't supply and is skipped rather
+than exposed broken.)
+
+**Requires:** `pip install "piranha-agent[slack]"` (installs `agno` +
+`slack-sdk`) and a Slack bot token.
+
+**Usage:**
+```python
+from piranha_agent import Agent
+from piranha_agent.skills.slack_tools import get_slack_skills
+
+agent = Agent(name="slack_bot", permissions=["slack"])
+for skill in get_slack_skills(token="xoxb-..."):
+    agent.add_skill(skill)
+```
+
+---
+
 ## 🆕 Model Compatibility Skill (v0.4.3)
 
 Check whether an LLM will run on this machine's hardware *before* pulling it.
