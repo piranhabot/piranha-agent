@@ -16,8 +16,8 @@ INTEGRATION_MONITOR_PORT = 8081
 WORKFLOW_MONITOR_PORT = 8082
 
 import asyncio
-import sys
 import inspect
+import sys
 
 from piranha_agent import (
     Agent,

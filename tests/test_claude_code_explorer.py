@@ -22,9 +22,9 @@ def test_import_create_skill_function():
 
 def test_explorer_config_default():
     """Test ExplorerConfig default values."""
-    from piranha_agent.claude_code_explorer import ExplorerConfig
-    
     import os
+
+    from piranha_agent.claude_code_explorer import ExplorerConfig
 
     config = ExplorerConfig()
     assert config.src_root == "/tmp/claude-code/src"

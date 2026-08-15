@@ -34,9 +34,9 @@ import uuid
 from collections import deque
 from dataclasses import asdict
 from datetime import datetime, timedelta, timezone
+from hmac import compare_digest
 from pathlib import Path
 from typing import Any
-from hmac import compare_digest
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect

@@ -4,7 +4,6 @@ from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
-
 from piranha_agent import Agent
 from piranha_agent.llm_provider import LLMProvider, LLMResponse
 

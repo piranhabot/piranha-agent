@@ -3,11 +3,11 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![Rust](https://img.shields.io/badge/rust-stable-orange.svg)](https://rust-lang.org/)
 [![License: MIT/Apache-2.0](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE)
-[![Tests: 169 passing](https://img.shields.io/badge/tests-169%20passing-green.svg)](tests/)
+[![Tests: 223 passing](https://img.shields.io/badge/tests-223%20passing-green.svg)](tests/)
 [![Version: 0.4.2](https://img.shields.io/badge/version-0.4.2-blue.svg)](pyproject.toml)
-[![Security: A+](https://img.shields.io/badge/security-A%2B-brightgreen.svg)](docs/SECURITY.md)
+[![Dependabot: 0 open alerts](https://img.shields.io/badge/dependabot-0%20open%20alerts-brightgreen.svg)](https://github.com/piranhabot/piranha-agent/security/dependabot)
 [![Performance: 7M+ ops/sec](https://img.shields.io/badge/performance-7M%2B%20ops%2Fsec-brightgreen.svg)](tests/test_benchmarking.py)
-[![Code Quality: 100%](https://img.shields.io/badge/code%20quality-100%25-brightgreen.svg)](docs/CODE_QUALITY_STATUS.md)
+[![Lint: 0 errors](https://img.shields.io/badge/lint-0%20errors-brightgreen.svg)](pyproject.toml)
 
 **Next-generation autonomous agent framework with Rust core, radical transparency through time-travel debugging, Wasm sandboxing, and 53+ skills (46 Claude + 5 Explorer + 2 Planning).**
 
@@ -613,7 +613,7 @@ piranha-agent/
 │   ├── 11_piranha_studio.py
 │   ├── 12_validation.py
 │   └── 13_benchmarks.py
-├── tests/                    # Test Suite (169 tests)
+├── tests/                    # Test Suite (223 tests)
 │   ├── test_rust_core.py
 │   ├── test_python_sdk.py
 │   ├── test_wasm.py
@@ -630,7 +630,7 @@ piranha-agent/
 ## 🧪 Testing
 
 ```bash
-# Run all tests (175 passing)
+# Run all tests (223 passing)
 pytest
 
 # Run specific test suite
@@ -644,7 +644,7 @@ python tests/test_benchmarking.py
 pytest --cov=piranha --cov-report=html
 ```
 
-**Current Status:** 169/169 tests passing (93.4% pass rate) ✅
+**Current Status:** 223/223 tests passing, 3 skipped ✅
 
 **Code Quality:** 96/96 findings fixed (100% resolved) ✅
 
