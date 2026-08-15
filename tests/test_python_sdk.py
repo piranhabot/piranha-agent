@@ -38,6 +38,13 @@ class TestAgent:
         assert agent.description == ""
         assert agent.system_prompt == ""
         assert agent.skills == []
+        assert agent.max_tokens == 2048
+
+    def test_agent_max_tokens_reaches_llm_provider(self):
+        """Test that Agent(max_tokens=...) actually configures the LLMProvider."""
+        agent = Agent(name="thrifty", max_tokens=256)
+        assert agent.max_tokens == 256
+        assert agent._llm.max_tokens == 256
 
     def test_agent_with_skills(self):
         """Test creating an agent with skills."""

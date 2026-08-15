@@ -43,9 +43,10 @@ class AsyncAgent:
         allowed_hosts: list[str] | None = None,
         api_base: str | None = None,
         api_key: str | None = None,
+        max_tokens: int = 2048,
     ):
         """Initialize async agent.
-        
+
         Args:
             name: Agent name
             model: LLM model identifier
@@ -56,6 +57,7 @@ class AsyncAgent:
             allowed_hosts: List of allowed network hosts
             api_base: API base URL (for Ollama)
             api_key: API key (for cloud providers)
+            max_tokens: Max tokens per LLM response
         """
         self.name = name
         self.model = model
@@ -74,6 +76,7 @@ class AsyncAgent:
             model=model,
             api_base=api_base,
             api_key=api_key,
+            max_tokens=max_tokens,
         )
         
         # Session management

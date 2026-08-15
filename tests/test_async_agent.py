@@ -28,6 +28,12 @@ class TestAsyncAgent:
         assert agent._llm is not None
         assert agent._context is not None
         assert agent._memory is not None
+        assert agent._llm.max_tokens == 2048
+
+    def test_create_async_agent_with_max_tokens(self):
+        """Test that AsyncAgent(max_tokens=...) configures the LLMProvider."""
+        agent = AsyncAgent(name="thrifty", max_tokens=256)
+        assert agent._llm.max_tokens == 256
 
     def test_create_async_agent_with_options(self):
         """Test creating an async agent with custom options."""

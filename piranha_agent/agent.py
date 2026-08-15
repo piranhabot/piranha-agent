@@ -55,6 +55,7 @@ class Agent:
     budget_limit: float = 0.0  # $0.0 means unlimited
     total_cost: float = 0.0
     max_history_messages: int = 20  # Trigger compaction after this many messages
+    max_tokens: int = 2048  # Max tokens per LLM response
     _event_store: EventStore | None = field(default=None, repr=False)
     _skill_registry: SkillRegistry | None = field(default=None, repr=False)
     _guardrail_engine: GuardrailEngine | None = field(default=None, repr=False)
@@ -83,6 +84,7 @@ class Agent:
             model=self.model,
             api_base=self.api_base,
             api_key=self.api_key,
+            max_tokens=self.max_tokens,
         )
         
         # Initialize context and memory
