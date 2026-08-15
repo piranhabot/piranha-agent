@@ -38,23 +38,23 @@ were never meant to track current state.*
 |------|---------|--------|
 | [README.md](README.md) | Main documentation | ✅ Verified Aug 2026 |
 | [CHANGELOG.md](CHANGELOG.md) | Version history | ✅ Verified Aug 2026 |
-| [INSTALL.md](INSTALL.md) | Installation guide | ⚠️ Not checked this session |
-| [GETTING_STARTED.md](GETTING_STARTED.md) | Quick start | ⚠️ Not checked this session |
+| [INSTALL.md](INSTALL.md) | Installation guide | ✅ Verified Aug 2026 |
+| [GETTING_STARTED.md](GETTING_STARTED.md) | Quick start | ✅ Verified Aug 2026 (fixed a broken async example) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guide | 🔒 Static |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Code of conduct | 🔒 Static |
 | [SECURITY.md](SECURITY.md) | Security policy | 🔒 Static |
 | [SUPPORT.md](SUPPORT.md) | Support info | 🔒 Static |
 | [LICENSE](LICENSE) | MIT License | 🔒 Static |
-| [RULES.md](RULES.md) | Agent rules | ⚠️ Not checked this session |
+| [RULES.md](RULES.md) | Agent rules | ✅ Verified Aug 2026 (fixed a broken sub-agent example) |
 | [RELEASE.md](RELEASE.md) | Release process | 🔒 Static |
-| [WORLD_CLASS_FEATURES.md](WORLD_CLASS_FEATURES.md) | Feature showcase | ⚠️ Not checked this session |
+| [WORLD_CLASS_FEATURES.md](WORLD_CLASS_FEATURES.md) | Feature showcase | ✅ Verified Aug 2026 |
 
 ### Feature Documentation
 
 | File | Feature | Status |
 |------|---------|--------|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture | ⚠️ Not checked this session |
-| [docs/SKILLS_REGISTRATION.md](docs/SKILLS_REGISTRATION.md) | Skills guide | ⚠️ Not checked this session - doesn't yet cover the GitHub/Slack/Google Sheets skills added Aug 2026 |
+| [docs/SKILLS_REGISTRATION.md](docs/SKILLS_REGISTRATION.md) | Skills guide | ✅ Verified Aug 2026 (fixed wrong counts, broken links, and a real code bug the wrong counts pointed at) |
 | [docs/PLAN_MODE.md](docs/PLAN_MODE.md) | Architecture-First Workflow | ⚠️ Not checked this session |
 | [docs/CLAUDE_CODE_EXPLORER.md](docs/CLAUDE_CODE_EXPLORER.md) | Source exploration | ⚠️ Not checked this session |
 | [docs/CLAUDE_CODE_QUICKSTART.md](docs/CLAUDE_CODE_QUICKSTART.md) | Explorer quick ref | ⚠️ Not checked this session |
@@ -62,8 +62,8 @@ were never meant to track current state.*
 | [docs/FRAMEWORK_COMPARISON.md](docs/FRAMEWORK_COMPARISON.md) | vs competitors | ✅ Verified Aug 2026 |
 | [docs/MICROSOFT_FRAMEWORK_COMPARISON.md](docs/MICROSOFT_FRAMEWORK_COMPARISON.md) | vs Microsoft | ✅ Verified Aug 2026 |
 | [docs/COMPARISON_SCORES.md](docs/COMPARISON_SCORES.md) | Score breakdown | ✅ Verified Aug 2026 |
-| [docs/SECURITY_HARDENING.md](docs/SECURITY_HARDENING.md) | Security guide | ⚠️ Not checked this session - doesn't yet cover the Aug 2026 Piranha Studio auth-enforcement fix |
-| [docs/WASM_TRACKING.md](docs/WASM_TRACKING.md) | Wasm documentation | ⚠️ Not checked this session |
+| [docs/SECURITY_HARDENING.md](docs/SECURITY_HARDENING.md) | Security guide | ✅ Verified Aug 2026 (removed a false "10/10" claim, documented the real HTTP auth fix) |
+| [docs/WASM_TRACKING.md](docs/WASM_TRACKING.md) | Wasm documentation | ✅ Verified Aug 2026 (fixed stale code examples) |
 | [docs/UI_GUIDE.md](docs/UI_GUIDE.md) | UI components | ⚠️ Not checked this session |
 | [docs/NEW_UI_FEATURES.md](docs/NEW_UI_FEATURES.md) | UI features | 📦 Historical snapshot |
 | [docs/BACKEND_UI_AUDIT.md](docs/BACKEND_UI_AUDIT.md) | Feature audit | 📦 Historical snapshot |
@@ -73,9 +73,9 @@ were never meant to track current state.*
 | File | Purpose | Status |
 |------|---------|--------|
 | [skills.md](skills.md) | Skills overview, incl. GitHub/Slack/Google Sheets/Model Compatibility | ✅ Verified Aug 2026 |
-| [skills/CATEGORIZATION.md](skills/CATEGORIZATION.md) | Skill catalog | ⚠️ Not checked this session - references "53+" skills, doesn't cover Aug 2026 additions |
-| [skills/README.md](skills/README.md) | Skills intro | ⚠️ Not checked this session |
-| [skills/SKILLS.md](skills/SKILLS.md) | Skills list | ⚠️ Not checked this session |
+| [skills/CATEGORIZATION.md](skills/CATEGORIZATION.md) | Skill catalog | ✅ Verified Aug 2026 (46 skills confirmed, fixed a missing entry) |
+| [skills/README.md](skills/README.md) | Skills intro | ✅ Verified Aug 2026 (a whole category, 14 skills, was missing) |
+| [skills/SKILLS.md](skills/SKILLS.md) | Skills list | ✅ Verified Aug 2026 (fixed a broken import in its own usage example) |
 
 ### Historical Snapshot Reports
 
@@ -126,11 +126,11 @@ report, not a defect in these files.
 
 | File | Purpose | Status |
 |------|---------|--------|
-| [cookbook/README.md](cookbook/README.md) | Cookbook recipes | ⚠️ Not checked this session |
-| [studio/README.md](studio/README.md) | Piranha Studio (Next.js dashboard) | ⚠️ Not checked this session |
-| [vscode-extension/README.md](vscode-extension/README.md) | VS Code extension | ⚠️ Not checked this session |
-| [docs/index.md](docs/index.md) | mkdocs index page | ⚠️ Not checked this session |
-| [docs/changelog.md](docs/changelog.md) | Alternate/mkdocs-facing changelog | ⚠️ Not checked this session - may duplicate/drift from [CHANGELOG.md](CHANGELOG.md) |
+| [cookbook/README.md](cookbook/README.md) | Cookbook recipes | ✅ Verified Aug 2026 (fixed nonexistent method calls, wrong package paths) |
+| [studio/README.md](studio/README.md) | Piranha Studio (Next.js dashboard) | ✅ Verified Aug 2026 (fixed a uvicorn example that never worked, documented HTTP auth) |
+| [vscode-extension/README.md](vscode-extension/README.md) | VS Code extension | ✅ Verified Aug 2026 |
+| [docs/index.md](docs/index.md) | mkdocs index page | ✅ Verified Aug 2026 |
+| [docs/changelog.md](docs/changelog.md) | Alternate/mkdocs-facing changelog | ✅ Verified Aug 2026 (transcludes [CHANGELOG.md](CHANGELOG.md) via mkdocs `--8<--`, not a fork) |
 
 ---
 

@@ -63,6 +63,12 @@ passing test.
 - The Rust test suite (`cargo test`) had apparently never compiled
   successfully before: `event_store.rs`'s own test module was missing an
   import.
+- **`register_complete_claude_skills()`** claimed (in its docstring and
+  every doc referencing it) to register "ALL Claude skills," but only
+  combined the official (16) + additional (16) sets - the 14 skills in
+  `claude_skills.py` (`analyze_data`, `generate_code`, `debug_code`,
+  etc.) were silently dropped. Found while auditing the skills docs for
+  stale counts. Now returns the full 46.
 
 ### Added
 
@@ -74,6 +80,8 @@ passing test.
   ever returned a canned markdown template.
 - 10 real Slack skills (send messages, read channels, upload files) via
   Agno's `SlackTools`.
+- 4 real Google Sheets skills (read/create/update sheets, duplicate
+  sheets) via Agno's `GoogleSheetsTools`.
 
 ### Removed
 
@@ -90,6 +98,13 @@ passing test.
 - Closed all 17 open Dependabot alerts across `studio/` and
   `debugger_ui/` (Next.js, PostCSS, sharp, nanoid, brace-expansion,
   js-yaml).
+- **Piranha Studio's HTTP REST API had zero authentication** despite a
+  fully-built JWT/API-key auth system already covering WebSocket
+  connections - all 35 `/api/*` routes in `piranha_agent/realtime.py`
+  accepted unauthenticated requests. Applied `authenticate_http_request`
+  as a dependency to every route except `/api/health`, with a dev-mode
+  bypass for credential-free local requests (wrong credentials are still
+  always rejected). See `docs/SECURITY_HARDENING.md`.
 
 ### Documentation
 
@@ -108,6 +123,19 @@ passing test.
   "Tested on M2 MacBook Pro, 32GB RAM" methodology that never happened) -
   removed rather than "corrected," since there was no real measurement
   behind them to correct to.
+- Audited every `.md` file in the repo against current code.
+  `docs/SECURITY_HARDENING.md` claimed a "10/10 Enterprise Ready" score
+  that was false at the time of writing (see the HTTP auth gap above).
+  `GETTING_STARTED.md`, `RULES.md`, and `skills/SKILLS.md` each
+  contained a code example that would raise on the first line
+  (`Agent.run()` used as if async, a nonexistent `Agent(parent=...)`
+  kwarg, an import from the wrong module). The repo's GitHub org was
+  wrong in nine files including `pyproject.toml`/`Cargo.toml`/
+  `mkdocs.yml`'s own metadata. `cookbook/README.md` and `studio/README.md`
+  referenced nonexistent methods and the old `piranha` package name.
+  Several docs linked to `docs/OBSERVABILITY.md`/`docs/MEMORY.md`, which
+  don't exist. Full list of files touched in the commit history around
+  August 2026.
 
 ## [0.4.2] - 2026-04-01
 
