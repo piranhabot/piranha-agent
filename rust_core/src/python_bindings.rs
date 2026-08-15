@@ -695,28 +695,54 @@ impl PyPostgresEventStore {
 #[pyclass(name = "AgentOrchestrator")]
 pub struct PyAgentOrchestrator {
     inner: Arc<DistOrchestrator>,
+    runtime: tokio::runtime::Runtime,
 }
 
 #[pymethods]
 impl PyAgentOrchestrator {
     #[new]
     #[pyo3(signature = (queue_size=100))]
-    fn new(queue_size: usize) -> Self {
-        PyAgentOrchestrator {
+    fn new(queue_size: usize) -> PyResult<Self> {
+        let runtime = tokio::runtime::Runtime::new()
+            .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+        Ok(PyAgentOrchestrator {
             inner: Arc::new(DistOrchestrator::new(queue_size)),
-        }
+            runtime,
+        })
     }
 
-    fn register_worker(&self, _agent_id: String) -> PyResult<()> {
+    fn register_worker(&self, agent_id: String) -> PyResult<()> {
+        self.runtime.block_on(self.inner.register_worker(agent_id));
         Ok(())
     }
 
-    fn submit_task(&self, description: String, _priority: u8) -> PyResult<String> {
-        Ok(format!("task-pending-{}", description.chars().take(10).collect::<String>()))
+    fn submit_task(&self, description: String, priority: u8) -> PyResult<String> {
+        self.runtime
+            .block_on(self.inner.submit_task(description, priority))
+            .map_err(PyRuntimeError::new_err)
     }
 
-    fn get_cluster_status(&self) -> PyResult<String> {
-        Ok("Cluster status available".to_string())
+    fn get_cluster_status(&self) -> PyResult<PyObject> {
+        let status = self.runtime.block_on(self.inner.get_cluster_status());
+        Python::with_gil(|py| {
+            let json = serde_json::to_string(&status)
+                .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+            let json_module = py.import("json")?;
+            json_module.call_method1("loads", (json,)).map(|obj| obj.into())
+        })
+    }
+
+    fn get_task(&self, task_id: &str) -> PyResult<Option<PyObject>> {
+        let task = self.runtime.block_on(self.inner.get_task(task_id));
+        match task {
+            Some(task) => Python::with_gil(|py| {
+                let json = serde_json::to_string(&task)
+                    .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+                let json_module = py.import("json")?;
+                json_module.call_method1("loads", (json,)).map(|obj| Some(obj.into()))
+            }),
+            None => Ok(None),
+        }
     }
 }
 

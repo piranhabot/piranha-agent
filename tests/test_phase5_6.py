@@ -106,17 +106,35 @@ class TestPhase6DistributedAgents:
         assert "Phase 6" in info
 
     def test_orchestrator_submit_task(self):
-        """Test submitting task to orchestrator."""
+        """Test submitting task to orchestrator actually enqueues it."""
         orchestrator = AgentOrchestrator()
         task_id = orchestrator.submit_task("Test task description", 5)
         assert task_id is not None
-        assert "task-pending" in task_id
+        assert task_id.startswith("task-")
+
+        task = orchestrator.get_task(task_id)
+        assert task is not None
+        assert task["description"] == "Test task description"
+        assert task["priority"] == 5
+        assert task["status"] == "Pending"
+
+    def test_orchestrator_submit_task_rejects_when_queue_full(self):
+        orchestrator = AgentOrchestrator(queue_size=1)
+        orchestrator.submit_task("first", 1)
+        with pytest.raises(RuntimeError):
+            orchestrator.submit_task("second", 1)
 
     def test_orchestrator_cluster_status(self):
-        """Test getting cluster status."""
+        """Test getting cluster status reflects real registered workers."""
         orchestrator = AgentOrchestrator()
+        assert orchestrator.get_cluster_status() == {}
+
+        orchestrator.register_worker("worker-1")
+        orchestrator.register_worker("worker-2")
         status = orchestrator.get_cluster_status()
-        assert isinstance(status, str)
+        assert isinstance(status, dict)
+        assert set(status.keys()) == {"worker-1", "worker-2"}
+        assert status["worker-1"] == "Idle"
 
     def test_distributed_agent_with_unique_id(self):
         """Test creating multiple agents with unique IDs."""
@@ -132,12 +150,15 @@ class TestPhase6DistributedAgents:
     def test_orchestrator_task_priority(self):
         """Test task submission with different priorities."""
         orchestrator = AgentOrchestrator()
-        
-        task1 = orchestrator.submit_task("Low priority", 1)
-        task2 = orchestrator.submit_task("High priority", 10)
-        
-        assert task1 is not None
-        assert task2 is not None
+
+        task1_id = orchestrator.submit_task("Low priority", 1)
+        task2_id = orchestrator.submit_task("High priority", 10)
+
+        assert task1_id is not None
+        assert task2_id is not None
+        assert task1_id != task2_id
+        assert orchestrator.get_task(task1_id)["priority"] == 1
+        assert orchestrator.get_task(task2_id)["priority"] == 10
 
     def test_multiple_agents_with_orchestrator(self):
         """Test multiple agents with single orchestrator."""
