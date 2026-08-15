@@ -1,113 +1,117 @@
-# 🦈 PIRANHA AGENT v0.4.2 - COMPLETE INDEX
+# 🦈 Piranha Agent - Documentation Index
 
-## ✅ ALL DOCUMENTATION UPDATED
+*Audited August 2026. Previously this index marked every single file
+"✅ Current"/"✅ Updated" regardless of whether that was true, and linked
+to three files (`docs/DEBUGGER.md`, `docs/MEMORY.md`,
+`docs/OBSERVABILITY.md`) that don't exist. Those are fixed below - status
+now distinguishes files actually verified recently from files nobody has
+checked since March/April 2026, and from historical snapshot reports that
+were never meant to track current state.*
 
 ---
 
 ## 🎯 Quick Navigation
 
-### 📖 **Start Here**
-- [README.md](README.md) - Main documentation
-- [WORLD_CLASS_FEATURES.md](WORLD_CLASS_FEATURES.md) - Complete feature showcase ⭐
-- [STATUS_v0.4.2_COMPLETE.md](STATUS_v0.4.2_COMPLETE.md) - v0.4.2 summary
+### 📖 Start Here
+- [README.md](README.md) - Main documentation (verified Aug 2026)
 - [GETTING_STARTED.md](GETTING_STARTED.md) - Quick start guide
+- [skills.md](skills.md) - Skills overview (verified Aug 2026)
 
-### 🏆 **5 World-Class Pillars**
-1. [Autonomous Swarms](docs/CLAUDE_CODE_SWARM.md) - Multi-agent orchestration
-2. [Safety & HITL](docs/PLAN_MODE.md) - Plan Mode, budget controls
-3. [Durable State](docs/ARCHITECTURE.md) - SQLite/PostgreSQL persistence
-4. [Live Visibility](docs/OBSERVABILITY.md) - Piranha Studio
-5. [Infinite Context](docs/MEMORY.md) - Semantic cache, compaction
-
-### 🚀 **Unique Features**
-- [Claude Code Explorer](docs/CLAUDE_CODE_EXPLORER.md) - 512K+ LOC exploration
+### 🚀 Feature Topics
+- [Autonomous Swarms](docs/CLAUDE_CODE_SWARM.md) - Multi-agent orchestration
 - [Plan Mode](docs/PLAN_MODE.md) - Architecture-first workflow
-- [Wasm Sandbox](docs/WASM_TRACKING.md) - Enterprise security
-- [Time-Travel Debugger](docs/DEBUGGER.md) - Visual debugging
+- [Wasm Sandbox](docs/WASM_TRACKING.md) - Sandboxed code execution
+- [Claude Code Explorer](docs/CLAUDE_CODE_EXPLORER.md) - Source exploration
+- Time-Travel Debugger - see [README §5](README.md#5-accountability-engine-time-travel-debugger) (no separate doc exists)
+- Semantic Memory - see [README §4](README.md#4-semantic-memory-with-real-embeddings) (no separate doc exists)
+- Observability & Metrics - see [README §8](README.md#8-observability--metrics) (no separate doc exists)
 
 ---
 
-## 📚 Complete Documentation Index
+## 📚 Documentation Index
 
-### Core Documentation (12 files)
+**Status key:** ✅ Verified this session (Aug 2026) · ⚠️ Not independently checked since March/April 2026, may be stale · 📦 Historical snapshot, frozen by design (not meant to reflect current state) · 🔒 Static/boilerplate (rarely needs updates)
+
+### Core Documentation
 
 | File | Purpose | Status |
 |------|---------|--------|
-| [README.md](README.md) | Main documentation | ✅ Updated v0.4.2 |
-| [CHANGELOG.md](CHANGELOG.md) | Version history | ✅ Updated v0.4.2 |
-| [INSTALL.md](INSTALL.md) | Installation guide | ✅ Updated |
-| [GETTING_STARTED.md](GETTING_STARTED.md) | Quick start | ✅ Updated |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guide | ✅ Current |
-| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Code of conduct | ✅ Current |
-| [SECURITY.md](SECURITY.md) | Security policy | ✅ Current |
-| [SUPPORT.md](SUPPORT.md) | Support info | ✅ Current |
-| [LICENSE](LICENSE) | MIT License | ✅ Current |
-| [RULES.md](RULES.md) | Agent rules | ✅ Current |
-| [RELEASE.md](RELEASE.md) | Release process | ✅ Current |
-| [WORLD_CLASS_FEATURES.md](WORLD_CLASS_FEATURES.md) | Feature showcase | ⭐ NEW |
+| [README.md](README.md) | Main documentation | ✅ Verified Aug 2026 |
+| [CHANGELOG.md](CHANGELOG.md) | Version history | ✅ Verified Aug 2026 |
+| [INSTALL.md](INSTALL.md) | Installation guide | ⚠️ Not checked this session |
+| [GETTING_STARTED.md](GETTING_STARTED.md) | Quick start | ⚠️ Not checked this session |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guide | 🔒 Static |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Code of conduct | 🔒 Static |
+| [SECURITY.md](SECURITY.md) | Security policy | 🔒 Static |
+| [SUPPORT.md](SUPPORT.md) | Support info | 🔒 Static |
+| [LICENSE](LICENSE) | MIT License | 🔒 Static |
+| [RULES.md](RULES.md) | Agent rules | ⚠️ Not checked this session |
+| [RELEASE.md](RELEASE.md) | Release process | 🔒 Static |
+| [WORLD_CLASS_FEATURES.md](WORLD_CLASS_FEATURES.md) | Feature showcase | ⚠️ Not checked this session |
 
-### Feature Documentation (17 files)
+### Feature Documentation
 
 | File | Feature | Status |
 |------|---------|--------|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture | ⭐ NEW v0.4.2 |
-| [docs/SKILLS_REGISTRATION.md](docs/SKILLS_REGISTRATION.md) | Complete skills guide | ⭐ NEW v0.4.2 |
-| [docs/PLAN_MODE.md](docs/PLAN_MODE.md) | Architecture-First Workflow | ✅ v0.4.2 |
-| [docs/CLAUDE_CODE_EXPLORER.md](docs/CLAUDE_CODE_EXPLORER.md) | Source exploration | ✅ Working |
-| [docs/CLAUDE_CODE_QUICKSTART.md](docs/CLAUDE_CODE_QUICKSTART.md) | Explorer quick ref | ✅ Updated |
-| [docs/CLAUDE_CODE_SWARM.md](docs/CLAUDE_CODE_SWARM.md) | Multi-agent explorer | ✅ Updated |
-| [docs/FRAMEWORK_COMPARISON.md](docs/FRAMEWORK_COMPARISON.md) | vs competitors | ✅ Current |
-| [docs/MICROSOFT_FRAMEWORK_COMPARISON.md](docs/MICROSOFT_FRAMEWORK_COMPARISON.md) | vs Microsoft | ✅ Current |
-| [docs/COMPARISON_SCORES.md](docs/COMPARISON_SCORES.md) | Score breakdown | ✅ Current |
-| [docs/SECURITY_HARDENING.md](docs/SECURITY_HARDENING.md) | Security guide | ✅ Current |
-| [docs/WASM_TRACKING.md](docs/WASM_TRACKING.md) | Wasm documentation | ✅ Current |
-| [docs/UI_GUIDE.md](docs/UI_GUIDE.md) | UI components | ✅ Current |
-| [docs/NEW_UI_FEATURES.md](docs/NEW_UI_FEATURES.md) | Latest UI | ✅ Current |
-| [docs/BACKEND_UI_AUDIT.md](docs/BACKEND_UI_AUDIT.md) | Feature audit | ✅ Current |
-| [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md) | Monitoring guide | ✅ Current |
-| [docs/MEMORY.md](docs/MEMORY.md) | Memory management | ✅ Current |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture | ✅ Current |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture | ⚠️ Not checked this session |
+| [docs/SKILLS_REGISTRATION.md](docs/SKILLS_REGISTRATION.md) | Skills guide | ⚠️ Not checked this session - doesn't yet cover the GitHub/Slack/Google Sheets skills added Aug 2026 |
+| [docs/PLAN_MODE.md](docs/PLAN_MODE.md) | Architecture-First Workflow | ⚠️ Not checked this session |
+| [docs/CLAUDE_CODE_EXPLORER.md](docs/CLAUDE_CODE_EXPLORER.md) | Source exploration | ⚠️ Not checked this session |
+| [docs/CLAUDE_CODE_QUICKSTART.md](docs/CLAUDE_CODE_QUICKSTART.md) | Explorer quick ref | ⚠️ Not checked this session |
+| [docs/CLAUDE_CODE_SWARM.md](docs/CLAUDE_CODE_SWARM.md) | Multi-agent explorer | ⚠️ Not checked this session |
+| [docs/FRAMEWORK_COMPARISON.md](docs/FRAMEWORK_COMPARISON.md) | vs competitors | ✅ Verified Aug 2026 |
+| [docs/MICROSOFT_FRAMEWORK_COMPARISON.md](docs/MICROSOFT_FRAMEWORK_COMPARISON.md) | vs Microsoft | ✅ Verified Aug 2026 |
+| [docs/COMPARISON_SCORES.md](docs/COMPARISON_SCORES.md) | Score breakdown | ✅ Verified Aug 2026 |
+| [docs/SECURITY_HARDENING.md](docs/SECURITY_HARDENING.md) | Security guide | ⚠️ Not checked this session - doesn't yet cover the Aug 2026 Piranha Studio auth-enforcement fix |
+| [docs/WASM_TRACKING.md](docs/WASM_TRACKING.md) | Wasm documentation | ⚠️ Not checked this session |
+| [docs/UI_GUIDE.md](docs/UI_GUIDE.md) | UI components | ⚠️ Not checked this session |
+| [docs/NEW_UI_FEATURES.md](docs/NEW_UI_FEATURES.md) | UI features | 📦 Historical snapshot |
+| [docs/BACKEND_UI_AUDIT.md](docs/BACKEND_UI_AUDIT.md) | Feature audit | 📦 Historical snapshot |
 
-### Skills Documentation (4 files)
+### Skills Documentation
 
 | File | Purpose | Status |
 |------|---------|--------|
-| [skills.md](skills.md) | Skills overview | ✅ Updated v0.4.2 |
-| [skills/CATEGORIZATION.md](skills/CATEGORIZATION.md) | Complete catalog | ✅ 53+ skills |
-| [skills/README.md](skills/README.md) | Skills intro | ✅ Current |
-| [skills/SKILLS.md](skills/SKILLS.md) | Skills list | ✅ Current |
+| [skills.md](skills.md) | Skills overview, incl. GitHub/Slack/Google Sheets/Model Compatibility | ✅ Verified Aug 2026 |
+| [skills/CATEGORIZATION.md](skills/CATEGORIZATION.md) | Skill catalog | ⚠️ Not checked this session - references "53+" skills, doesn't cover Aug 2026 additions |
+| [skills/README.md](skills/README.md) | Skills intro | ⚠️ Not checked this session |
+| [skills/SKILLS.md](skills/SKILLS.md) | Skills list | ⚠️ Not checked this session |
 
-### Development Documentation (12 files)
+### Historical Snapshot Reports
 
-| File | Purpose | Status |
-|------|---------|--------|
-| [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md) | Implementation guide | ✅ Current |
-| [docs/COMPLETE_RELEASE_SUMMARY.md](docs/COMPLETE_RELEASE_SUMMARY.md) | v0.4.0 release | ✅ Historical |
-| [docs/FINAL_TEST_STATUS_93_PERCENT.md](docs/FINAL_TEST_STATUS_93_PERCENT.md) | Test results | ✅ 93.4% pass |
-| [docs/WIRING_VALIDATION.md](docs/WIRING_VALIDATION.md) | Validation report | ✅ Current |
-| [docs/CODE_QUALITY_STATUS.md](docs/CODE_QUALITY_STATUS.md) | Quality metrics | ✅ 100% |
-| [docs/PERFECT_CODE_QUALITY.md](docs/PERFECT_CODE_QUALITY.md) | Quality journey | ✅ Current |
-| [docs/CODE_QUALITY_IMPROVEMENTS.md](docs/CODE_QUALITY_IMPROVEMENTS.md) | Improvements | ✅ Current |
-| [docs/FINAL_CODE_CLEANUP.md](docs/FINAL_CODE_CLEANUP.md) | Cleanup summary | ✅ Current |
-| [docs/EMPTY_EXCEPT_FIXED.md](docs/EMPTY_EXCEPT_FIXED.md) | Error handling | ✅ Fixed |
-| [docs/DEPENDABOT_UPDATE_COMPLETE.md](docs/DEPENDABOT_UPDATE_COMPLETE.md) | Security updates | ✅ Current |
-| [docs/IMPROVEMENT_ROADMAP.md](docs/IMPROVEMENT_ROADMAP.md) | Future plans | ✅ Current |
-| [RUST_CORE_BUILD_SUCCESS.md](RUST_CORE_BUILD_SUCCESS.md) | Build report | ✅ Success |
+These document a specific development milestone in March/April 2026 and
+were never meant to track current state - the same way a commit message
+doesn't get edited after the fact. Some of their "complete"/"100%"/
+"perfect" claims have since been superseded by real bugs found and fixed
+in the August 2026 session (see [CHANGELOG.md](CHANGELOG.md)'s
+`[Unreleased]` section for specifics) - that's expected of a point-in-time
+report, not a defect in these files.
 
-### Status Reports (8 files)
+| File |
+|------|
+| [STATUS_v0.4.2_COMPLETE.md](STATUS_v0.4.2_COMPLETE.md) |
+| [DOCUMENTATION_COMPLETE.md](DOCUMENTATION_COMPLETE.md) |
+| [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md) |
+| [CLAUDE_CODE_WHATS_MISSING.md](CLAUDE_CODE_WHATS_MISSING.md) |
+| [CLAUDE_CODE_INTEGRATION.md](CLAUDE_CODE_INTEGRATION.md) |
+| [CLAUDE_CODE_FIXES_COMPLETE.md](CLAUDE_CODE_FIXES_COMPLETE.md) |
+| [RUST_CORE_BUILD_SUCCESS.md](RUST_CORE_BUILD_SUCCESS.md) |
+| [docs/100_PERCENT_COMPLETE.md](docs/100_PERCENT_COMPLETE.md) |
+| [docs/PRE_PUBLICATION_STATUS.md](docs/PRE_PUBLICATION_STATUS.md) |
+| [docs/PRE_PUBLICATION_ANALYSIS.md](docs/PRE_PUBLICATION_ANALYSIS.md) |
+| [docs/COMPLETE_RELEASE_SUMMARY.md](docs/COMPLETE_RELEASE_SUMMARY.md) |
+| [docs/FINAL_TEST_STATUS_93_PERCENT.md](docs/FINAL_TEST_STATUS_93_PERCENT.md) |
+| [docs/FINAL_TEST_STATUS.md](docs/FINAL_TEST_STATUS.md) |
+| [docs/WIRING_VALIDATION.md](docs/WIRING_VALIDATION.md) |
+| [docs/CODE_QUALITY_STATUS.md](docs/CODE_QUALITY_STATUS.md) |
+| [docs/PERFECT_CODE_QUALITY.md](docs/PERFECT_CODE_QUALITY.md) |
+| [docs/CODE_QUALITY_IMPROVEMENTS.md](docs/CODE_QUALITY_IMPROVEMENTS.md) |
+| [docs/FINAL_CODE_CLEANUP.md](docs/FINAL_CODE_CLEANUP.md) |
+| [docs/EMPTY_EXCEPT_FIXED.md](docs/EMPTY_EXCEPT_FIXED.md) |
+| [docs/DEPENDABOT_UPDATE_COMPLETE.md](docs/DEPENDABOT_UPDATE_COMPLETE.md) |
+| [docs/IMPROVEMENT_ROADMAP.md](docs/IMPROVEMENT_ROADMAP.md) |
 
-| File | Purpose | Status |
-|------|---------|--------|
-| [STATUS_v0.4.2_COMPLETE.md](STATUS_v0.4.2_COMPLETE.md) | v0.4.2 summary | ⭐ LATEST |
-| [DOCUMENTATION_COMPLETE.md](DOCUMENTATION_COMPLETE.md) | Doc status | ✅ Updated |
-| [CLAUDE_CODE_WHATS_MISSING.md](CLAUDE_CODE_WHATS_MISSING.md) | Explorer status | ✅ FIXED |
-| [CLAUDE_CODE_INTEGRATION.md](CLAUDE_CODE_INTEGRATION.md) | Integration guide | ✅ Complete |
-| [CLAUDE_CODE_FIXES_COMPLETE.md](CLAUDE_CODE_FIXES_COMPLETE.md) | Fixes summary | ✅ Complete |
-| [docs/100_PERCENT_COMPLETE.md](docs/100_PERCENT_COMPLETE.md) | Completion report | ✅ Current |
-| [docs/PRE_PUBLICATION_STATUS.md](docs/PRE_PUBLICATION_STATUS.md) | Pre-publish | ✅ Historical |
-| [docs/PRE_PUBLICATION_ANALYSIS.md](docs/PRE_PUBLICATION_ANALYSIS.md) | Analysis | ✅ Historical |
-
-### GitHub Documentation (6 files)
+### GitHub Community Files
 
 | File | Purpose |
 |------|---------|
@@ -118,107 +122,32 @@
 | [.github/PYPI_PUBLISHING.md](.github/PYPI_PUBLISHING.md) | PyPI publishing |
 | [.github/SETUP_CHECKLIST.md](.github/SETUP_CHECKLIST.md) | Setup checklist |
 
-### Other Documentation (5 files)
+### Other Documentation
 
-| File | Purpose |
-|------|---------|
-| [cookbook/README.md](cookbook/README.md) | Cookbook recipes |
-| [studio/README.md](studio/README.md) | Piranha Studio |
-| [vscode-extension/README.md](vscode-extension/README.md) | VS Code extension |
-| [docs/index.md](docs/index.md) | Docs index |
-| [docs/changelog.md](docs/changelog.md) | Alternate changelog |
-
----
-
-## 🎯 Feature Coverage Matrix
-
-| Feature | Documentation | Examples | Tests |
-|---------|---------------|----------|-------|
-| **Plan Mode** | [docs/PLAN_MODE.md](docs/PLAN_MODE.md) | `examples/04_autonomous_orchestration.py` | ✅ |
-| **Claude Code Explorer** | [docs/CLAUDE_CODE_EXPLORER.md](docs/CLAUDE_CODE_EXPLORER.md) | `examples/15_claude_code_explorer_working.py` | ✅ |
-| **Autonomous Swarms** | [docs/CLAUDE_CODE_SWARM.md](docs/CLAUDE_CODE_SWARM.md) | `examples/13_claude_code_swarm.py` | ✅ |
-| **Wasm Sandbox** | [docs/WASM_TRACKING.md](docs/WASM_TRACKING.md) | `examples/07_wasm_sandbox.py` | ✅ |
-| **Piranha Studio** | [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md) | `examples/11_piranha_studio.py` | ✅ |
-| **Semantic Cache** | [docs/MEMORY.md](docs/MEMORY.md) | `examples/08_semantic_cache_fuzzy.py` | ✅ |
-| **PostgreSQL** | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | - | ✅ |
-| **Time-Travel Debugger** | [docs/DEBUGGER.md](docs/DEBUGGER.md) | - | ✅ |
+| File | Purpose | Status |
+|------|---------|--------|
+| [cookbook/README.md](cookbook/README.md) | Cookbook recipes | ⚠️ Not checked this session |
+| [studio/README.md](studio/README.md) | Piranha Studio (Next.js dashboard) | ⚠️ Not checked this session |
+| [vscode-extension/README.md](vscode-extension/README.md) | VS Code extension | ⚠️ Not checked this session |
+| [docs/index.md](docs/index.md) | mkdocs index page | ⚠️ Not checked this session |
+| [docs/changelog.md](docs/changelog.md) | Alternate/mkdocs-facing changelog | ⚠️ Not checked this session - may duplicate/drift from [CHANGELOG.md](CHANGELOG.md) |
 
 ---
 
 ## 📊 Documentation Statistics
 
+*Recomputed from the actual repo, August 2026 - the previous version of
+this section claimed "500+ code examples" and "~15,000+ lines," neither
+of which could be verified against anything real.*
+
 | Metric | Count |
 |--------|-------|
-| **Total .md Files** | 62 |
-| **Core Documentation** | 12 |
-| **Feature Guides** | 15 |
-| **Skills Documentation** | 4 |
-| **Development Docs** | 12 |
-| **Status Reports** | 8 |
-| **GitHub Docs** | 6 |
-| **Other Docs** | 5 |
-| **Total Lines** | ~15,000+ |
-| **Code Examples** | 500+ |
+| Total `.md` files | 66 |
+| Example scripts (`examples/*.py`) | 21 |
+| Built-in Python skills (`@skill`-decorated) | 51, plus 5 Claude Code Explorer skills built programmatically |
+| Optional skill integrations (require extras) | GitHub (39), Slack (10), Google Sheets (4) |
 
 ---
 
-## 🎯 What's Documented
-
-### ✅ Fully Documented (100%)
-
-- [x] Architecture-First Workflow (Plan Mode)
-- [x] Claude Code Explorer (8 MCP tools)
-- [x] Autonomous Swarms (orchestration)
-- [x] Safety & HITL Checkpoints
-- [x] Durable State (SQLite/PostgreSQL)
-- [x] Live Visibility (Piranha Studio)
-- [x] Infinite Context (Semantic Cache)
-- [x] Wasm Sandbox (Wasmtime)
-- [x] Time-Travel Debugger
-- [x] Multi-Agent Collaboration
-- [x] Security Hardening
-- [x] Observability & Monitoring
-- [x] Memory Management
-- [x] 53+ Skills
-
----
-
-## 🚀 Quick Start Navigation
-
-### For New Users
-1. [GETTING_STARTED.md](GETTING_STARTED.md) - Install and run first agent
-2. [skills.md](skills.md) - Learn about skills
-3. [examples/](examples/) - Run example code
-
-### For Developers
-1. [IMPLEMENTATION_COMPLETE.md](IMPLEMENTATION_COMPLETE.md) - Implementation details
-2. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - System architecture
-3. [RUST_CORE_BUILD_SUCCESS.md](RUST_CORE_BUILD_SUCCESS.md) - Rust core build
-
-### For Enterprise Users
-1. [WORLD_CLASS_FEATURES.md](WORLD_CLASS_FEATURES.md) - Feature showcase
-2. [docs/SECURITY_HARDENING.md](docs/SECURITY_HARDENING.md) - Security docs
-3. [docs/FRAMEWORK_COMPARISON.md](docs/FRAMEWORK_COMPARISON.md) - vs competitors
-
----
-
-## 🎉 Status Summary
-
-```
-╔══════════════════════════════════════════════════╗
-║     PIRANHA AGENT v0.4.2 - INDEX COMPLETE       ║
-╠══════════════════════════════════════════════════╣
-║  Documentation Files:        62                 ║
-║  Features Documented:        100%               ║
-║  Code Examples:              500+               ║
-║  Total Lines:                15,000+            ║
-║  Version:                    0.4.2              ║
-║  Status:                     PRODUCTION READY   ║
-╚══════════════════════════════════════════════════╝
-```
-
----
-
-**Version:** 0.4.2  
-**Date:** April 1, 2026  
-**Status:** ✅ **ALL DOCUMENTATION UPDATED AND COMPLETE**
+**Version:** 0.4.2
+**Index last audited:** August 2026
