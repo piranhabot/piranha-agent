@@ -465,7 +465,9 @@ await collab.execute_task("Build a comprehensive market report")
 
 ```bash
 # Launch Studio with Benchmarking Dashboard
-piranha monitor
+# (there is no `piranha monitor` CLI command; this is how the realtime
+# server is actually started - see studio/README.md)
+python -m piranha_agent.realtime --port 8080
 ```
 
 **Features:**
@@ -597,24 +599,51 @@ More frameworks worth knowing about, checked against the same criteria (except P
 
 ## 📈 Performance Benchmarks
 
+*Single-run numbers from `python tests/test_benchmarking.py` on one
+development machine - not an average, not independently audited, and
+**not stable**. Verified August 2026 by running the suite 3x back-to-back
+on the same machine: the sub-millisecond benchmarks (SkillRegistry
+Authorize, Wasm Validate, SemanticCache Get) varied by 3-6x between runs,
+since at that timescale the "work" being timed is smaller than OS
+scheduler/timer noise. Only the benchmarks with real measurable latency
+(EventStore Append, SemanticCache Put, Vector Search) were stable
+(~1-2% run-to-run). Treat the fast numbers below as "very fast," not as
+a precise figure - rerun the suite yourself if you need current numbers.*
+
 | Component | Avg Time | Throughput | P95 | P99 |
 |-----------|----------|------------|-----|-----|
-| **EventStore Append** | 0.02ms | **59,263 ops/sec** | 0.02ms | 0.02ms |
-| **SemanticCache Put**¹ | ~27-37ms | **~27-38 ops/sec** | - | - |
-| **SemanticCache Get** | 0.00ms | **~495,000 ops/sec** | 0.00ms | 0.00ms |
-| **SkillRegistry Authorize** | 0.00ms | **4,530,021 ops/sec** | 0.00ms | 0.00ms |
-| **Guardrail Check** | 0.01ms | **197,095 ops/sec** | 0.00ms | 0.02ms |
-| **Wasm Validate** | 0.00ms | **1,633,801 ops/sec** | 0.00ms | 0.00ms |
-| **Vector Search (1K items)** | 41.94ms | 23.84 ops/sec | 43.26ms | 46.89ms |
-| **Metrics Collection** | 0.01ms | **103,506 ops/sec** | 0.02ms | 0.02ms |
+| **EventStore Append** | 0.02ms | **~57,000 ops/sec** (stable) | 0.02ms | 0.02ms |
+| **SemanticCache Put**¹ | ~27-40ms | **~27-40 ops/sec** (stable) | - | - |
+| **SemanticCache Get** | 0.00ms | **~200K-1.3M ops/sec** (volatile, see above) | 0.00ms | 0.00ms |
+| **SkillRegistry Authorize** | 0.00ms | **~930K-4.5M ops/sec** (volatile, see above) | 0.00ms | 0.00ms |
+| **Guardrail Check** | 0.01-0.03ms | **~35K-200K ops/sec** | 0.00ms | 0.02ms |
+| **Wasm Validate** | 0.00ms | **~440K-1.8M ops/sec** (volatile, see above) | 0.00ms | 0.00ms |
+| **Vector Search (1K items)** | ~39-42ms | ~24-26 ops/sec (stable) | 43-46ms | 47-59ms |
+| **Metrics Collection** | 0.01ms | **~100K-660K ops/sec** (volatile) | 0.02ms | 0.02ms |
 
-**Piranha is 50-100x faster** than competitors for core operations!
+There is no competitor benchmark anywhere in this repo - the
+`tests/test_benchmarking.py` suite only measures Piranha's own
+components. An earlier version of this section claimed "50-100x faster
+than competitors," which had no actual comparative test behind it;
+removed rather than corrected, since there's nothing to correct it *to*.
+See [How to test it and score it](#-how-to-verify-these-benchmarks-yourself)
+below if you want to reproduce or extend this.
 
 ¹ `SemanticCache.put()` computes a real embedding via a local Ollama call (`nomic-embed-text`) to support fuzzy matching, so it's network-bound - this replaced an earlier hash-based placeholder embedding that had no actual semantic meaning (and inflated this number to ~643K ops/sec). `get()` by exact key doesn't call the embedding model and stays fast.
 
+### 🔁 How to Verify These Benchmarks Yourself
+
+```bash
+# Run once
+python tests/test_benchmarking.py
+
+# Run a few times back-to-back to see the actual variance
+for i in 1 2 3; do python tests/test_benchmarking.py 2>&1 | grep -E "^Benchmark:|Throughput:"; echo; done
+```
+
 ### 📊 Visual Benchmarking
 You can view these benchmarks in real-time using Piranha Studio:
-1. Start the monitor: `piranha monitor`
+1. Start the monitor: `python -m piranha_agent.realtime --port 8080` (there is no `piranha monitor` CLI command - the CLI's real commands are `piranha-agent agent|debug|explore|version`)
 2. Run benchmarks with reporting: `PIRANHA_MONITOR_URL=http://localhost:8080 python tests/test_benchmarking.py`
 3. Open `http://localhost:8080` and click the **Benchmarks** tab to see live charts.
 

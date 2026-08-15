@@ -2,11 +2,19 @@
 """Piranha Agent Benchmarking Suite.
 
 Provides:
-- Performance benchmarks (throughput, latency)
-- Comparison with other frameworks
-- Load testing
-- Cost-effectiveness analysis
-- Quality evaluation metrics
+- Performance benchmarks (throughput, latency) for Piranha's own
+  components only - there is no competitor comparison, cost-effectiveness
+  analysis, or quality evaluation implemented here (an earlier version of
+  this docstring claimed all three; corrected August 2026).
+- Load testing (see benchmark_concurrent_agent_execution)
+
+Note: several of these benchmarks measure sub-millisecond operations over
+50-100 iterations. At that timescale, throughput numbers are highly
+sensitive to OS scheduling/timer resolution noise - back-to-back runs on
+the same machine have been observed to differ by 3-6x for the fastest
+benchmarks (SkillRegistry Authorize, Wasm Validate, SemanticCache Get).
+Don't treat a single run's numbers as a stable measurement; run this
+multiple times if you need a real sense of the range.
 
 Usage:
     python tests/test_benchmarking.py
