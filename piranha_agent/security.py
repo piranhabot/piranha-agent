@@ -246,6 +246,14 @@ def authenticate_http_request(request: Request) -> dict:
             detail="Invalid API key",
         )
 
+    # No credentials provided at all. Same fail-open-in-dev/fail-closed-in-
+    # production posture as verify_api_key(): only bypass when no API_KEYS
+    # are configured AND we're in a development environment, so a missing
+    # auth configuration doesn't silently disable authentication in
+    # production.
+    if not API_KEYS and is_development_environment():
+        return {"auth_type": "dev_bypass"}
+
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Authentication required",

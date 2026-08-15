@@ -39,7 +39,7 @@ from pathlib import Path
 from typing import Any
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
+from fastapi import Depends, FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
@@ -52,6 +52,7 @@ from piranha_agent.observability import SecretMasker
 
 # Import security module
 from .security import (
+    authenticate_http_request,
     create_access_token,
     get_cors_origins,
     get_limiter,
@@ -239,7 +240,7 @@ class RealtimeMonitor:
             allow_origins=allowed_origins,
             allow_credentials=True,
             allow_methods=["GET", "POST", "PUT", "DELETE"],
-            allow_headers=["Authorization", "Content-Type"],
+            allow_headers=["Authorization", "Content-Type", "X-API-Key", "X-Demo-Secret"],
         )
         
         # Setup routes
@@ -271,13 +272,13 @@ class RealtimeMonitor:
                 }
             }
         
-        @self.app.get("/api/agents")
+        @self.app.get("/api/agents", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("30/minute")
         async def get_agents(request: Request):
             """Get all agents."""
             return {"agents": list(self.agents.values())}
 
-        @self.app.get("/api/agents/{agent_id}")
+        @self.app.get("/api/agents/{agent_id}", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("60/minute")
         async def get_agent(request: Request, agent_id: str):
             """Get specific agent."""
@@ -285,7 +286,7 @@ class RealtimeMonitor:
                 raise HTTPException(status_code=404, detail="Agent not found")
             return self.agents[agent_id]
 
-        @self.app.get("/api/tasks")
+        @self.app.get("/api/tasks", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("30/minute")
         async def get_tasks(request: Request, status: str | None = None):
             """Get all tasks, optionally filtered by status."""
@@ -294,26 +295,26 @@ class RealtimeMonitor:
                 tasks = [t for t in tasks if t.status == status]
             return {"tasks": tasks}
 
-        @self.app.get("/api/metrics")
+        @self.app.get("/api/metrics", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("60/minute")
         async def get_metrics(request: Request):
             """Get system metrics."""
             self.update_metrics()
             return self.metrics
         
-        @self.app.get("/api/events")
+        @self.app.get("/api/events", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("30/minute")
         async def get_events(request: Request, limit: int = 100):
             """Get recent events."""
             return {"events": self.events[-limit:]}
         
-        @self.app.get("/api/benchmarks")
+        @self.app.get("/api/benchmarks", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("30/minute")
         async def get_benchmarks(request: Request):
             """Get benchmark history."""
             return {"benchmarks": self.benchmarks}
         
-        @self.app.post("/api/benchmarks")
+        @self.app.post("/api/benchmarks", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("10/minute")
         async def add_benchmark(benchmark: BenchmarkData, request: Request):
             """Add a benchmark result."""
@@ -326,13 +327,13 @@ class RealtimeMonitor:
             self.record_event("benchmark.added", benchmark.model_dump())
             return {"status": "ok"}
 
-        @self.app.get("/api/security/check")
+        @self.app.get("/api/security/check", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("10/minute")
         async def security_check(request: Request):
             """Run security check."""
             return run_security_check()
         
-        @self.app.get("/api/security/token")
+        @self.app.get("/api/security/token", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("5/minute")
         async def get_token(request: Request):
             """Get authentication token (for demo purposes only)."""
@@ -367,7 +368,7 @@ class RealtimeMonitor:
                 "uptime": (datetime.now() - self.start_time).total_seconds()
             }
         
-        @self.app.get("/api/wasm")
+        @self.app.get("/api/wasm", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("30/minute")
         async def get_wasm_executions(request: Request):
             """Get Wasm execution history."""
@@ -378,7 +379,7 @@ class RealtimeMonitor:
             ]
             return {"executions": wasm_events[-50:]}  # Last 50 executions
         
-        @self.app.post("/api/wasm/execute")
+        @self.app.post("/api/wasm/execute", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("60/minute")
         async def execute_wasm(execution_request: WasmExecutionRequest, request: Request):
             """Track Wasm execution."""
@@ -394,7 +395,7 @@ class RealtimeMonitor:
             )
             return {"status": "ok"}
         
-        @self.app.get("/api/skills")
+        @self.app.get("/api/skills", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("30/minute")
         async def get_skills(request: Request):
             """Get all available skills."""
@@ -408,19 +409,19 @@ class RealtimeMonitor:
                 ]
             }
         
-        @self.app.post("/api/skills/{skill_id}/install")
+        @self.app.post("/api/skills/{skill_id}/install", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("10/minute")
         async def install_skill(request: Request, skill_id: str):
             """Install a skill."""
             return {"status": "ok", "message": f"Skill {skill_id} installed"}
         
-        @self.app.delete("/api/skills/{skill_id}/uninstall")
+        @self.app.delete("/api/skills/{skill_id}/uninstall", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("10/minute")
         async def uninstall_skill(request: Request, skill_id: str):
             """Uninstall a skill."""
             return {"status": "ok", "message": f"Skill {skill_id} uninstalled"}
         
-        @self.app.get("/api/cache/stats")
+        @self.app.get("/api/cache/stats", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("30/minute")
         async def get_cache_stats(request: Request):
             """Get cache statistics."""
@@ -434,7 +435,7 @@ class RealtimeMonitor:
                 "max_entries": 10000
             }
         
-        @self.app.get("/api/cache/entries")
+        @self.app.get("/api/cache/entries", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("10/minute")
         async def get_cache_entries(request: Request):
             """Get cache entries."""
@@ -452,13 +453,13 @@ class RealtimeMonitor:
                 })
             return {"entries": entries}
         
-        @self.app.delete("/api/cache/clear")
+        @self.app.delete("/api/cache/clear", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("5/minute")
         async def clear_cache(request: Request):
             """Clear cache."""
             return {"status": "ok", "message": "Cache cleared"}
         
-        @self.app.get("/api/llm/providers")
+        @self.app.get("/api/llm/providers", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("30/minute")
         async def get_llm_providers(request: Request):
             """Get all LLM providers."""
@@ -472,31 +473,31 @@ class RealtimeMonitor:
                 ]
             }
         
-        @self.app.post("/api/llm/providers")
+        @self.app.post("/api/llm/providers", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("10/minute")
         async def add_llm_provider(provider: LLMProviderRequest, request: Request):
             """Add LLM provider."""
             return {"status": "ok", "message": f"Provider {provider.name} added"}
         
-        @self.app.delete("/api/llm/providers/{provider_id}")
+        @self.app.delete("/api/llm/providers/{provider_id}", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("10/minute")
         async def delete_llm_provider(request: Request, provider_id: str):
             """Delete LLM provider."""
             return {"status": "ok", "message": f"Provider {provider_id} deleted"}
         
-        @self.app.put("/api/llm/providers/{provider_id}/default")
+        @self.app.put("/api/llm/providers/{provider_id}/default", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("10/minute")
         async def set_default_provider(request: Request, provider_id: str):
             """Set default provider."""
             return {"status": "ok", "message": f"Provider {provider_id} set as default"}
         
-        @self.app.post("/api/llm/providers/{provider_id}/test")
+        @self.app.post("/api/llm/providers/{provider_id}/test", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("10/minute")
         async def test_llm_provider(request: Request, provider_id: str):
             """Test LLM provider connection."""
             return {"status": "ok", "success": True, "message": "Connection successful"}
         
-        @self.app.get("/api/costs/analytics")
+        @self.app.get("/api/costs/analytics", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("30/minute")
         async def get_cost_analytics(request: Request, range: str = '7d'):
             """Get advanced cost analytics."""
@@ -530,7 +531,7 @@ class RealtimeMonitor:
                 ]
             }
         
-        @self.app.get("/api/events/timeline")
+        @self.app.get("/api/events/timeline", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("30/minute")
         async def get_events_timeline(request: Request):
             """Get event timeline."""
@@ -553,7 +554,7 @@ class RealtimeMonitor:
             
             return {"events": events}
         
-        @self.app.get("/api/collaborations")
+        @self.app.get("/api/collaborations", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("30/minute")
         async def get_collaborations(request: Request):
             """Get multi-agent collaborations."""
@@ -596,7 +597,7 @@ class RealtimeMonitor:
                 ]
             }
         
-        @self.app.get("/api/guardrails")
+        @self.app.get("/api/guardrails", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("30/minute")
         async def get_guardrails(request: Request):
             """Get guardrail configuration."""
@@ -608,13 +609,13 @@ class RealtimeMonitor:
                 "warning_threshold": 80
             }
         
-        @self.app.put("/api/guardrails")
+        @self.app.put("/api/guardrails", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("10/minute")
         async def update_guardrails(config: GuardrailsConfig, request: Request):
             """Update guardrail configuration."""
             return {"status": "ok", "message": "Guardrails updated"}
         
-        @self.app.get("/api/guardrails/stats")
+        @self.app.get("/api/guardrails/stats", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("30/minute")
         async def get_guardrails_stats(request: Request):
             """Get guardrails statistics."""
@@ -627,14 +628,14 @@ class RealtimeMonitor:
                 "budget_remaining": 32500
             }
         
-        @self.app.get("/api/memory")
+        @self.app.get("/api/memory", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("30/minute")
         async def get_memory(request: Request):
             """Get all memories."""
             memories = [m.to_dict() for m in self.memory_manager.get_all()]
             return {"memories": memories}
         
-        @self.app.post("/api/memory/search")
+        @self.app.post("/api/memory/search", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("60/minute")
         async def search_memory(search_request: MemorySearchRequest, request: Request):
             """Search memories."""
@@ -652,7 +653,7 @@ class RealtimeMonitor:
                 
             return {"results": formatted_results, "query": query, "top_k": top_k}
         
-        @self.app.post("/api/memory")
+        @self.app.post("/api/memory", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("30/minute")
         async def add_memory(memory_request: MemoryCreateRequest, request: Request):
             """Add memory."""
@@ -666,7 +667,7 @@ class RealtimeMonitor:
             memory = self.memory_manager.add(content, tags=tags, importance=importance)
             return {"status": "ok", "memory_id": memory.id}
         
-        @self.app.delete("/api/memory/{memory_id}")
+        @self.app.delete("/api/memory/{memory_id}", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("30/minute")
         async def delete_memory(request: Request, memory_id: str):
             """Delete memory."""
@@ -675,7 +676,7 @@ class RealtimeMonitor:
                 raise HTTPException(status_code=404, detail="Memory not found")
             return {"status": "ok"}
         
-        @self.app.delete("/api/memory/clear")
+        @self.app.delete("/api/memory/clear", dependencies=[Depends(authenticate_http_request)])
         @limiter.limit("5/minute")
         async def clear_memory(request: Request):
             """Clear all memories."""
