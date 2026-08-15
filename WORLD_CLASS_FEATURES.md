@@ -271,7 +271,7 @@ agent.run_autonomous(
 7. **Claude Code Explorer** - Unique source exploration
 8. **Plan Mode** - Architecture-first workflow
 9. **Rust Core** - 7M+ ops/sec performance
-10. **53+ Skills** - Largest skill ecosystem
+10. **56 Skills** - 46 Claude skills + 5 Explorer skills built-in, plus real GitHub/Slack/Google Sheets integrations added Aug 2026
 
 ---
 
@@ -318,16 +318,16 @@ Status: WORLD-CLASS AGENT FRAMEWORK ✅
 | Autonomous Swarms | [docs/CLAUDE_CODE_SWARM.md](docs/CLAUDE_CODE_SWARM.md) |
 | Safety & HITL | [docs/PLAN_MODE.md](docs/PLAN_MODE.md) |
 | Durable State | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
-| Live Visibility | [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md) |
-| Infinite Context | [docs/MEMORY.md](docs/MEMORY.md) |
+| Live Visibility | [README.md §8](README.md#8-observability--metrics) (no separate doc exists) |
+| Infinite Context | [README.md §4](README.md#4-semantic-memory-with-real-embeddings) (no separate doc exists) |
 | Claude Code Explorer | [docs/CLAUDE_CODE_EXPLORER.md](docs/CLAUDE_CODE_EXPLORER.md) |
 | Plan Mode | [docs/PLAN_MODE.md](docs/PLAN_MODE.md) |
-| Rust Core | [RUST_CORE_BUILD_SUCCESS.md](RUST_CORE_BUILD_SUCCESS.md) |
+| Rust Core | [RUST_CORE_BUILD_SUCCESS.md](RUST_CORE_BUILD_SUCCESS.md) (historical snapshot) |
 
 ---
 
-**Version:** 0.4.2  
-**Date:** April 1, 2026  
+**Version:** 0.4.2
+**Date:** April 1, 2026; skill counts and doc links corrected August 2026
 **Status:** ✅ **WORLD-CLASS AGENT FRAMEWORK**
 
 ---
@@ -341,6 +341,6 @@ Status: WORLD-CLASS AGENT FRAMEWORK ✅
 - ✅ Production-ready performance (7M+ ops/sec)
 - ✅ Enterprise security (Wasm, egress hardening, secret masking)
 - ✅ Complete observability (Studio, OpenTelemetry)
-- ✅ 53+ skills ecosystem
+- ✅ 56 built-in skills, plus real GitHub/Slack/Google Sheets integrations
 
 **You can confidently use this in production for enterprise workloads.**

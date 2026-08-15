@@ -325,56 +325,62 @@ from piranha_agent.claude_skills import (
 5. `brand-guidelines` - official_claude_skills
 6. `canvas-design` - official_claude_skills
 7. `code-review` - official_claude_skills
-8. `competitive-ads-extractor` - complete_claude_skills
-9. `content-research-writer` - complete_claude_skills
-10. `creative_writing` - claude_skills
-11. `csv-data-summarizer` - official_claude_skills
-12. `debug_code` - claude_skills
-13. `deep-research` - complete_claude_skills
-14. `docx` - official_claude_skills
-15. `domain-name-brainstormer` - complete_claude_skills
-16. `edit_improve_text` - claude_skills
-17. `explain_code` - claude_skills
-18. `extract_information` - claude_skills
-19. `file-organizer` - official_claude_skills
-20. `frontend-design` - official_claude_skills
-21. `generate_code` - claude_skills
-22. `git-workflows` - official_claude_skills
-23. `imagen` - complete_claude_skills
-24. `internal-comms` - official_claude_skills
-25. `kaizen` - complete_claude_skills
-26. `lead-research-assistant` - complete_claude_skills
-27. `logical_reasoning` - claude_skills
-28. `mcp-builder` - official_claude_skills
-29. `meeting-insights-analyzer` - complete_claude_skills
-30. `pdf` - official_claude_skills
-31. `postgres` - official_claude_skills
-32. `pptx` - official_claude_skills
-33. `reddit-fetch` - complete_claude_skills
-34. `root-cause-tracing` - complete_claude_skills
-35. `skill-creator` - complete_claude_skills
-36. `software-architecture` - complete_claude_skills
-37. `solve_math_problem` - claude_skills
-38. `statistical_analysis` - claude_skills
-39. `step_by_step_solver` - claude_skills
-40. `summarize_text` - claude_skills
-41. `tailored-resume-generator` - complete_claude_skills
-42. `test-driven-development` - official_claude_skills
-43. `twitter-algorithm-optimizer` - complete_claude_skills
-44. `xlsx` - official_claude_skills
-45. `youtube-transcript` - complete_claude_skills
+8. `compare_options` - claude_skills
+9. `competitive-ads-extractor` - complete_claude_skills
+10. `content-research-writer` - complete_claude_skills
+11. `creative_writing` - claude_skills
+12. `csv-data-summarizer` - official_claude_skills
+13. `debug_code` - claude_skills
+14. `deep-research` - complete_claude_skills
+15. `docx` - official_claude_skills
+16. `domain-name-brainstormer` - complete_claude_skills
+17. `edit_improve_text` - claude_skills
+18. `explain_code` - claude_skills
+19. `extract_information` - claude_skills
+20. `file-organizer` - official_claude_skills
+21. `frontend-design` - official_claude_skills
+22. `generate_code` - claude_skills
+23. `git-workflows` - official_claude_skills
+24. `imagen` - complete_claude_skills
+25. `internal-comms` - official_claude_skills
+26. `kaizen` - complete_claude_skills
+27. `lead-research-assistant` - complete_claude_skills
+28. `logical_reasoning` - claude_skills
+29. `mcp-builder` - official_claude_skills
+30. `meeting-insights-analyzer` - complete_claude_skills
+31. `pdf` - official_claude_skills
+32. `postgres` - official_claude_skills
+33. `pptx` - official_claude_skills
+34. `reddit-fetch` - complete_claude_skills
+35. `root-cause-tracing` - complete_claude_skills
+36. `skill-creator` - complete_claude_skills
+37. `software-architecture` - complete_claude_skills
+38. `solve_math_problem` - claude_skills
+39. `statistical_analysis` - claude_skills
+40. `step_by_step_solver` - claude_skills
+41. `summarize_text` - claude_skills
+42. `tailored-resume-generator` - complete_claude_skills
+43. `test-driven-development` - official_claude_skills
+44. `twitter-algorithm-optimizer` - complete_claude_skills
+45. `xlsx` - official_claude_skills
+46. `youtube-transcript` - complete_claude_skills
 
 ---
 
 ## 📚 Documentation
 
 - **Main Skills README:** `skills/README.md`
-- **Module 1:** `piranha/claude_skills.py`
-- **Module 2:** `piranha/official_claude_skills.py`
-- **Module 3:** `piranha/complete_claude_skills.py`
+- **Module 1:** `piranha_agent/claude_skills.py`
+- **Module 2:** `piranha_agent/official_claude_skills.py`
+- **Module 3:** `piranha_agent/complete_claude_skills.py`
+
+Not covered by this catalog (separate, optional integrations, added
+August 2026 - see [../skills.md](../skills.md)): GitHub (39 skills),
+Slack (10 skills), Google Sheets (4 skills), and the standalone Model
+Compatibility skill.
 
 ---
 
-*Last updated: March 2026*
-*Version: 0.3.0*
+*Last updated: March 2026; verified against code August 2026.*
+*Current package version: 0.4.2*
 *Total Skills: 46+*

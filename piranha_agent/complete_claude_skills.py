@@ -1052,9 +1052,15 @@ def register_additional_claude_skills(agent) -> None:
 
 
 def get_complete_claude_skills() -> list:
-    """Get ALL Claude skills (official + additional)."""
+    """Get ALL Claude skills (core + official + additional).
+
+    Previously omitted the 14 skills from claude_skills.py despite the
+    name/docstring promising "ALL" - callers of register_complete_claude_skills()
+    were silently missing analyze_data, generate_code, debug_code, etc.
+    """
+    from piranha_agent.claude_skills import get_all_claude_skills
     from piranha_agent.official_claude_skills import get_all_official_claude_skills
-    return get_all_official_claude_skills() + get_all_additional_claude_skills()
+    return get_all_claude_skills() + get_all_official_claude_skills() + get_all_additional_claude_skills()
 
 
 def register_complete_claude_skills(agent) -> None:

@@ -70,7 +70,6 @@ Complete collection of Claude Skills for Piranha Agent framework.
 | `git-workflows` | Git branch/PR management |
 | `skill-creator` | Interactive skill creation |
 | `kaizen` | Continuous improvement methodology |
-| `tailored-resume-generator` | Job-specific resume generation |
 
 #### 🌐 Social Media Skills
 | Skill | Description |
@@ -84,6 +83,31 @@ Complete collection of Claude Skills for Piranha Agent framework.
 |-------|-------------|
 | `competitive-ads-extractor` | Competitor ad analysis |
 | `domain-name-brainstormer` | Domain name generation |
+| `compare_options` | Multi-criteria decision comparison |
+| `tailored-resume-generator` | Job-specific resume generation |
+
+#### 🧠 Reasoning Skills
+
+*Previously omitted from this page entirely - these 14 `claude_skills.py`
+skills were also missing from `register_complete_claude_skills()` until
+August 2026 (see Usage below). Full catalog:
+[CATEGORIZATION.md](CATEGORIZATION.md).*
+
+| Skill | Description |
+|-------|-------------|
+| `analyze_data` | Data set analysis and insights |
+| `solve_math_problem` | Mathematical problem solving |
+| `explain_code` | Code functionality explanation |
+| `generate_code` | Code generation for tasks |
+| `debug_code` | Bug identification and fixing |
+| `analyze_complex_problem` | Systematic problem breakdown |
+| `logical_reasoning` | Logical argument evaluation |
+| `creative_writing` | Stories, poems, articles |
+| `summarize_text` | Document summarization |
+| `edit_improve_text` | Text editing and improvement |
+| `statistical_analysis` | Statistical analysis on datasets |
+| `extract_information` | Information extraction from text |
+| `step_by_step_solver` | Complex problem solving |
 
 ---
 
@@ -102,7 +126,7 @@ agent = Agent(
     description="AI assistant with all Claude skills"
 )
 
-# Register ALL skills (100+)
+# Register all 46 Claude skills
 register_complete_claude_skills(agent)
 
 # Or register specific categories
@@ -191,14 +215,20 @@ Expected output structure.
 |----------|-------|
 | Document Skills | 4 |
 | Development Skills | 5 |
-| Research Skills | 3 |
-| Creative Skills | 4 |
-| Communication Skills | 3 |
-| Data Skills | 3 |
-| Productivity Skills | 5 |
+| Research Skills | 5 |
+| Creative Skills | 5 |
+| Communication Skills | 5 |
+| Data Skills | 4 |
+| Productivity Skills | 6 |
 | Social Media Skills | 3 |
-| Business Skills | 2 |
-| **Total** | **32+** |
+| Business Skills | 4 |
+| Reasoning Skills | 5 |
+| **Total** | **46** |
+
+See [CATEGORIZATION.md](CATEGORIZATION.md) for the full per-skill
+breakdown - this table previously omitted the Reasoning category (and
+undercounted several others) because it only reflected the official +
+additional skill modules, not `claude_skills.py`.
 
 ---
 
@@ -230,5 +260,5 @@ To contribute new skills:
 
 ---
 
-*Last updated: March 2026*
-*Version: 0.3.0*
+*Last updated: March 2026; corrected against code August 2026.*
+*Current package version: 0.4.2*

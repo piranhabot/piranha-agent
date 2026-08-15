@@ -2,18 +2,22 @@
 
 ## 🎯 Overview
 
-Piranha Agent v0.4.2 includes **53+ skills** across multiple categories.
+Piranha Agent v0.4.2 includes **51 built-in `@skill`-decorated Python
+skills**, plus 5 Claude Code Explorer skills built programmatically -
+56 total, spread across several independent registration functions (no
+single call registers literally everything - see Method 1 vs 2 below).
 
-**Total Skills:** 53+
-- Planning: 2 skills
-- Claude Code Explorer: 5 skills
-- Claude Skills: 46+ skills
+- Claude Skills (`register_complete_claude_skills`): 46 skills (14 + 16 + 16)
+- Claude Code Explorer (`create_claude_explorer_skill`): 5 skills
+- Planning (`piranha_agent.skills.planning`): 2 skills
+- git workflow (`piranha_agent.skills.git`): 2 skills
+- Model compatibility (`piranha_agent.skills.model_compat`): 1 skill
 
 ---
 
-## 🚀 Quick Start: Register ALL Skills
+## 🚀 Quick Start: Register ALL Claude Skills
 
-### Method 1: Auto-Register All Skills (Recommended)
+### Method 1: Auto-Register All Claude Skills (Recommended)
 
 ```python
 from piranha_agent import Agent, register_complete_claude_skills
@@ -21,28 +25,32 @@ from piranha_agent import Agent, register_complete_claude_skills
 # Create agent
 agent = Agent(name="assistant")
 
-# Register ALL 53+ skills
+# Register all 46 Claude skills (core + official + additional)
 register_complete_claude_skills(agent)
-
-# Agent now has:
-# - 2 Planning skills
-# - 5 Claude Code Explorer skills
-# - 46+ Claude skills
 ```
+
+This registers the 46 Claude skills only - it does **not** add Planning,
+Explorer, git, or Model Compatibility skills; those need to be added
+separately (see below), and GitHub/Slack/Google Sheets integrations are
+a different mechanism entirely (see [../skills.md](../skills.md)).
+
+*Fixed August 2026: this function previously combined only the official
+(16) + additional (16) sets, silently dropping the 14 skills in
+`claude_skills.py` - it now returns the full 46 as originally intended.*
 
 ### Method 2: Selective Registration
 
 ```python
 from piranha_agent import Agent
 from piranha_agent import (
-    register_claude_skills,           # ~46 skills
+    register_claude_skills,           # 14 skills (claude_skills.py)
     create_claude_explorer_skill,     # 5 skills
 )
 
 agent = Agent(name="assistant")
 
 # Register specific skill sets
-register_claude_skills(agent)  # Core Claude skills
+register_claude_skills(agent)  # Core Claude skills only (not official/additional)
 
 # Add explorer skills separately
 for skill in create_claude_explorer_skill():
@@ -107,19 +115,19 @@ skills = create_claude_explorer_skill()
 
 ---
 
-### Claude Skills (~46 skills)
+### Claude Skills (46 skills)
 
 **Files:**
-- `piranha_agent/claude_skills.py` - Core Claude skills
-- `piranha_agent/official_claude_skills.py` - 4 official Anthropic skills
-- `piranha_agent/complete_claude_skills.py` - 42 additional skills
+- `piranha_agent/claude_skills.py` - 14 core Claude skills
+- `piranha_agent/official_claude_skills.py` - 16 official-style skills (incl. `docx`/`pdf`/`pptx`/`xlsx`)
+- `piranha_agent/complete_claude_skills.py` - 16 additional skills
 
 ```python
 from piranha_agent import (
-    register_claude_skills,           # ~46 skills
-    register_official_claude_skills,  # 4 official skills
-    register_additional_claude_skills, # 42 additional skills
-    register_complete_claude_skills,  # ALL 53+ skills
+    register_claude_skills,           # 14 skills
+    register_official_claude_skills,  # 16 skills
+    register_additional_claude_skills, # 16 skills
+    register_complete_claude_skills,  # all 46 (14 + 16 + 16)
 )
 ```
 
@@ -145,7 +153,7 @@ from piranha_agent import (
 from piranha_agent import Agent, register_complete_claude_skills
 
 agent = Agent(name="assistant")
-register_complete_claude_skills(agent)  # All 53+ skills
+register_complete_claude_skills(agent)  # All 46 Claude skills
 ```
 
 ### Use Case 2: Code Explorer
@@ -207,10 +215,10 @@ agent = Agent(
 
 | Function | Skills Registered | Use Case |
 |----------|-------------------|----------|
-| `register_complete_claude_skills()` | 53+ | General purpose |
-| `register_claude_skills()` | ~46 | Core Claude skills |
-| `register_official_claude_skills()` | 4 | Official Anthropic |
-| `register_additional_claude_skills()` | 42 | Extended Claude |
+| `register_complete_claude_skills()` | 46 | General purpose (all Claude skills) |
+| `register_claude_skills()` | 14 | Core Claude skills only |
+| `register_official_claude_skills()` | 16 | Official-style skills only |
+| `register_additional_claude_skills()` | 16 | Additional skills only |
 | `create_claude_explorer_skill()` | 5 | Source exploration |
 | `draft_plan`, `get_plan` | 2 | Plan Mode |
 
@@ -290,7 +298,7 @@ agent = Agent(name="assistant")
 register_complete_claude_skills(agent)
 
 # Check skill count
-print(f"Total skills: {len(agent.skills)}")  # Should be 53+
+print(f"Total skills: {len(agent.skills)}")  # Should be 46
 
 # List skill names
 for skill in agent.skills:
@@ -396,15 +404,24 @@ print(result)
 
 ## 📚 Related Documentation
 
-- [skills.md](skills.md) - Skills overview
-- [skills/CATEGORIZATION.md](skills/CATEGORIZATION.md) - Complete catalog
-- [docs/PLAN_MODE.md](docs/PLAN_MODE.md) - Plan Mode guide
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - System architecture
-- [docs/CLAUDE_CODE_EXPLORER.md](docs/CLAUDE_CODE_EXPLORER.md) - Explorer guide
-- [INDEX.md](INDEX.md) - Complete index
+*Links below are relative to this file's location (`docs/`), not repo root.*
+
+- [../skills.md](../skills.md) - Skills overview, incl. GitHub/Slack/Google Sheets/Model Compatibility skills (not covered by this page - those are separate optional integrations, not part of `register_complete_claude_skills()`)
+- [../skills/CATEGORIZATION.md](../skills/CATEGORIZATION.md) - Complete catalog
+- [PLAN_MODE.md](PLAN_MODE.md) - Plan Mode guide
+- [ARCHITECTURE.md](ARCHITECTURE.md) - System architecture
+- [CLAUDE_CODE_EXPLORER.md](CLAUDE_CODE_EXPLORER.md) - Explorer guide
+- [../INDEX.md](../INDEX.md) - Complete index
 
 ---
 
-**Version:** 0.4.2  
-**Date:** April 1, 2026  
-**Status:** ✅ **ALL 53+ SKILLS REGISTERED AND WORKING**
+**Version:** 0.4.2
+**Date:** April 1, 2026 (original); code-verified August 2026
+
+*Updated August 2026: `register_complete_claude_skills()` previously
+combined only the official (16) + additional (16) skill sets, silently
+dropping the 14 skills in `claude_skills.py` (`analyze_data`,
+`generate_code`, `debug_code`, etc.) despite its docstring and this
+page both claiming it registers "ALL" Claude skills. Fixed - it now
+returns the full 46 (14 + 16 + 16), matching what "Method 1" below has
+always claimed. See [CHANGELOG.md](../CHANGELOG.md).*

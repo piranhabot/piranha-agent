@@ -1,7 +1,7 @@
 # Claude Skills for Piranha Agent
 
-**Version:** 0.4.0  
-**Last Updated:** March 2026
+**Version:** 0.4.2
+**Last Updated:** March 2026; corrected against code August 2026
 
 ---
 
@@ -11,7 +11,7 @@ Claude Skills are specialized capabilities that extend Piranha Agent's functiona
 
 ---
 
-## 🎯 Available Skills (46+)
+## 🎯 Available Skills (46)
 
 ### 📄 Document Skills (4)
 
@@ -150,12 +150,12 @@ Claude Skills are specialized capabilities that extend Piranha Agent's functiona
 
 ```python
 from piranha_agent import Agent
-from piranha_agent.claude_skills import register_complete_claude_skills
+from piranha_agent.complete_claude_skills import register_complete_claude_skills
 
 # Create agent
 agent = Agent(name="assistant", model="ollama/llama3:latest")
 
-# Register all 46+ skills
+# Register all 46 skills
 register_complete_claude_skills(agent)
 
 # Use specific skill
@@ -232,7 +232,7 @@ Expected output structure.
 
 | Metric | Value |
 |--------|-------|
-| **Total Skills** | 46+ |
+| **Total Skills** | 46 |
 | **Document Skills** | 4 |
 | **Development Skills** | 5 |
 | **Research Skills** | 5 |
@@ -248,12 +248,13 @@ Expected output structure.
 
 ## 🔗 References
 
-- [Skills UI](http://localhost:3000/skills)
-- [Skills API Documentation](docs/SKILLS_API.md)
-- [Creating Custom Skills](docs/CUSTOM_SKILLS.md)
-- [Piranha Agent README](README.md)
+- [Skills UI](http://localhost:3000/skills) (Piranha Studio dashboard, when running)
+- [Skills Registration Guide](../docs/SKILLS_REGISTRATION.md)
+- [Complete Skills Catalog](CATEGORIZATION.md)
+- [Skills overview, incl. GitHub/Slack/Google Sheets](../skills.md)
+- [Piranha Agent README](../README.md)
 
 ---
 
-*Last updated: March 2026*  
-*Version: 0.4.0*
+*Last updated: March 2026; corrected against code August 2026.*
+*Current package version: 0.4.2*
