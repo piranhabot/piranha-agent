@@ -523,6 +523,10 @@ ui.launch()
 | **Multi-Cloud** | ✅ | ⚠️ | ✅ (Bedrock, Gemini, Azure, Ollama) | Unverified | Unverified | ✅ | Unverified |
 | **No-Code Builder** | ✅ | ❌ | ❌ | ❌ | ⚠️ (LangGraph Studio is low-code, not no-code) | ✅ (CrewAI Studio v2) | ❌ |
 | **OpenTelemetry** | ✅ | ❌ | ✅ | Unverified | Unverified | ✅ | Unverified |
+| **Pricing/License** | MIT/Apache-2.0 | MIT, free | MIT, free (+optional paid Azure hosting) | MIT, free (+optional paid Azure hosting) | MIT core, free (+paid managed cloud from $39/user/mo) | MIT core, free tier (+custom-quoted Enterprise) | MIT, free (+optional paid Azure hosting) |
+| **Streaming** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Orchestration Style** | Coordinator + role delegation + parallel swarm | Sub-agent delegation + planning loop (on LangGraph state graph) | Multi-pattern: sequential/concurrent/handoff/group-chat/Magentic-One | Event-driven Core API + task-driven AgentChat | Graph-based state machine | Role-based Crews + event-driven Flows | Session state + graph-based (via MAF convergence) |
+| **Context/Memory Handling** | History compaction + semantic memory retrieval | Auto-summarization + context offloading + virtual filesystem | Pluggable memory (vector/KV/conversational) | Unverified | Checkpointer: short- + long-term state | Unified memory (short/long/entity) | Session state + vector-store integration |
 
 ¹ AutoGen and Semantic Kernel are both officially in **maintenance mode** as of 2026 — Microsoft merged both into Microsoft Agent Framework (GA'd April 2026), which is now their actively developed successor. Comparing against them as current "leading frameworks" is somewhat academic; MAF is the fairer comparison point going forward.
 
@@ -530,7 +534,31 @@ ui.launch()
 
 *Note: the "AgentGen" framework previously listed here could not be identified in any current search — no project by that name was found, so the column was removed rather than left unverifiable.*
 
-**🏆 Overall Scores** (self-assessed composite; see [methodology](docs/COMPARISON_SCORES.md#detailed-scoring-breakdown)):
+### Additional Frameworks
+
+More frameworks worth knowing about, checked against the same criteria (except Performance, which we haven't independently benchmarked for these):
+
+| Feature | Piranha | LlamaIndex | Haystack | Agno³ | AgentScope | Agency Swarm⁴ |
+|---------|---------|------------|----------|-------|------------|----------------|
+| **Wasm Sandbox** | ✅ | ❌ | ❌ | ⚠️ (secure sandbox, not confirmed Wasm) | ❌ (Docker/K8s/Daytona/E2B) | ❌ |
+| **Time-Travel Debug** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Semantic Cache** | ✅ | Unverified | Unverified | ❌ | ❌ | ❌ |
+| **Skills/Tools Ecosystem** | ✅ 56 built-in skills | Unverified (large, not sized) | Unverified (large, not sized) | ✅ 100+ integrations | ⚠️ large (MCP/A2A), no fixed count | Unverified |
+| **Local LLM (Ollama etc.)** | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ (OpenAI + LiteLLM router only) |
+| **Event Sourcing** | ✅ | ⚠️ (event-driven workflows) | Unverified | ❌ | ⚠️ (unified event bus, 28 typed events) | ❌ |
+| **Multi-Cloud** | ✅ | Unverified | Unverified | ✅ (AWS, GCP, Azure templates) | Unverified (cloud-agnostic deploys) | Unverified |
+| **No-Code Builder** | ✅ | ❌ | Unverified | ⚠️ (AgentOS web UI, not full no-code) | ❌ (observability UI only) | ❌ |
+| **OpenTelemetry** | ✅ | ✅ | ✅ | ⚠️ (built-in traces, not confirmed OTel-standard) | ✅ | ❌ |
+| **Pricing/License** | MIT/Apache-2.0 | MIT core, free (+credit-based paid LlamaCloud) | Apache-2.0 core, free (+paid deepset Cloud/Enterprise) | Apache-2.0 core, free (+$150/mo Pro, custom Enterprise) | Apache-2.0, free | MIT, free |
+| **Streaming** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Orchestration Style** | Coordinator + role delegation + parallel swarm | Event-driven Workflows (typed events, async steps) | Directed-graph Pipeline of typed components | Team-based, modular (swap LLM/DB/vector store) | Message-hub, ReAct-based | Role-based/hierarchical ("org-chart" directional messaging) |
+| **Context/Memory Handling** | History compaction + semantic memory retrieval | Multiple memory abstractions (token-capped buffer, auto-summarizing, composable) | Modular memory pipeline component | Unverified | Unverified | Unverified |
+
+³ Agno was formerly known as Phidata.
+
+⁴ Not to be confused with "OpenAI Swarm" (a different, deprecated project) — Agency Swarm is a separate, actively maintained project built on the OpenAI Agents SDK.
+
+**🏆 Overall Scores** (self-assessed composite for the originally-compared frameworks only; see [methodology](docs/COMPARISON_SCORES.md#detailed-scoring-breakdown) — the newer additions above haven't been run through this scoring yet):
 1. **Piranha Agent** - 9.2/10 🥇
 2. **Microsoft Agent Framework** - 8.8/10 🥈
 3. **DeepAgents** - 8.6/10 🥉
