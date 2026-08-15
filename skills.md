@@ -35,6 +35,31 @@ result = agent.run_autonomous(
 
 ---
 
+## 🆕 Model Compatibility Skill (v0.4.3)
+
+Check whether an LLM will run on this machine's hardware *before* pulling it.
+Wraps the [`llm-checker`](https://github.com/signerless/llm-checker) CLI.
+
+| Skill | Description | Confirmation Required |
+|-------|-------------|----------------------|
+| `check_model_compatibility` | Detect hardware, find the best-fitting variant of a model, and flag cloud-only/too-large models | ❌ No |
+
+**Requires:** `npm install -g llm-checker` (the skill returns an install hint if it's missing; it does not install it automatically).
+
+**Usage:**
+```python
+from piranha_agent import Agent
+from piranha_agent.skills.model_compat import check_model_compatibility
+
+agent = Agent(name="hw_checker")
+agent.add_skill(check_model_compatibility)
+
+result = agent.skills[0](query="qwen3", use_case="coding")
+print(result)
+```
+
+---
+
 ## 🆕 Claude Code Explorer Skills (v0.4.1)
 
 Explore Claude Code's 512K+ lines of source code directly from your agents!
