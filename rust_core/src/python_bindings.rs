@@ -558,10 +558,10 @@ pub struct PyPostgresEventStore {
 impl PyPostgresEventStore {
     #[new]
     #[pyo3(signature = (connection_string=None))]
-    fn new(connection_string: Option<String>) -> Self {
-        PyPostgresEventStore {
-            inner: PgEventStore::new(connection_string),
-        }
+    fn new(connection_string: Option<String>) -> PyResult<Self> {
+        let inner = PgEventStore::new(connection_string)
+            .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+        Ok(PyPostgresEventStore { inner })
     }
 
     fn get_info(&self) -> PyResult<String> {
@@ -573,6 +573,118 @@ impl PyPostgresEventStore {
 
     fn get_connection_info(&self) -> PyResult<String> {
         Ok(self.inner.get_connection_info())
+    }
+
+    fn record_llm_call(
+        &self,
+        session_id: &str,
+        agent_id: &str,
+        model: &str,
+        prompt_tokens: u32,
+        completion_tokens: u32,
+        cost_usd: f64,
+        cache_hit: bool,
+        context_event_count: usize,
+    ) -> PyResult<String> {
+        let sid = parse_uuid(session_id)?;
+        let aid = parse_uuid(agent_id)?;
+
+        let sequence = self
+            .inner
+            .get_next_sequence(sid)
+            .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+
+        let prev_cumulative = if sequence > 0 {
+            let events = self
+                .inner
+                .get_events_for_agent(sid, aid)
+                .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+            events.last().map(|e| e.cumulative_tokens).unwrap_or(0)
+        } else {
+            0
+        };
+
+        let new_tokens = if cache_hit {
+            0
+        } else {
+            prompt_tokens as u64 + completion_tokens as u64
+        };
+
+        let event = Event {
+            id: Uuid::new_v4(),
+            session_id: sid,
+            agent_id: aid,
+            parent_event_id: None,
+            sequence,
+            timestamp: Utc::now(),
+            event_type: if cache_hit {
+                EventType::CacheHit
+            } else {
+                EventType::LlmCall
+            },
+            payload: EventPayload::LlmCall(LlmCallPayload {
+                model: model.to_string(),
+                prompt_tokens,
+                completion_tokens,
+                cost_usd,
+                context_event_count,
+                cache_hit,
+                cache_key_hash: None,
+            }),
+            cumulative_tokens: prev_cumulative + new_tokens,
+            metadata: HashMap::new(),
+        };
+
+        let event_id = event.id.to_string();
+        self.inner
+            .append(event)
+            .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+
+        Ok(event_id)
+    }
+
+    fn get_cost_report(&self, session_id: &str) -> PyResult<PyObject> {
+        let sid = parse_uuid(session_id)?;
+        let report = self
+            .inner
+            .build_cost_report(sid)
+            .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+
+        Python::with_gil(|py| {
+            let json = serde_json::to_string(&report)
+                .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+            let json_module = py.import("json")?;
+            json_module.call_method1("loads", (json,)).map(|obj| obj.into())
+        })
+    }
+
+    fn export_trace(&self, session_id: &str) -> PyResult<String> {
+        let sid = parse_uuid(session_id)?;
+        self.inner
+            .export_trace(sid)
+            .map_err(|e| PyRuntimeError::new_err(e.to_string()))
+    }
+
+    fn rollback_to_sequence(
+        &self,
+        session_id: &str,
+        agent_id: &str,
+        target_sequence: u64,
+    ) -> PyResult<PyObject> {
+        let sid = parse_uuid(session_id)?;
+        let aid = parse_uuid(agent_id)?;
+
+        let snapshot = self
+            .inner
+            .rollback_to_sequence(sid, aid, target_sequence)
+            .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+
+        Python::with_gil(|py| {
+            let json = serde_json::to_string(&snapshot)
+                .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+            let json_module = py.import("json")?;
+            json_module.call_method1("loads", (json,)).map(|obj| obj.into())
+        })
     }
 }
 

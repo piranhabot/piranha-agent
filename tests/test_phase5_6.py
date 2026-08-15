@@ -1,6 +1,24 @@
 """Tests for Phase 5: PostgreSQL Backend and Phase 6: Distributed Agents."""
 
+import os
+import uuid
+
+import pytest
 from piranha_agent import AgentOrchestrator, DistributedAgent, PostgresEventStore
+
+# PostgresEventStore now makes a real connection (it used to be a stub that
+# never touched a database). These tests need a real, reachable Postgres -
+# skip cleanly rather than fail on machines/CI without one.
+_TEST_POSTGRES_URL = os.environ.get(
+    "PIRANHA_TEST_POSTGRES_URL", "postgresql://localhost/piranha_test"
+)
+
+
+def _make_store() -> PostgresEventStore:
+    try:
+        return PostgresEventStore(connection_string=_TEST_POSTGRES_URL)
+    except RuntimeError as e:
+        pytest.skip(f"No reachable Postgres for integration tests: {e}")
 
 
 class TestPhase5PostgresStore:
@@ -8,20 +26,57 @@ class TestPhase5PostgresStore:
 
     def test_postgres_store_creation(self):
         """Test creating PostgreSQL event store."""
-        store = PostgresEventStore()
+        store = _make_store()
         assert store is not None
 
     def test_postgres_store_with_connection_string(self):
         """Test creating PostgreSQL store with connection string."""
-        store = PostgresEventStore(connection_string="postgresql://localhost/test")
+        store = _make_store()
         assert store is not None
 
     def test_postgres_store_info(self):
         """Test PostgreSQL store info method."""
-        store = PostgresEventStore()
+        store = _make_store()
         info = store.get_info()
         assert "PostgreSQL" in info
         assert "Phase 5" in info
+        assert "Connected: true" in info
+
+    def test_bad_connection_string_actually_fails(self):
+        """Regression test: new() used to silently ignore the connection
+        string and always report success against hardcoded defaults."""
+        with pytest.raises(RuntimeError):
+            PostgresEventStore(
+                connection_string="postgresql://baduser:badpass@nonexistent-host-xyz:9999/db"
+            )
+
+    def test_record_llm_call_and_cost_report(self):
+        """Test that events genuinely persist and aggregate, end-to-end."""
+        store = _make_store()
+        session_id = str(uuid.uuid4())
+        agent_id = str(uuid.uuid4())
+
+        event_id = store.record_llm_call(
+            session_id, agent_id, "llama3", 100, 50, 0.01, False, 5
+        )
+        assert event_id
+
+        report = store.get_cost_report(session_id)
+        assert report["llm_calls"] == 1
+        assert report["total_tokens"] == 150
+        assert report["total_cost_usd"] == pytest.approx(0.01)
+
+    def test_export_trace_contains_recorded_event(self):
+        store = _make_store()
+        session_id = str(uuid.uuid4())
+        agent_id = str(uuid.uuid4())
+        event_id = store.record_llm_call(
+            session_id, agent_id, "llama3", 10, 5, 0.001, False, 1
+        )
+
+        trace = store.export_trace(session_id)
+        assert event_id in trace
+        assert session_id in trace
 
 
 class TestPhase6DistributedAgents:
@@ -105,9 +160,9 @@ class TestPhase5Phase6Integration:
     def test_postgres_and_distributed_agents(self):
         """Test using PostgreSQL store with distributed agents."""
         # Phase 5
-        store = PostgresEventStore()
+        store = _make_store()
         assert store is not None
-        
+
         # Phase 6
         orchestrator = AgentOrchestrator()
         agent = DistributedAgent("integration-agent")
@@ -116,7 +171,7 @@ class TestPhase5Phase6Integration:
 
     def test_system_info(self):
         """Test system information for both phases."""
-        store = PostgresEventStore()
+        store = _make_store()
         agent = DistributedAgent("info-agent")
         
         store_info = store.get_info()

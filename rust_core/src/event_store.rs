@@ -316,7 +316,7 @@ impl EventStore for SqliteEventStore {
     }
 }
 
-fn apply_event_to_snapshot(state: &mut AgentStateSnapshot, event: &Event) {
+pub(crate) fn apply_event_to_snapshot(state: &mut AgentStateSnapshot, event: &Event) {
     state.tokens_used = event.cumulative_tokens;
     state.sequence_at_snapshot = event.sequence;
 
@@ -374,7 +374,7 @@ fn row_to_event(row: &rusqlite::Row) -> rusqlite::Result<Event> {
     })
 }
 
-fn infer_event_type(payload: &EventPayload) -> EventType {
+pub(crate) fn infer_event_type(payload: &EventPayload) -> EventType {
     match payload {
         EventPayload::LlmCall(l) if l.cache_hit => EventType::CacheHit,
         EventPayload::LlmCall(_) => EventType::LlmCall,
@@ -392,6 +392,7 @@ fn infer_event_type(payload: &EventPayload) -> EventType {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::LlmCallPayload;
     use std::collections::HashMap;
 
     fn make_test_event(session_id: SessionId, agent_id: AgentId, sequence: u64) -> Event {
