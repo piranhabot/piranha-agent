@@ -734,15 +734,43 @@ impl PyAgentOrchestrator {
 
     fn get_task(&self, task_id: &str) -> PyResult<Option<PyObject>> {
         let task = self.runtime.block_on(self.inner.get_task(task_id));
-        match task {
-            Some(task) => Python::with_gil(|py| {
-                let json = serde_json::to_string(&task)
-                    .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
-                let json_module = py.import("json")?;
-                json_module.call_method1("loads", (json,)).map(|obj| Some(obj.into()))
-            }),
-            None => Ok(None),
-        }
+        task_to_pyobject(task)
+    }
+
+    /// Assign the highest-priority pending task to the given worker, if
+    /// that worker is idle and a pending task exists. Returns None (not an
+    /// error) if there's nothing to assign right now.
+    fn assign_task_to_worker(&self, worker_id: &str) -> PyResult<Option<PyObject>> {
+        let task = self
+            .runtime
+            .block_on(self.inner.assign_task_to_worker(worker_id))
+            .map_err(PyRuntimeError::new_err)?;
+        task_to_pyobject(task)
+    }
+
+    /// Assign a pending task to every currently-idle worker. Returns a list
+    /// of (worker_id, task_id) pairs for everything actually assigned.
+    fn auto_assign(&self) -> PyResult<Vec<(String, String)>> {
+        Ok(self.runtime.block_on(self.inner.auto_assign()))
+    }
+
+    /// Mark an assigned task as completed, freeing its worker back to Idle.
+    fn complete_task(&self, task_id: &str) -> PyResult<()> {
+        self.runtime
+            .block_on(self.inner.complete_task(task_id))
+            .map_err(PyRuntimeError::new_err)
+    }
+}
+
+fn task_to_pyobject(task: Option<crate::distributed_agents::Task>) -> PyResult<Option<PyObject>> {
+    match task {
+        Some(task) => Python::with_gil(|py| {
+            let json = serde_json::to_string(&task)
+                .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
+            let json_module = py.import("json")?;
+            json_module.call_method1("loads", (json,)).map(|obj| Some(obj.into()))
+        }),
+        None => Ok(None),
     }
 }
 

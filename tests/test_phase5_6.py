@@ -163,16 +163,86 @@ class TestPhase6DistributedAgents:
     def test_multiple_agents_with_orchestrator(self):
         """Test multiple agents with single orchestrator."""
         orchestrator = AgentOrchestrator(queue_size=10)
-        
+
         _agents = []
         for i in range(5):
             agent = DistributedAgent(f"agent-{i}")
             _agents.append(agent)
             orchestrator.register_worker(agent.get_id())
-        
+
         assert len(_agents) == 5
         _ids = [a.get_id() for a in _agents]
         assert len(set(_ids)) == 5  # All unique
+
+    def test_assign_task_to_worker_prefers_higher_priority(self):
+        orchestrator = AgentOrchestrator()
+        orchestrator.register_worker("worker-1")
+        orchestrator.submit_task("low", 1)
+        high_id = orchestrator.submit_task("high", 9)
+
+        assigned = orchestrator.assign_task_to_worker("worker-1")
+        assert assigned["id"] == high_id
+        assert assigned["status"] == "Assigned"
+        assert assigned["assigned_to"] == "worker-1"
+        assert orchestrator.get_cluster_status()["worker-1"] == "Busy"
+
+    def test_assign_task_returns_none_when_nothing_to_assign(self):
+        orchestrator = AgentOrchestrator()
+        orchestrator.register_worker("worker-1")
+        # No tasks submitted yet.
+        assert orchestrator.assign_task_to_worker("worker-1") is None
+
+    def test_assign_task_to_unknown_worker_raises(self):
+        orchestrator = AgentOrchestrator()
+        with pytest.raises(RuntimeError):
+            orchestrator.assign_task_to_worker("no-such-worker")
+
+    def test_complete_task_frees_worker_and_updates_status(self):
+        orchestrator = AgentOrchestrator()
+        orchestrator.register_worker("worker-1")
+        task_id = orchestrator.submit_task("do a thing", 5)
+        orchestrator.assign_task_to_worker("worker-1")
+
+        orchestrator.complete_task(task_id)
+
+        assert orchestrator.get_task(task_id)["status"] == "Completed"
+        assert orchestrator.get_cluster_status()["worker-1"] == "Idle"
+
+    def test_complete_task_rejects_unassigned_task(self):
+        orchestrator = AgentOrchestrator()
+        task_id = orchestrator.submit_task("never assigned", 5)
+        with pytest.raises(RuntimeError):
+            orchestrator.complete_task(task_id)
+
+    def test_auto_assign_distributes_across_idle_workers(self):
+        orchestrator = AgentOrchestrator()
+        orchestrator.register_worker("worker-1")
+        orchestrator.register_worker("worker-2")
+        orchestrator.submit_task("a", 1)
+        orchestrator.submit_task("b", 1)
+
+        pairs = orchestrator.auto_assign()
+
+        assert len(pairs) == 2
+        assigned_workers = {worker_id for worker_id, _ in pairs}
+        assert assigned_workers == {"worker-1", "worker-2"}
+        status = orchestrator.get_cluster_status()
+        assert status["worker-1"] == "Busy"
+        assert status["worker-2"] == "Busy"
+
+    def test_full_task_lifecycle(self):
+        """End-to-end: submit -> auto_assign -> complete -> worker free again."""
+        orchestrator = AgentOrchestrator()
+        orchestrator.register_worker("worker-1")
+
+        task_id = orchestrator.submit_task("full lifecycle", 5)
+        pairs = orchestrator.auto_assign()
+        assert pairs == [("worker-1", task_id)]
+        assert orchestrator.get_cluster_status()["worker-1"] == "Busy"
+
+        orchestrator.complete_task(task_id)
+        assert orchestrator.get_cluster_status()["worker-1"] == "Idle"
+        assert orchestrator.get_task(task_id)["status"] == "Completed"
 
 
 class TestPhase5Phase6Integration:

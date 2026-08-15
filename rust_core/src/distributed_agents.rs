@@ -31,6 +31,9 @@ pub struct Task {
     pub description: String,
     pub priority: u8,
     pub status: TaskStatus,
+    pub assigned_to: Option<String>,
+    /// Submission order, used to break priority ties (earliest wins).
+    pub sequence: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -98,10 +101,107 @@ impl AgentOrchestrator {
                 description,
                 priority,
                 status: TaskStatus::Pending,
+                assigned_to: None,
+                sequence: task_id,
             },
         );
         info!("Task submitted: {}", id);
         Ok(id)
+    }
+
+    /// Assign the highest-priority pending task (earliest submitted wins
+    /// ties) to the given worker, if that worker is currently idle and a
+    /// pending task exists. Returns Ok(None) if there's nothing to assign
+    /// (worker busy/offline, or no pending tasks) - that's a normal outcome,
+    /// not an error. Returns Err only if the worker doesn't exist.
+    pub async fn assign_task_to_worker(&self, worker_id: &str) -> Result<Option<Task>, String> {
+        {
+            let workers = self.workers.read().await;
+            match workers.get(worker_id) {
+                None => return Err(format!("Worker '{worker_id}' not found")),
+                Some(w) if w.status != AgentStatus::Idle => return Ok(None),
+                _ => {}
+            }
+        }
+
+        let assigned_task = {
+            let mut tasks = self.tasks.write().await;
+            let next_task_id = tasks
+                .values()
+                .filter(|t| t.status == TaskStatus::Pending)
+                .max_by_key(|t| (t.priority, std::cmp::Reverse(t.sequence)))
+                .map(|t| t.id.clone());
+
+            let Some(task_id) = next_task_id else {
+                return Ok(None);
+            };
+
+            let task = tasks
+                .get_mut(&task_id)
+                .expect("task_id came from this same map");
+            task.status = TaskStatus::Assigned;
+            task.assigned_to = Some(worker_id.to_string());
+            task.clone()
+        };
+
+        let mut workers = self.workers.write().await;
+        if let Some(w) = workers.get_mut(worker_id) {
+            w.status = AgentStatus::Busy;
+        }
+
+        info!("Assigned task {} to worker {}", assigned_task.id, worker_id);
+        Ok(Some(assigned_task))
+    }
+
+    /// Try to assign a pending task to every currently-idle worker.
+    /// Returns (worker_id, task_id) pairs for everything actually assigned.
+    pub async fn auto_assign(&self) -> Vec<(String, String)> {
+        let idle_worker_ids: Vec<String> = {
+            let workers = self.workers.read().await;
+            workers
+                .values()
+                .filter(|w| w.status == AgentStatus::Idle)
+                .map(|w| w.id.clone())
+                .collect()
+        };
+
+        let mut assigned = Vec::new();
+        for worker_id in idle_worker_ids {
+            if let Ok(Some(task)) = self.assign_task_to_worker(&worker_id).await {
+                assigned.push((worker_id, task.id));
+            }
+        }
+        assigned
+    }
+
+    /// Mark an assigned task as completed, freeing its worker back to Idle
+    /// and incrementing that worker's completed-task count.
+    pub async fn complete_task(&self, task_id: &str) -> Result<(), String> {
+        let worker_id = {
+            let mut tasks = self.tasks.write().await;
+            let task = tasks
+                .get_mut(task_id)
+                .ok_or_else(|| format!("Task '{task_id}' not found"))?;
+            if task.status != TaskStatus::Assigned {
+                return Err(format!(
+                    "Task '{}' is not currently assigned (status: {:?})",
+                    task_id, task.status
+                ));
+            }
+            task.status = TaskStatus::Completed;
+            task.assigned_to.clone()
+        };
+
+        if let Some(worker_id) = worker_id {
+            let mut workers = self.workers.write().await;
+            if let Some(w) = workers.get_mut(&worker_id) {
+                w.status = AgentStatus::Idle;
+                w.tasks_completed += 1;
+            }
+        }
+
+        info!("Task {} completed", task_id);
+        Ok(())
     }
 
     /// Get a task by ID.
@@ -190,6 +290,115 @@ mod tests {
         orchestrator.submit_task("b".to_string(), 1).await.unwrap();
         let result = orchestrator.submit_task("c".to_string(), 1).await;
         assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_assign_task_to_idle_worker() {
+        let orchestrator = AgentOrchestrator::new(100);
+        orchestrator.register_worker("worker-1".to_string()).await;
+        let task_id = orchestrator.submit_task("do a thing".to_string(), 5).await.unwrap();
+
+        let assigned = orchestrator.assign_task_to_worker("worker-1").await.unwrap();
+        let assigned = assigned.expect("should have assigned the pending task");
+        assert_eq!(assigned.id, task_id);
+        assert_eq!(assigned.status, TaskStatus::Assigned);
+        assert_eq!(assigned.assigned_to, Some("worker-1".to_string()));
+
+        let status = orchestrator.get_cluster_status().await;
+        assert_eq!(status["worker-1"], AgentStatus::Busy);
+    }
+
+    #[tokio::test]
+    async fn test_assign_task_prefers_higher_priority() {
+        let orchestrator = AgentOrchestrator::new(100);
+        orchestrator.register_worker("worker-1".to_string()).await;
+        let low = orchestrator.submit_task("low".to_string(), 1).await.unwrap();
+        let high = orchestrator.submit_task("high".to_string(), 9).await.unwrap();
+
+        let assigned = orchestrator.assign_task_to_worker("worker-1").await.unwrap().unwrap();
+        assert_eq!(assigned.id, high);
+
+        // low priority task should still be pending
+        let low_task = orchestrator.get_task(&low).await.unwrap();
+        assert_eq!(low_task.status, TaskStatus::Pending);
+    }
+
+    #[tokio::test]
+    async fn test_assign_task_ties_broken_by_submission_order() {
+        let orchestrator = AgentOrchestrator::new(100);
+        orchestrator.register_worker("worker-1".to_string()).await;
+        let first = orchestrator.submit_task("first".to_string(), 5).await.unwrap();
+        let _second = orchestrator.submit_task("second".to_string(), 5).await.unwrap();
+
+        let assigned = orchestrator.assign_task_to_worker("worker-1").await.unwrap().unwrap();
+        assert_eq!(assigned.id, first);
+    }
+
+    #[tokio::test]
+    async fn test_assign_task_returns_none_when_worker_busy() {
+        let orchestrator = AgentOrchestrator::new(100);
+        orchestrator.register_worker("worker-1".to_string()).await;
+        orchestrator.submit_task("a".to_string(), 1).await.unwrap();
+        orchestrator.submit_task("b".to_string(), 1).await.unwrap();
+
+        orchestrator.assign_task_to_worker("worker-1").await.unwrap(); // now busy
+        let second_attempt = orchestrator.assign_task_to_worker("worker-1").await.unwrap();
+        assert!(second_attempt.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_assign_task_unknown_worker_is_error() {
+        let orchestrator = AgentOrchestrator::new(100);
+        let result = orchestrator.assign_task_to_worker("nonexistent").await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_complete_task_frees_worker_and_increments_count() {
+        let orchestrator = AgentOrchestrator::new(100);
+        orchestrator.register_worker("worker-1".to_string()).await;
+        let task_id = orchestrator.submit_task("do a thing".to_string(), 5).await.unwrap();
+        orchestrator.assign_task_to_worker("worker-1").await.unwrap();
+
+        orchestrator.complete_task(&task_id).await.unwrap();
+
+        let task = orchestrator.get_task(&task_id).await.unwrap();
+        assert_eq!(task.status, TaskStatus::Completed);
+
+        let status = orchestrator.get_cluster_status().await;
+        assert_eq!(status["worker-1"], AgentStatus::Idle);
+    }
+
+    #[tokio::test]
+    async fn test_complete_task_rejects_unassigned_task() {
+        let orchestrator = AgentOrchestrator::new(100);
+        let task_id = orchestrator.submit_task("not assigned".to_string(), 5).await.unwrap();
+        let result = orchestrator.complete_task(&task_id).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_auto_assign_distributes_across_idle_workers() {
+        let orchestrator = AgentOrchestrator::new(100);
+        orchestrator.register_worker("worker-1".to_string()).await;
+        orchestrator.register_worker("worker-2".to_string()).await;
+        orchestrator.submit_task("a".to_string(), 1).await.unwrap();
+        orchestrator.submit_task("b".to_string(), 1).await.unwrap();
+
+        let assigned = orchestrator.auto_assign().await;
+        assert_eq!(assigned.len(), 2);
+
+        let status = orchestrator.get_cluster_status().await;
+        assert_eq!(status["worker-1"], AgentStatus::Busy);
+        assert_eq!(status["worker-2"], AgentStatus::Busy);
+    }
+
+    #[tokio::test]
+    async fn test_auto_assign_no_idle_workers_assigns_nothing() {
+        let orchestrator = AgentOrchestrator::new(100);
+        orchestrator.submit_task("a".to_string(), 1).await.unwrap();
+        let assigned = orchestrator.auto_assign().await;
+        assert!(assigned.is_empty());
     }
 
     #[tokio::test]
