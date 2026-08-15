@@ -1,3 +1,5 @@
+from typing import Any
+
 from piranha_agent.skill import agent_permissions
 from piranha_agent.skills._agno_bridge import (
     json_schema_for,
@@ -44,6 +46,42 @@ def test_json_schema_for_optional_param_not_required():
     schema = json_schema_for(fn)
     assert schema["required"] == ["required_arg"]
     assert schema["properties"]["optional_arg"]["type"] == "string"
+
+
+def test_json_schema_for_nested_generic_list_resolves_to_array():
+    """Regression test: List[List[Any]] (and similar nested generics) used
+    to fall through to the "unsupported type" path since the old code only
+    compared against bare `list`/`dict`, not generic origins - silently
+    dropping any tool with a parameter shaped like this (e.g. Google
+    Sheets' update_sheet(data: List[List[Any]]))."""
+
+    def fn(data: list[list[Any]]) -> str:
+        """Do a thing.
+
+        Args:
+            data: A 2D grid.
+        """
+        return "ok"
+
+    schema = json_schema_for(fn)
+    assert schema is not None
+    assert schema["properties"]["data"]["type"] == "array"
+    assert "data" in schema["required"]
+
+
+def test_json_schema_for_optional_nested_generic_resolves_to_array():
+    def fn(data: list[list[Any]] | None = None) -> str:
+        """Do a thing.
+
+        Args:
+            data: Optional 2D grid.
+        """
+        return "ok"
+
+    schema = json_schema_for(fn)
+    assert schema is not None
+    assert schema["properties"]["data"]["type"] == "array"
+    assert schema["required"] == []
 
 
 def test_json_schema_for_returns_none_for_unsupported_required_type():

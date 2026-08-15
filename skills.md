@@ -93,6 +93,35 @@ for skill in get_slack_skills(token="xoxb-..."):
 
 ---
 
+## 🆕 Google Sheets Skills (v0.4.3)
+
+Real Google Sheets operations, powered by Agno's `GoogleSheetsTools`
+toolkit. Same bridge as GitHub/Slack.
+
+4 skills: `google_sheets_read_sheet`, `google_sheets_create_sheet`,
+`google_sheets_update_sheet`, `google_sheets_create_duplicate_sheet`. All
+require the `google_sheets` permission tag; everything except `read_sheet`
+additionally requires confirmation.
+
+**Requires:** `pip install "piranha-agent[google-sheets]"` and either a
+service account JSON key (`service_account_path`, recommended for
+unattended agent use) or an OAuth client's `credentials_path`/`token_path`.
+
+**Usage:**
+```python
+from piranha_agent import Agent
+from piranha_agent.skills.google_sheets_tools import get_google_sheets_skills
+
+agent = Agent(name="sheets_bot", permissions=["google_sheets"])
+for skill in get_google_sheets_skills(
+    spreadsheet_id="your-sheet-id",
+    service_account_path="/path/to/service-account.json",
+):
+    agent.add_skill(skill)
+```
+
+---
+
 ## 🆕 Model Compatibility Skill (v0.4.3)
 
 Check whether an LLM will run on this machine's hardware *before* pulling it.

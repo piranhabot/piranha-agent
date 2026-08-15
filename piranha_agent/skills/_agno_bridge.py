@@ -13,6 +13,8 @@ from __future__ import annotations
 import inspect
 import logging
 import re
+import types
+import typing
 from collections.abc import Callable
 from typing import Any, get_type_hints
 
@@ -28,6 +30,27 @@ _JSON_TYPE_MAP: dict[type, str] = {
     list: "array",
     dict: "object",
 }
+
+
+def _resolve_json_type(py_type: Any) -> str | None:
+    """Resolve a type annotation to a JSON schema type name, or None if it
+    can't be confidently mapped (e.g. a framework-injected object type like
+    Agno's RunContext). Handles Optional[X]/X | None (unwraps to X) and
+    parameterized generics like List[List[Any]]/Dict[str, int] (maps by
+    origin - str(list)/dict - not by exact type identity, so nesting
+    doesn't matter)."""
+    origin = typing.get_origin(py_type)
+
+    if origin is typing.Union or origin is types.UnionType:
+        args = [a for a in typing.get_args(py_type) if a is not type(None)]
+        if not args:
+            return "string"
+        return _resolve_json_type(args[0])
+
+    if origin is not None:
+        return _JSON_TYPE_MAP.get(origin)
+
+    return _JSON_TYPE_MAP.get(py_type)
 
 
 def parse_docstring(doc: str | None) -> tuple[str, dict[str, str]]:
@@ -77,18 +100,13 @@ def json_schema_for(func: Callable[..., Any]) -> dict[str, Any] | None:
             continue
 
         py_type = hints.get(name, str)
-        base_type = py_type
-        args = getattr(py_type, "__args__", None)
-        if args:
-            non_none = [a for a in args if a is not type(None)]
-            if non_none:
-                base_type = non_none[0]
+        resolved = _resolve_json_type(py_type)
 
         is_required = param.default is inspect.Parameter.empty
-        if base_type not in _JSON_TYPE_MAP and is_required:
+        if resolved is None and is_required:
             return None
 
-        prop: dict[str, Any] = {"type": _JSON_TYPE_MAP.get(base_type, "string")}
+        prop: dict[str, Any] = {"type": resolved or "string"}
         if name in descriptions:
             prop["description"] = descriptions[name]
         properties[name] = prop
