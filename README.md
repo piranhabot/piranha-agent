@@ -338,6 +338,25 @@ print(result.content)
 
 **Full example:** [`examples/01_basic_agent.py`](examples/01_basic_agent.py)
 
+**Using any other local model:** Piranha's `model="ollama/<name>"` works with
+*any* model Ollama can serve - not just `llama3`. Pull it, then point an
+agent at it:
+
+```bash
+ollama pull hermes3:8b   # or qwen3, mistral, deepseek-coder, any Ollama model
+```
+```python
+agent = Agent(name="assistant", model="ollama/hermes3:8b")
+```
+
+This also covers models fine-tuned with [Unsloth](https://github.com/unslothai/unsloth)
+(LoRA/QLoRA training with 2x speed and 70% less VRAM) - Unsloth exports
+trained models in GGUF format, which loads into Ollama like any other
+model (`ollama create my-model -f Modelfile`, then
+`model="ollama/my-model"`). Unsloth itself is a training tool, not
+something Piranha calls at runtime; the fine-tuned model is what gets
+connected, the same way as any other local model above.
+
 ### 2. Async Agent with Claude Skills
 
 ```python
