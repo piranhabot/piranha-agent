@@ -205,15 +205,21 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         self.base_url = base_url
         # Default dimension matches nomic-embed-text unless overridden.
         self._dim = dim if dim is not None else 768
+        # Same dimension as the real path, so a mid-outage fallback doesn't
+        # produce vectors of a different size than dimension() reports
+        # (which would break similarity comparisons against real ones).
+        self._fallback = HashEmbeddingProvider(dim=self._dim)
 
-    def embed(self, text: str) -> list[float] | None:
+    def embed(self, text: str) -> list[float]:
         """
         Generate an embedding for the given text using the configured Ollama model.
         This method calls the Ollama `/api/embeddings` endpoint and returns the
         embedding vector from the response. If any error occurs while making the
         request or parsing the response (for example, network issues, timeouts,
-        or non-success HTTP status codes), the error is logged and ``None`` is
-        returned so that callers can handle the failure explicitly.
+        or non-success HTTP status codes), the error is logged and a non-semantic
+        hash-based embedding is returned instead - callers always get a valid
+        vector, never None, so a transient Ollama outage degrades fuzzy/semantic
+        matching rather than corrupting stored memories with a missing embedding.
         """
         try:
             res = requests.post(
@@ -222,7 +228,7 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
                 timeout=30
             )
             res.raise_for_status()
-            
+
             data = res.json()
             embedding = data.get("embedding")
             if not isinstance(embedding, list):
@@ -230,14 +236,15 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
             return embedding
         except Exception as e:
             truncated_text = text[:50] + ("..." if len(text) > 50 else "")
-            logger.error(
-                "Ollama embedding failed for model '%s' at '%s' with text '%s': %s",
+            logger.warning(
+                "Ollama embedding failed for model '%s' at '%s' with text '%s': %s. "
+                "Falling back to non-semantic hash-based embedding.",
                 self.model,
                 self.base_url,
                 truncated_text,
                 e,
             )
-            return None
+            return self._fallback.embed(text)
     def dimension(self) -> int:
         return self._dim
 
@@ -274,35 +281,87 @@ class SentenceTransformerProvider(EmbeddingProvider):
         return self._impl.dimension()
 
 
+class OpenAIEmbeddingProvider(EmbeddingProvider):
+    """Semantic embeddings using OpenAI's embeddings API (cloud, paid)."""
+    def __init__(
+        self,
+        model: str = "text-embedding-3-small",
+        api_key: str | None = None,
+        organization: str | None = None,
+    ):
+        try:
+            from openai import OpenAI
+        except ImportError as e:
+            raise ImportError(
+                "openai not installed. Install with: pip install openai"
+            ) from e
+        self.model = model
+        self._client = OpenAI(api_key=api_key, organization=organization)
+        self._dim = 1536 if "small" in model else 3072
+
+    def embed(self, text: str) -> list[float]:
+        response = self._client.embeddings.create(model=self.model, input=text)
+        return response.data[0].embedding
+
+    def dimension(self) -> int:
+        return self._dim
+
+
 class EmbeddingModel:
     """Entry point for generating text embeddings.
-    
+
     Supports:
-    - hash (default)
-    - ollama (nomic-embed-text)
-    - sentence-transformers (local)
-    - openai (cloud)
+    - ollama (default - nomic-embed-text, local, free, degrades to a
+      non-semantic hash-based embedding if Ollama isn't reachable)
+    - sentence-transformers (local, free)
+    - openai (cloud, paid)
+    - hash (explicit non-semantic fallback, deterministic, no dependencies)
     """
-    
-    def __init__(self, provider: str = "hash", model: str | None = None, **kwargs):
+
+    def __init__(self, provider: str = "ollama", model: str | None = None, **kwargs):
         if provider == "ollama":
             # Allow callers to override the Ollama embedding dimension (default 768).
             dim = kwargs.pop("dim", None)
             self._impl = OllamaEmbeddingProvider(model or "nomic-embed-text", dim=dim, **kwargs)
         elif provider == "sentence-transformers":
             self._impl = SentenceTransformerProvider(model or "all-MiniLM-L6-v2")
+        elif provider == "openai":
+            self._impl = OpenAIEmbeddingProvider(model or "text-embedding-3-small", **kwargs)
+        elif provider == "hash":
+            self._impl = HashEmbeddingProvider(dim=kwargs.pop("dim", 384))
         else:
-            self._impl = HashEmbeddingProvider(dim=384)
-            
+            raise ValueError(
+                f"Unknown embedding provider: {provider!r}. "
+                "Available: ollama, sentence-transformers, openai, hash"
+            )
+
     def embed(self, text: str) -> list[float]:
         return self._impl.embed(text)
-    
+
     def embed_batch(self, texts: list[str]) -> list[list[float]]:
         return [self.embed(text) for text in texts]
     
     @property
     def dimension(self) -> int:
         return self._impl.dimension()
+
+
+def get_embedding_model(provider: str = "ollama", **kwargs: Any) -> EmbeddingModel:
+    """Get an embedding model for the given provider.
+
+    Args:
+        provider: Provider name (ollama, sentence-transformers, openai, hash)
+        **kwargs: Provider-specific arguments
+
+    Returns:
+        Configured EmbeddingModel
+    """
+    return EmbeddingModel(provider=provider, **kwargs)
+
+
+def list_supported_providers() -> list[str]:
+    """List supported embedding providers."""
+    return ["ollama", "sentence-transformers", "openai", "hash"]
 
 
 class MemoryManager:
