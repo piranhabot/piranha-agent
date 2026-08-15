@@ -80,24 +80,45 @@ TEMPLATES = {
 
 
 def generate_code(workflow):
-    """Generate functional Python code using Piranha SDK."""
+    """Generate functional Python code using Piranha SDK.
+
+    Follows the actual connection graph (not just node list order), so
+    condition nodes produce real if/else branches based on which outgoing
+    connection is labeled "Yes"/"No" - a linear node-order walk can't do
+    that. http/llm/skill/transform nodes generate real, runnable code;
+    where a node genuinely needs configuration that this builder's UI
+    doesn't yet expose (e.g. which URL, which specific skill), the
+    generated code is real and correct in structure, with a clearly
+    marked TODO for the value only a person can supply.
+    """
     nodes = workflow.get("nodes", [])
+    connections = workflow.get("connections", [])
+    node_by_id = {n["id"]: n for n in nodes}
+
+    outgoing: dict[str, list[tuple[str, str | None]]] = {}
+    targets: set[str] = set()
+    for conn in connections:
+        outgoing.setdefault(conn["source"], []).append((conn["target"], conn.get("label")))
+        targets.add(conn["target"])
+    roots = [n["id"] for n in nodes if n["id"] not in targets]
 
     lines = [
         '#!/usr/bin/env python3',
         '"""Auto-generated Workflow using Piranha Agent"""',
         "",
         "import asyncio",
+        "import httpx",
         "from piranha_agent import Agent, Task",
         "from piranha_agent.complete_claude_skills import register_complete_claude_skills",
+        "from piranha_agent.llm_provider import LLMMessage, LLMProvider",
         "",
         "async def main():",
         "    # Initialize Agents and Tools",
     ]
 
-    # Instantiate agents
-    agent_nodes = [n for n in nodes if n["type"] == "agent"]
-    for node in agent_nodes:
+    # Instantiate agents up front (agent and skill nodes both need one).
+    executor_nodes = [n for n in nodes if n["type"] in ("agent", "skill")]
+    for node in executor_nodes:
         nid, name = node["id"], node.get("name", "Assistant")
         lines.append(f'    agent_{nid} = Agent(name="{name}", model="ollama/llama3:latest")')
         lines.append(f'    register_complete_claude_skills(agent_{nid})')
@@ -105,20 +126,83 @@ def generate_code(workflow):
     lines.append("")
     lines.append("    # Define Workflow Execution")
 
-    # Simplified execution logic based on connections
-    for node in nodes:
-        nid, ntype, name = node["id"], node["type"], node.get("name", "Node")
+    def emit(nid: str, indent: int, visited: set[str]) -> None:
+        if nid in visited or nid not in node_by_id:
+            return
+        visited.add(nid)
+
+        node = node_by_id[nid]
+        ntype, name = node["type"], node.get("name", "Node")
+        pad = "    " * indent
+
         if ntype == "trigger":
-            lines.append(f'    # {name}: Entry point')
-            lines.append('    input_data = "Start workflow"')
+            lines.append(f'{pad}# {name}: Entry point')
+            lines.append(f'{pad}input_data = "Start workflow"')
         elif ntype == "agent":
-            lines.append(f'    # {name}: Processing')
-            lines.append(f'    task_{nid} = Task(description=input_data, agent=agent_{nid})')
-            lines.append(f'    result_{nid} = task_{nid}.run()')
-            lines.append(f'    input_data = result_{nid}.result')
+            lines.append(f'{pad}# {name}: Agent processing')
+            lines.append(f'{pad}task_{nid} = Task(description=input_data, agent=agent_{nid})')
+            lines.append(f'{pad}result_{nid} = task_{nid}.run()')
+            lines.append(f'{pad}input_data = result_{nid}.result')
+        elif ntype == "skill":
+            lines.append(f'{pad}# {name}: Skill execution (agent picks the right registered skill)')
+            lines.append(f'{pad}task_{nid} = Task(description=input_data, agent=agent_{nid})')
+            lines.append(f'{pad}result_{nid} = task_{nid}.run()')
+            lines.append(f'{pad}input_data = result_{nid}.result')
+        elif ntype == "llm":
+            lines.append(f'{pad}# {name}: Direct LLM call')
+            lines.append(f'{pad}llm_{nid} = LLMProvider(model="ollama/llama3:latest")')
+            lines.append(f'{pad}response_{nid} = llm_{nid}.chat([LLMMessage(role="user", content=input_data)])')
+            lines.append(f'{pad}input_data = response_{nid}.content')
+        elif ntype == "http":
+            lines.append(f'{pad}# {name}: HTTP request')
+            lines.append(f'{pad}url_{nid} = "https://api.example.com"  # TODO: set the real URL for "{name}"')
+            lines.append(f'{pad}response_{nid} = httpx.get(url_{nid})')
+            lines.append(f'{pad}input_data = response_{nid}.text')
+        elif ntype == "transform":
+            lines.append(f'{pad}# {name}: Data transform')
+            lines.append(f'{pad}def transform_{nid}(data):')
+            lines.append(f'{pad}    # TODO: implement the transform for "{name}"')
+            lines.append(f'{pad}    return data')
+            lines.append(f'{pad}input_data = transform_{nid}(input_data)')
+        elif ntype == "condition":
+            lines.append(f'{pad}# {name}: Branch')
+            lines.append(f'{pad}if True:  # TODO: implement the real condition for "{name}"')
         elif ntype == "output":
-            lines.append(f'    # {name}: Final Result')
-            lines.append('    print("--- Workflow Result ---\\n", input_data)')
+            lines.append(f'{pad}# {name}: Final Result')
+            lines.append(f'{pad}print("--- Workflow Result ---\\n", input_data)')
+
+        next_edges = outgoing.get(nid, [])
+        if ntype == "condition":
+            yes = [t for t, label in next_edges if label == "Yes"]
+            no = [t for t, label in next_edges if label == "No"]
+            other = [t for t, label in next_edges if label not in ("Yes", "No")]
+
+            for target in yes:
+                emit(target, indent + 1, visited)
+            if not yes:
+                lines.append(f'{pad}    pass')
+
+            lines.append(f'{pad}else:')
+            for target in no:
+                emit(target, indent + 1, visited)
+            if not no:
+                lines.append(f'{pad}    pass')
+
+            for target in other:
+                emit(target, indent, visited)
+        else:
+            for target, _label in next_edges:
+                emit(target, indent, visited)
+
+    visited: set[str] = set()
+    for root_id in roots:
+        emit(root_id, 1, visited)
+    # Nodes unreachable from any root (e.g. a floating node with no
+    # incoming connection that also isn't a root due to a cycle) still
+    # get emitted, so nothing a user placed on the canvas is silently
+    # dropped.
+    for node in nodes:
+        emit(node["id"], 1, visited)
 
     lines.extend([
         "",

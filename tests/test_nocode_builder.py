@@ -54,6 +54,88 @@ def test_all_templates_produce_syntactically_valid_code():
         compile(code, f"<template {name}>", "exec")
 
 
+def test_http_node_generates_real_request():
+    wf = {
+        "nodes": [{"id": "n1", "type": "http", "name": "Fetch", "x": 0, "y": 0}],
+        "connections": [],
+    }
+    code = generate_code(wf)
+    assert "httpx.get(" in code
+    compile(code, "<test>", "exec")
+
+
+def test_llm_node_generates_direct_llm_call():
+    wf = {
+        "nodes": [{"id": "n1", "type": "llm", "name": "Ask", "x": 0, "y": 0}],
+        "connections": [],
+    }
+    code = generate_code(wf)
+    assert "LLMProvider(" in code
+    assert "LLMMessage(" in code
+    compile(code, "<test>", "exec")
+
+
+def test_transform_node_generates_real_function():
+    wf = {
+        "nodes": [{"id": "n1", "type": "transform", "name": "Parse", "x": 0, "y": 0}],
+        "connections": [],
+    }
+    code = generate_code(wf)
+    assert "def transform_n1(data):" in code
+    assert "transform_n1(input_data)" in code
+    compile(code, "<test>", "exec")
+
+
+def test_skill_node_generates_agent_backed_execution():
+    wf = {
+        "nodes": [{"id": "n1", "type": "skill", "name": "Search", "x": 0, "y": 0}],
+        "connections": [],
+    }
+    code = generate_code(wf)
+    assert 'agent_n1 = Agent(name="Search"' in code
+    assert "register_complete_claude_skills(agent_n1)" in code
+    compile(code, "<test>", "exec")
+
+
+def test_condition_node_branches_on_connection_labels():
+    """Nodes connected via a "Yes"-labeled edge must land inside the if
+    branch; "No"-labeled nodes must land inside the else branch - this
+    requires following the actual connection graph, not just node order."""
+    wf = {
+        "nodes": [
+            {"id": "cond", "type": "condition", "name": "Check", "x": 0, "y": 0},
+            {"id": "yes_node", "type": "output", "name": "YesOutput", "x": 0, "y": 0},
+            {"id": "no_node", "type": "output", "name": "NoOutput", "x": 0, "y": 0},
+        ],
+        "connections": [
+            {"source": "cond", "target": "yes_node", "label": "Yes"},
+            {"source": "cond", "target": "no_node", "label": "No"},
+        ],
+    }
+    code = generate_code(wf)
+    compile(code, "<test>", "exec")
+
+    if_block, _, else_block = code.partition("else:")
+    assert "YesOutput" in if_block
+    assert "NoOutput" not in if_block
+    assert "NoOutput" in else_block
+    assert "YesOutput" not in else_block
+
+
+def test_condition_node_with_only_one_branch_still_compiles():
+    wf = {
+        "nodes": [
+            {"id": "cond", "type": "condition", "name": "Check", "x": 0, "y": 0},
+            {"id": "yes_node", "type": "output", "name": "YesOutput", "x": 0, "y": 0},
+        ],
+        "connections": [{"source": "cond", "target": "yes_node", "label": "Yes"}],
+    }
+    code = generate_code(wf)
+    compile(code, "<test>", "exec")
+    assert "else:" in code
+    assert "pass" in code
+
+
 def test_add_node_appends_and_auto_connects():
     wf = {"nodes": [], "connections": []}
     wf, _, _, _ = add_node(wf, "trigger")
