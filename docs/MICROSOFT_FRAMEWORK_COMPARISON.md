@@ -1,12 +1,15 @@
-# Piranha Agent vs Microsoft Agent Frameworks: Complete Comparison
+# Piranha Agent vs Microsoft's Agent Frameworks
 
-Comprehensive comparison of Piranha Agent with Microsoft's agent frameworks (AutoGen, Semantic Kernel, and Microsoft Agent Framework) plus other leading frameworks in 2026.
+*Last fact-checked: August 2026. This document previously included
+specific throughput/memory/TCO figures for every framework that were
+never real measurements - they've been removed rather than "corrected",
+since there was no real number to correct them to. For the sourced,
+citation-backed feature comparison, see the
+[README](../README.md#-framework-comparison).*
 
 ---
 
-## 📊 Executive Summary
-
-### Microsoft's Agent Framework Evolution (2025-2026)
+## 📊 Microsoft's Agent Framework Evolution
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -14,61 +17,55 @@ Comprehensive comparison of Piranha Agent with Microsoft's agent frameworks (Aut
 ├─────────────────────────────────────────────────────────────┤
 │  AutoGen (2023-2025)  +  Semantic Kernel (2023-2025)        │
 │         ↓                        ↓                          │
-│  Multi-agent orchestration    Cognitive reasoning           │
+│  Multi-agent orchestration    Cognitive reasoning            │
 │         ↓                        ↓                          │
 │  ──────── MERGED ─────────────────────────────              │
 │                    ↓                                        │
 │         Microsoft Agent Framework (MAF)                     │
-│              (October 2025 - Present)                       │
+│              GA April 2, 2026                               │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**Key Insight**: Microsoft merged AutoGen + Semantic Kernel into **Microsoft Agent Framework (MAF)** in October 2025 for enterprise production deployments.
+**Verified fact**: Microsoft merged AutoGen and Semantic Kernel into
+**Microsoft Agent Framework (MAF)**, which reached GA on April 2, 2026.
+Both AutoGen and Semantic Kernel are now officially in **maintenance
+mode** (bug/security fixes only) - comparing against them as current
+"leading frameworks" is somewhat academic; MAF is the actively developed
+successor.
+
+Sources: [Microsoft Agent Framework Overview](https://learn.microsoft.com/en-us/agent-framework/overview/),
+[MAF at BUILD 2026](https://devblogs.microsoft.com/agent-framework/microsoft-agent-framework-at-build-2026-announce/),
+[VS Magazine: SK+AutoGen merger](https://visualstudiomagazine.com/articles/2025/10/01/semantic-kernel-autogen--open-source-microsoft-agent-framework.aspx)
 
 ---
 
-## 🏆 Complete Comparison Matrix
+## 📊 Feature Matrix
 
-| Feature | **Piranha Agent** | **Microsoft Agent Framework** | **AutoGen** | **Semantic Kernel** | **LangGraph** | **CrewAI** |
-|---------|-------------------|-------------------------------|-------------|---------------------|---------------|------------|
-| **Core Language** | Python + Rust | .NET + Python | Python | .NET + Python | Python | Python |
-| **Performance** | ⚡⚡⚡⚡⚡ (Rust) | ⚡⚡⚡ (Optimized) | ⚡⚡ | ⚡⚡⚡ | ⚡⚡ | ⚡⚡ |
-| **Multi-Agent** | ✅ Orchestrator | ✅ Teams | ✅ Conversations | ⚠️ Single | ✅ Graph | ✅ Crews |
-| **Wasm Sandbox** | ✅ Full support | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Time-Travel Debug** | ✅ Full UI | ⚠️ App Insights | ❌ | ❌ | ✅ Studio | ❌ |
-| **Semantic Cache** | ✅ Fuzzy matching | ⚠️ Cosmos DB | ❌ | ⚠️ Memory | ❌ | ❌ |
-| **Event Sourcing** | ✅ Append-only | ✅ Cosmos DB | ❌ | ❌ | ✅ State | ❌ |
-| **PostgreSQL** | ✅ Built-in | ⚠️ Via Azure | ❌ | ❌ | ⚠️ Plugin | ❌ |
-| **Azure Integration** | ⚠️ Manual | ✅ Native | ⚠️ Manual | ✅ Native | ⚠️ Plugin | ⚠️ Manual |
-| **Microsoft 365** | ❌ | ✅ Native | ⚠️ Manual | ✅ Native | ❌ | ❌ |
-| **Guardrails** | ✅ Token budget | ✅ Enterprise | ⚠️ Basic | ⚠️ Basic | ⚠️ Basic | ⚠️ Basic |
-| **Skill System** | ✅ 46+ Claude | ✅ Plugins | ✅ Tools | ✅ Skills | ✅ Tools | ✅ Tools |
-| **LLM Providers** | ✅ 100+ (LiteLLM) | ✅ Azure + Any | ✅ Any | ✅ Azure + Any | ✅ 100+ | ✅ Multiple |
-| **Local LLM** | ✅ Ollama native | ⚠️ Manual | ✅ Manual | ⚠️ Manual | ⚠️ Manual | ⚠️ Manual |
-| **Code Execution** | ✅ Wasm sandbox | ✅ Sandbox | ✅ Python | ⚠️ Limited | ⚠️ Manual | ✅ Python |
-| **Type Safety** | ⚡ Pydantic | ⚡⚡ .NET Types | ⚠️ Dynamic | ⚡⚡ .NET Types | ⚡ Pydantic | ⚡ Pydantic |
-| **Learning Curve** | 🟢 Medium | 🟡 Steep | 🟢 Easy | 🟡 Steep | 🟡 Steep | 🟢 Easy |
-| **Community** | 🟡 Growing | 🟢 Enterprise | 🟢 Large | 🟢 Enterprise | 🟢 Large | 🟢 Large |
-| **License** | MIT/Apache 2.0 | MIT | MIT | MIT | MIT | MIT |
-| **Production Ready** | ✅ Yes | ✅ Yes | ⚠️ Research | ✅ Yes | ✅ Yes | ✅ Yes |
+See the [README's Framework Comparison](../README.md#-framework-comparison)
+for the full, sourced feature-by-feature matrix across Piranha, MAF,
+AutoGen, Semantic Kernel, LangGraph, and CrewAI.
+
+Verified corrections from an earlier version of this doc: MAF's
+**Multi-Cloud** support (Bedrock, Gemini, Azure, Ollama all natively
+supported, not just Azure) and **OpenTelemetry** integration (native,
+first-class - `configure_otel_providers()`) were both undersold
+previously.
 
 ---
 
-## 🏛️ Microsoft Agent Frameworks Deep Dive
+## 🏛️ Deep Dive
 
-### 1. AutoGen (2023-2025) - Research & Prototyping
+### AutoGen (2023-2025, now maintenance mode)
 
 **Purpose**: Multi-agent orchestration and conversation management
 
 | Aspect | Details |
 |--------|---------|
-| **Core Concept** | Agents exchange structured messages in orchestrated "smart chatroom" |
+| **Core Concept** | Agents exchange structured messages in an orchestrated "chatroom" |
 | **Architecture** | Lightweight Python library, in-process execution |
-| **Best For** | Research, experimentation, rapid prototyping |
-| **Key Strengths** | • Rapid agent creation (few lines of Python)<br>• Flexible multi-agent dialogue flows<br>• Works with any LLM<br>• Human-in-the-loop support<br>• Built-in tools for memory, reasoning, code execution |
-| **Limitations** | • No built-in persistence<br>• No enterprise monitoring<br>• Manual integration for external services<br>• Not designed for distributed scaling |
+| **Local LLM** | ✅ Documented Ollama support |
+| **Status** | Maintenance mode - security/bug fixes only, no new features |
 
-**Code Example**:
 ```python
 from autogen import AssistantAgent, UserProxyAgent
 
@@ -80,19 +77,17 @@ user_proxy.initiate_chat(assistant, message="Plot a chart of NVDA and TESLA stoc
 
 ---
 
-### 2. Semantic Kernel - Cognitive Reasoning
+### Semantic Kernel (now maintenance mode)
 
-**Purpose**: The "brain" of individual agents
+**Purpose**: Cognitive reasoning and planning for individual agents
 
 | Aspect | Details |
 |--------|---------|
-| **Core Concept** | Cognitive reasoning, planning, semantic memory |
-| **Architecture** | .NET + Python SDK for AI orchestration |
-| **Best For** | Individual agent intelligence & reasoning |
-| **Key Capabilities** | • Planning & task decomposition<br>• Embeddings & semantic memory<br>• Natural language reasoning<br>• Programmable reasoning chains |
-| **Role in MAF** | Provides cognitive capabilities to each agent |
+| **Core Concept** | Planning, semantic memory, reasoning chains |
+| **Architecture** | .NET + Python SDK |
+| **Local LLM** | ✅ Documented Ollama support alongside Azure OpenAI/Anthropic |
+| **Status** | Maintenance mode - security/bug fixes only, no new features |
 
-**Code Example**:
 ```csharp
 var kernel = Kernel.CreateBuilder()
     .AddAzureOpenAIChatCompletion("gpt-4", "endpoint", "key")
@@ -103,237 +98,52 @@ var result = await kernel.InvokeAsync("Summarize this document...", variables);
 
 ---
 
-### 3. Microsoft Agent Framework (MAF) - Production Platform
+### Microsoft Agent Framework (MAF) - current production platform
 
 **Purpose**: Unified SDK + runtime combining AutoGen + Semantic Kernel
 
 | Aspect | Details |
 |--------|---------|
 | **Core Concept** | AutoGen's orchestration + Semantic Kernel's reasoning + Azure runtime |
-| **Architecture** | Distributed components with externalized orchestration |
-| **Best For** | Enterprise deployment, scalability, integration |
-| **Key Strengths** | • AutoGen's multi-agent orchestration<br>• Semantic Kernel's reasoning<br>• Azure-native integrations<br>• Persistent storage (Cosmos DB)<br>• Built-in telemetry (App Insights)<br>• Secure runtime with governance |
+| **Orchestration patterns** | Sequential, concurrent, handoff, group chat, Magentic-One - the most pattern-flexible of the frameworks compared |
+| **Multi-Cloud** | ✅ Bedrock, Gemini, Azure OpenAI, OpenAI, Ollama, all natively supported |
+| **OpenTelemetry** | ✅ Native, first-class (`configure_otel_providers()`) |
+| **Wasm Sandbox** | ⚠️ Not a core feature; adjacent Microsoft tools (Wassette, Hyperlight Wasm) exist but aren't confirmed built into MAF itself |
 
-**Architecture**:
-```
-┌─────────────────────────────────────────────────────────┐
-│           Microsoft Agent Framework                      │
-├─────────────────────────────────────────────────────────┤
-│  AutoGen Contribution       Semantic Kernel Contribution │
-│  • Multi-agent orchestration • Planning & reasoning      │
-│  • Message routing           • Embeddings & memory       │
-│  • Conversation management   • Natural language logic    │
-│  • Role-based agents         • Programmable reasoning    │
-├─────────────────────────────────────────────────────────┤
-│  + Azure Runtime (security, scaling, monitoring, persistence) │
-└─────────────────────────────────────────────────────────┘
-```
+Sources: [MAF Workflow Orchestration Patterns](https://learn.microsoft.com/en-us/agent-framework/workflows/orchestrations/),
+[MAF Observability docs](https://learn.microsoft.com/en-us/agent-framework/agents/observability),
+[Ollama provider docs](https://learn.microsoft.com/en-us/agent-framework/agents/providers/ollama)
 
 ---
 
-## 🥊 Head-to-Head Comparisons
+## 🎯 Use Case Guidance
 
-### Piranha Agent vs Microsoft Agent Framework
+Editorial judgment, not a scored comparison:
 
-| Criteria | Piranha Agent | Microsoft Agent Framework | Winner |
-|----------|---------------|---------------------------|--------|
-| **Performance** | ⚡ Rust core (10K+ events/sec) | ⚡⚡ Optimized .NET | 🏆 Piranha |
-| **Security** | ✅ Wasm sandbox | ✅ Azure sandbox | 🏆 Piranha (more portable) |
-| **Multi-Cloud** | ✅ Any cloud | ⚠️ Azure-optimized | 🏆 Piranha |
-| **Local LLM** | ✅ Native Ollama | ⚠️ Manual setup | 🏆 Piranha |
-| **Microsoft 365** | ❌ | ✅ Native integration | 🏆 MAF |
-| **Azure Integration** | ⚠️ Manual | ✅ Native | 🏆 MAF |
-| **Cost** | 💰 Free (open source) | 💰 Free + Azure costs | 🏆 Piranha |
-| **Claude Skills** | ✅ 46+ native | ❌ | 🏆 Piranha |
-| **Time-Travel Debug** | ✅ Built-in UI | ⚠️ App Insights | 🏆 Piranha |
-| **Semantic Cache** | ✅ Fuzzy matching | ⚠️ Cosmos DB | 🏆 Piranha |
-| **Enterprise Support** | ⚠️ Community | ✅ Microsoft support | 🏆 MAF |
-| **Compliance** | ⚠️ Manual | ✅ Built-in | 🏆 MAF |
+### Consider Piranha Agent if:
+- You want a Wasm-sandboxed code execution path
+- You need native local-LLM support (Ollama) without extra setup
+- You want to avoid Azure lock-in while still wanting multi-cloud model support
+- You want built-in time-travel debugging (event replay/rollback)
 
-**Best For**:
-- **Piranha**: Performance, security, multi-cloud, local LLM, cost optimization
-- **MAF**: Microsoft ecosystem, enterprise compliance, Azure integration
+### Consider Microsoft Agent Framework if:
+- You're building on Azure and/or need Microsoft 365 integration
+- You want the actively-developed successor to AutoGen/Semantic Kernel rather than either legacy framework
+- You need enterprise compliance/governance features out of the box
 
----
-
-### Piranha Agent vs AutoGen
-
-| Criteria | Piranha Agent | AutoGen | Winner |
-|----------|---------------|---------|--------|
-| **Performance** | ⚡⚡⚡⚡⚡ Rust | ⚡⚡ Python | 🏆 Piranha |
-| **Ease of Use** | 🟢 Medium | 🟢 Very Easy | 🏆 AutoGen |
-| **Multi-Agent** | ✅ Structured | ✅ Conversational | 🤝 Tie |
-| **Production Ready** | ✅ Yes | ⚠️ Research | 🏆 Piranha |
-| **Security** | ✅ Wasm | ⚠️ Process | 🏆 Piranha |
-| **Persistence** | ✅ EventStore | ❌ Manual | 🏆 Piranha |
-| **Learning Curve** | 🟡 Medium | 🟢 Easy | 🏆 AutoGen |
-| **Flexibility** | 🟡 Structured | 🟢 Very Flexible | 🏆 AutoGen |
-
-**Best For**:
-- **Piranha**: Production deployments, security, performance
-- **AutoGen**: Research, prototyping, experimentation
-
----
-
-### Piranha Agent vs Semantic Kernel
-
-| Criteria | Piranha Agent | Semantic Kernel | Winner |
-|----------|---------------|-----------------|--------|
-| **Performance** | ⚡⚡⚡⚡⚡ Rust | ⚡⚡⚡ .NET | 🏆 Piranha |
-| **Reasoning** | ⚡ Good | ⚡⚡⚡ Advanced | 🏆 SK |
-| **Multi-Agent** | ✅ Yes | ⚠️ Single agent | 🏆 Piranha |
-| **Microsoft Integration** | ⚠️ Manual | ✅ Native | 🏆 SK |
-| **Type Safety** | ⚡ Pydantic | ⚡⚡ .NET Types | 🏆 SK |
-| **Local LLM** | ✅ Native | ⚠️ Manual | 🏆 Piranha |
-| **Skills** | ✅ 46+ Claude | ✅ Plugins | 🤝 Tie |
-
-**Best For**:
-- **Piranha**: Multi-agent workflows, local LLM, performance
-- **Semantic Kernel**: Individual agent reasoning, Microsoft stack
-
----
-
-## 📈 Performance Benchmarks
-
-| Framework | Startup Time | Memory Usage | Events/Sec | Concurrent Agents |
-|-----------|--------------|--------------|------------|-------------------|
-| **Piranha Agent** | ⚡ 50ms | ⚡ 50MB | ⚡ 10,000+ | ✅ 100+ |
-| **Microsoft Agent Framework** | ⚡⚡ 100ms | ⚡⚡ 100MB | ⚡⚡ 5,000+ | ✅ 50+ |
-| **AutoGen** | ⚡⚡⚡ 200ms | ⚡⚡⚡ 150MB | ⚡⚡ 1,000+ | ⚠️ 20+ |
-| **Semantic Kernel** | ⚡⚡ 100ms | ⚡⚡ 80MB | ⚡⚡ 3,000+ | ⚠️ 10+ |
-| **LangGraph** | ⚡⚡⚡ 250ms | ⚡⚡⚡ 200MB | ⚡⚡ 1,000+ | ✅ 50+ |
-| **CrewAI** | ⚡⚡⚡ 300ms | ⚡⚡⚡ 180MB | ⚡ 500+ | ⚠️ 20+ |
-
-*Lower is better for startup time and memory. Higher is better for events/sec and concurrent agents.*
-
----
-
-## 🎯 Use Case Recommendations
-
-### Choose Piranha Agent If:
-
-- ✅ **Performance matters** - Rust core for high throughput
-- ✅ **Security is critical** - Wasm sandbox for code execution
-- ✅ **You need Claude Skills** - 46+ pre-built skills
-- ✅ **Audit trails required** - Full event sourcing
-- ✅ **Cost optimization** - Semantic cache (30-50% savings)
-- ✅ **Local LLM** - Native Ollama integration
-- ✅ **Multi-cloud deployment** - Not tied to Azure
-- ✅ **Time-travel debugging** - Step through agent decisions
-
-### Choose Microsoft Agent Framework If:
-
-- ✅ **Already on Azure** - Native integration
-- ✅ **Microsoft 365 integration** - Teams, Outlook, SharePoint
-- ✅ **Enterprise compliance** - Built-in governance
-- ✅ **.NET ecosystem** - C# development
-- ✅ **Microsoft support** - Enterprise SLA
-- ✅ **Long-running services** - Azure runtime
-
-### Choose AutoGen If:
-
-- ✅ **Research/experimentation** - Rapid prototyping
-- ✅ **Learning multi-agent** - Educational purposes
-- ✅ **Flexible conversations** - Chat-based collaboration
-- ✅ **Quick demos** - Minimal setup
-
-### Choose Semantic Kernel If:
-
-- ✅ **Individual agent reasoning** - Cognitive capabilities
-- ✅ **Microsoft stack** - .NET development
-- ✅ **Azure OpenAI** - Native integration
-- ✅ **Planning & memory** - Advanced reasoning chains
-
----
-
-## 💰 Total Cost of Ownership (3-Year Projection)
-
-| Framework | License | Infrastructure | Development | Maintenance | **Total** |
-|-----------|---------|----------------|-------------|-------------|-----------|
-| **Piranha Agent** | $0 | $5K-20K | $50K | $20K | **$75K-95K** |
-| **Microsoft Agent Framework** | $0 | $20K-100K* | $75K | $40K | **$135K-215K** |
-| **AutoGen** | $0 | $5K-30K | $40K | $30K | **$75K-105K** |
-| **Semantic Kernel** | $0 | $15K-80K* | $60K | $35K | **$110K-175K** |
-| **LangGraph** | $0 | $10K-50K* | $60K | $30K | **$100K-140K** |
-
-*Excluding LLM API costs. *Higher for Azure-optimized frameworks if using Azure.
-
----
-
-## 🏁 Final Verdict
-
-### Overall Rankings
-
-| Rank | Framework | Best For | Score |
-|------|-----------|----------|-------|
-| 🥇 | **Piranha Agent** | Production performance + security | 9.2/10 |
-| 🥈 | **Microsoft Agent Framework** | Enterprise Azure deployments | 8.8/10 |
-| 🥉 | **LangGraph** | Visual debugging + ecosystem | 8.5/10 |
-| 4 | **Semantic Kernel** | Individual agent reasoning | 8.0/10 |
-| 5 | **AutoGen** | Research & prototyping | 7.5/10 |
-| 6 | **CrewAI** | Simple multi-agent workflows | 7.0/10 |
-
-### Scoring Criteria
-
-| Criteria | Weight | Piranha | MAF | AutoGen | SK |
-|----------|--------|---------|-----|---------|-----|
-| Performance | 20% | 10 | 7 | 5 | 6 |
-| Security | 15% | 10 | 8 | 5 | 7 |
-| Features | 20% | 9 | 9 | 7 | 8 |
-| Ease of Use | 15% | 7 | 6 | 9 | 6 |
-| Ecosystem | 15% | 6 | 10 | 8 | 9 |
-| Cost | 15% | 9 | 6 | 8 | 7 |
-| **Weighted Score** | **100%** | **9.2** | **8.8** | **7.5** | **8.0** |
-
----
-
-## 📚 Decision Tree
-
-```
-Start
-│
-├─ Are you already on Microsoft Azure stack?
-│  ├─ Yes → Choose Microsoft Agent Framework
-│  └─ No → Continue
-│
-├─ Do you need multi-agent collaboration?
-│  ├─ Yes → Continue
-│  └─ No → Choose Semantic Kernel (single agent reasoning)
-│
-├─ Is performance critical (10K+ events/sec)?
-│  ├─ Yes → Choose Piranha Agent (Rust core)
-│  └─ No → Continue
-│
-├─ Is security paramount (Wasm sandbox required)?
-│  ├─ Yes → Choose Piranha Agent
-│  └─ No → Continue
-│
-├─ Do you need Claude Skills compatibility?
-│  ├─ Yes → Choose Piranha Agent (46+ skills)
-│  └─ No → Continue
-│
-├─ Are you doing research/prototyping?
-│  ├─ Yes → Choose AutoGen (easy experimentation)
-│  └─ No → Continue
-│
-├─ Do you need visual debugging?
-│  ├─ Yes → Choose LangGraph (LangGraph Studio)
-│  └─ No → Piranha Agent (time-travel UI) or MAF (App Insights)
-│
-└─ Default → Choose Piranha Agent (best overall)
-```
+### Consider AutoGen or Semantic Kernel if:
+- You have an existing investment in either and don't need new features
+- Otherwise, prefer MAF - both are in maintenance mode
 
 ---
 
 ## 📚 References
 
-- [Microsoft Agent Framework vs AutoGen](https://createaiagent.net/autogen-vs-microsoft-agent-framework/)
-- [AutoGen Architecture Evolution](https://zhuanlan.zhihu.com/p/2013728518073247564)
-- [AI Agent Frameworks 2026](https://relipa.global/ai-agent-frameworks/)
-- [Turing AI Agent Comparison](https://www.turing.com/resources/ai-agent-frameworks)
-- [Piranha Agent Documentation](https://docs.piranha-agent.dev)
+- [Microsoft Agent Framework Overview](https://learn.microsoft.com/en-us/agent-framework/overview/)
+- [MAF at BUILD 2026](https://devblogs.microsoft.com/agent-framework/microsoft-agent-framework-at-build-2026-announce/)
+- [VS Magazine: SK+AutoGen merger](https://visualstudiomagazine.com/articles/2025/10/01/semantic-kernel-autogen--open-source-microsoft-agent-framework.aspx)
+- [AutoGen Ollama docs](https://microsoft.github.io/autogen/0.2/docs/topics/non-openai-models/local-ollama/)
 
 ---
 
-*Last updated: March 2026*
-*Version: 0.3.0*
+*Last updated: August 2026*

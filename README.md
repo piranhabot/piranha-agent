@@ -558,7 +558,7 @@ More frameworks worth knowing about, checked against the same criteria (except P
 
 ⁴ Not to be confused with "OpenAI Swarm" (a different, deprecated project) — Agency Swarm is a separate, actively maintained project built on the OpenAI Agents SDK.
 
-**🏆 Overall Scores** (self-assessed composite for the originally-compared frameworks only; see [methodology](docs/COMPARISON_SCORES.md#detailed-scoring-breakdown) — the newer additions above haven't been run through this scoring yet):
+**🏆 Overall Scores** (self-assessed composite for the originally-compared frameworks only; see [methodology](docs/COMPARISON_SCORES.md#-scoring-methodology) — the newer additions above haven't been run through this scoring yet):
 1. **Piranha Agent** - 9.2/10 🥇
 2. **Microsoft Agent Framework** - 8.8/10 🥈
 3. **DeepAgents** - 8.6/10 🥉

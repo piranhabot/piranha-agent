@@ -5,6 +5,110 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+A pass through the codebase and docs found a recurring pattern: several
+features looked finished (real API, real tests passing, real docs) but
+were actually no-op stubs or fake implementations underneath. Each one
+below was replaced with a genuinely working implementation, not just a
+passing test.
+
+### Fixed
+
+- **`DynamicSkillCompiler.compile_and_execute()`** decoded base64 input and
+  reported a hardcoded `success=True` with the byte count as "output" -
+  it never executed anything. Now genuinely runs the decoded Wasm module.
+- **`PostgresEventStore`** never connected to a database: `new()` silently
+  discarded the connection string and always used hardcoded defaults,
+  `connected` was permanently `false`, and it had no append/query methods
+  at all. Replaced with a real `deadpool-postgres`-backed implementation
+  of the same `EventStore` trait `SqliteEventStore` uses, verified
+  end-to-end against a live PostgreSQL instance.
+- **`AgentOrchestrator.register_worker()` / `get_cluster_status()`** were
+  no-ops/hardcoded strings in the Python bindings even though the
+  underlying Rust methods were real and tested - the binding just never
+  called them. `submit_task()` had no backend at all. Added a real task
+  queue (`submit_task`, `assign_task_to_worker`, `auto_assign`,
+  `complete_task`) with priority ordering and capacity limits.
+- **`SemanticCache.compute_embedding()` (Rust)** used SHA-256 hashing as a
+  placeholder "embedding" with no actual semantic meaning, so fuzzy
+  matching could never work for related-but-differently-worded prompts.
+  Now uses real embeddings via a local Ollama instance
+  (`nomic-embed-text`), with a hash-based fallback if Ollama isn't
+  reachable.
+- **`MemoryManager`'s embedding model (Python)** had the identical bug -
+  defaulted to the same fake hash-based provider, so every agent's memory
+  search was non-semantic. Also fixed a related correctness bug: the
+  Ollama provider returned `None` on any failure and that `None` was
+  stored directly as a memory's embedding with no downstream check.
+- **No-code builder's "Run" button** just showed a toast
+  ("Workflow execution started!") and never executed anything. Now
+  genuinely runs the generated workflow as a subprocess and shows real
+  output. Fixed two more bugs this surfaced in the generated code itself:
+  it called a nonexistent `Task.run_async()` (the real method is sync,
+  `Task.run()`) and read a nonexistent `TaskResult.content` (the real
+  field is `.result`).
+- `create_provider()` passed `api_key`/`api_base` both explicitly and via
+  `**kwargs`, causing a `TypeError` that broke Anthropic/OpenAI/Gemini/
+  Ollama provider construction.
+- `WasmRunner.execute()` / `execute_with_io()` passed the caller's `input`
+  string as the Wasm function name instead of `function_name`, so
+  execution always failed with "Function '<input>' not found".
+- `Agent`/`AsyncAgent` silently ignored any `max_tokens` setting - always
+  stuck at the hardcoded default of 2048 with no way to override it.
+- A permanently-leaked `unittest.mock` patch in one test
+  (`Agent.run = mock_run` inside a `with MagicMock()` block, which never
+  restores it) was silently corrupting other tests that ran afterward in
+  the same process - root cause of two "flaky" test failures.
+- The Rust test suite (`cargo test`) had apparently never compiled
+  successfully before: `event_store.rs`'s own test module was missing an
+  import.
+
+### Added
+
+- `check_model_compatibility` skill - checks whether an LLM will run on
+  the current machine's hardware before pulling it (wraps the
+  `llm-checker` CLI).
+- 39 real GitHub skills (create/list issues and PRs, branches, file ops)
+  via Agno's `GithubTools`, replacing a `git_workflows` skill that only
+  ever returned a canned markdown template.
+- 10 real Slack skills (send messages, read channels, upload files) via
+  Agno's `SlackTools`.
+
+### Removed
+
+- `piranha_agent/embeddings.py` - a second, unused, near-duplicate
+  implementation of the same embedding provider classes `memory.py` had
+  its own separate copy of. Consolidated on `memory.py`'s version.
+- `nocode_builder.py`'s own `create_builder_ui()` - a completely unused
+  duplicate Gradio UI with the identical fake "Run" button bug.
+  `nocode_builder_app.py`'s version (which imports the shared data/logic
+  functions from `nocode_builder.py`) is the one actually exported.
+
+### Security
+
+- Closed all 17 open Dependabot alerts across `studio/` and
+  `debugger_ui/` (Next.js, PostCSS, sharp, nanoid, brace-expansion,
+  js-yaml).
+
+### Documentation
+
+- README badges and benchmark numbers were stale/inconsistent (test
+  count, a "Security: A+" badge with no real scan behind it, a
+  `SemanticCache Put` throughput number that was measuring the fake hash
+  embedding). Corrected to match verified, current state.
+- The framework comparison table was fact-checked against current docs
+  for DeepAgents, Microsoft Agent Framework, AutoGen, Semantic Kernel,
+  LangGraph, CrewAI, LlamaIndex, Haystack, Agno, AgentScope, and Agency
+  Swarm. Removed "AgentGen," a framework that could not be found to
+  exist anywhere. `docs/FRAMEWORK_COMPARISON.md`,
+  `docs/MICROSOFT_FRAMEWORK_COMPARISON.md`, and
+  `docs/COMPARISON_SCORES.md` had extensive fabricated numbers (specific
+  throughput/memory/3-year-TCO figures for every competitor, a claimed
+  "Tested on M2 MacBook Pro, 32GB RAM" methodology that never happened) -
+  removed rather than "corrected," since there was no real measurement
+  behind them to correct to.
+
 ## [0.4.2] - 2026-04-01
 
 ### Added

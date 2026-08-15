@@ -1,260 +1,96 @@
-# Piranha Agent vs DeepAgents vs Other AI Agent Frameworks
+# Piranha Agent vs DeepAgents, CrewAI, AutoGen, and LangGraph
 
-Comprehensive comparison of Piranha Agent with DeepAgents, LangGraph, CrewAI, AutoGen, and other leading AI agent frameworks in 2026.
-
----
-
-## 📊 Quick Comparison Matrix
-
-| Feature | **Piranha Agent** | **Pydantic Deep Agents** | **LangChain Deep Agents** | **CrewAI** | **AutoGen** | **LangGraph** |
-|---------|-------------------|--------------------------|---------------------------|------------|-------------|---------------|
-| **Core Language** | Python + Rust | Python | Python | Python | Python | Python |
-| **Performance** | ⚡⚡⚡⚡⚡ (Rust core) | ⚡⚡⚡ (Python) | ⚡⚡ (Python) | ⚡⚡ (Python) | ⚡⚡ (Python) | ⚡⚡⚡ (Python) |
-| **Multi-Agent** | ✅ Orchestrator | ✅ Teams | ✅ Task tool | ✅ Crews | ✅ Conversations | ✅ Graph nodes |
-| **Wasm Sandbox** | ✅ Full support | ❌ Docker only | ❌ Docker/Modal | ❌ | ❌ | ❌ |
-| **Time-Travel Debug** | ✅ Full UI | ❌ | ✅ Studio | ❌ | ❌ | ✅ Studio |
-| **Semantic Cache** | ✅ Fuzzy matching | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Event Sourcing** | ✅ Append-only | ✅ Checkpoints | ✅ Checkpoints | ❌ | ❌ | ✅ State |
-| **PostgreSQL** | ✅ Built-in | ✅ Via pydantic-ai | ✅ Via LangGraph | ⚠️ Plugin | ⚠️ Plugin | ✅ Plugin |
-| **Guardrails** | ✅ Token budget | ✅ Permissions | ✅ HITL | ⚠️ Basic | ⚠️ Basic | ⚠️ Basic |
-| **Skill System** | ✅ 46+ Claude skills | ✅ Tools | ✅ Tools | ✅ Tools | ✅ Tools | ✅ Tools |
-| **LLM Providers** | ✅ 100+ (LiteLLM) | ✅ Multiple | ✅ 100+ | ✅ Multiple | ✅ Multiple | ✅ 100+ |
-| **Local LLM** | ✅ Ollama native | ⚠️ Via backend | ⚠️ Via backend | ⚠️ Manual | ⚠️ Manual | ⚠️ Manual |
-| **Code Execution** | ✅ Wasm sandbox | ✅ Shell/Docker | ✅ Shell/Docker | ✅ Python | ✅ Python | ⚠️ Manual |
-| **Type Safety** | ⚡ Pydantic | ⚡⚡ Pydantic | ⚡ Pydantic | ⚡ Pydantic | ⚠️ Dynamic | ⚡ Pydantic |
-| **Learning Curve** | 🟢 Medium | 🟡 Steep | 🟡 Steep | 🟢 Easy | 🟡 Medium | 🟡 Steep |
-| **Community Size** | 🟡 Growing | 🟢 Large | 🟢 Large | 🟢 Large | 🟢 Large | 🟢 Large |
-| **Production Ready** | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes | ⚠️ Beta | ✅ Yes |
+*Last fact-checked: August 2026. This document previously included
+specific throughput/memory/TCO figures for every framework that were
+never real measurements - they've been removed rather than "corrected",
+since there was no real number to correct them to. For the sourced,
+citation-backed feature comparison, see the
+[README](../README.md#-framework-comparison).*
 
 ---
 
-## 🏆 Deep Dive Comparison
+## 📊 Feature Matrix
 
-### 1. Architecture
+See the [README's Framework Comparison](../README.md#-framework-comparison)
+for the full, sourced feature-by-feature matrix (Wasm sandboxing,
+time-travel debugging, semantic caching, skills ecosystem, local LLM,
+event sourcing, multi-cloud, no-code builders, OpenTelemetry, pricing,
+streaming, orchestration style, memory handling) across Piranha,
+DeepAgents, Microsoft Agent Framework, AutoGen, LangGraph, and CrewAI.
 
-| Aspect | Piranha Agent | DeepAgents (Pydantic) | LangChain Deep Agents |
-|--------|---------------|----------------------|----------------------|
-| **Core** | Rust + Python hybrid | Pure Python (Pydantic AI) | Pure Python (LangGraph) |
-| **Design Pattern** | Event-sourced agents | Planner-executor | Graph-based state machine |
-| **State Management** | EventStore (SQLite/Postgres) | TodoList + Checkpoints | Graph state + Checkpoints |
-| **Execution Model** | Async + Sync | Async-first | Async + Sync |
-| **Memory Model** | Vector + Event history | Sliding window + Summary | Concurrent summarization |
-
-**Winner:** 🏆 **Piranha Agent** for performance (Rust core), **LangChain** for ecosystem
-
----
-
-### 2. Multi-Agent Collaboration
-
-| Feature | Piranha | Pydantic Deep | LangChain Deep | CrewAI | AutoGen |
-|---------|---------|---------------|----------------|--------|---------|
-| **Agent Types** | Orchestrator + Workers | Team agents | Task agents | Role agents | Conversational |
-| **Communication** | Message queue | SharedTodoList, MessageBus | Task tool | Process flow | Chat-based |
-| **Delegation** | ✅ Sub-agents | ✅ Nested spawning | ✅ Parallel tasks | ✅ Task assign | ✅ Auto-handoff |
-| **Coordination** | Central orchestrator | Peer-to-peer | Central planner | Hierarchical | Emergent |
-| **State Sharing** | EventStore | SharedTodoList | Graph state | Task context | Conversation |
-
-**Winner:** 🏆 **AutoGen** for flexible conversations, **Piranha** for structured workflows
+Note on naming: this repo's earlier docs used "Pydantic Deep Agents" and
+"LangChain Deep Agents" as separate entries. There's no product called
+"Pydantic Deep Agents" - the real project is **Pydantic AI**. The
+LangChain project's real name is simply **DeepAgents**
+(`langchain-ai/deepagents`, built on the LangGraph runtime).
 
 ---
 
-### 3. Code Execution & Security
+## 🏛️ Architecture
 
-| Feature | Piranha | Pydantic Deep | LangChain Deep | CrewAI | AutoGen |
-|---------|---------|---------------|----------------|--------|---------|
-| **Sandbox** | ✅ Wasm (Wasmtime) | Docker, Local | Docker, Modal, Runloop | Python exec | Python exec |
-| **File Editing** | Standard | Hashline (+64pp accuracy) | str_replace | Standard | Standard |
-| **Shell Access** | ⚠️ Limited | ✅ 4 backends | ✅ Via backend | ⚠️ Limited | ✅ Full |
-| **Security** | ✅ Wasm isolation | Docker isolation | Cloud sandbox | ⚠️ Process | ⚠️ Process |
-| **Permissions** | ✅ 4 presets | ✅ Per-tool HITL | ✅ Per-tool HITL | ⚠️ Basic | ⚠️ Basic |
-
-**Winner:** 🏆 **Piranha** for security (Wasm), **Pydantic Deep** for file editing accuracy
+| Aspect | Piranha Agent | DeepAgents | LangGraph |
+|--------|---------------|------------|-----------|
+| **Core** | Rust + Python hybrid | Pure Python, built on LangGraph | Pure Python |
+| **Design Pattern** | Event-sourced agents | Sub-agent delegation + planning loop | Graph-based state machine |
+| **State Management** | EventStore (SQLite/Postgres) | Context summarization + virtual filesystem, via LangGraph checkpointing | Checkpointer (short + long-term state) |
+| **Multi-agent coordination** | Central orchestrator + role delegation | Sub-agent spawning | Explicit graph branching/conditional routing |
 
 ---
 
-### 4. Developer Experience
+## 🔒 Code Execution & Security
 
-| Feature | Piranha | Pydantic Deep | LangChain Deep | CrewAI | AutoGen |
-|---------|---------|---------------|----------------|--------|---------|
-| **Setup** | `pip install piranha-agent` | `pip install pydantic-deep` | `pip install deepagents` | `pip install crewai` | `pip install autogen` |
-| **Boilerplate** | 🟢 Minimal | 🟢 Minimal | 🟡 Moderate | 🟢 Minimal | 🟡 Moderate |
-| **Debugging** | ✅ Time-travel UI | Logfire | LangGraph Studio | ⚠️ Logs | ⚠️ Logs |
-| **IDE Support** | ⚠️ Basic | ⚠️ Basic | ✅ ACP (Zed) | ⚠️ Basic | ⚠️ Basic |
-| **Documentation** | 🟢 Good | 🟢 Excellent | 🟢 Excellent | 🟢 Good | 🟢 Good |
-| **Examples** | ✅ 10+ examples | ✅ Many | ✅ Many | ✅ Many | ✅ Many |
-
-**Winner:** 🏆 **LangChain** for IDE integration, **Piranha** for time-travel debugging
+| Feature | Piranha | DeepAgents | CrewAI | AutoGen |
+|---------|---------|------------|--------|---------|
+| **Sandbox** | ✅ Wasm (Wasmtime) | ❌ Not mentioned in docs | ⚠️ Docker-based (`CodeInterpreterTool`) | ❌ Not mentioned |
+| **Known issues** | - | - | Had critical 2026 CVEs (CVE-2026-2275, CVE-2026-2287): silently fell back from Docker to a bypassable mode enabling RCE | - |
 
 ---
 
-### 5. Skills & Tools Ecosystem
+## 👩‍💻 Developer Experience
 
-| Feature | Piranha | Pydantic Deep | LangChain Deep | CrewAI | AutoGen |
-|---------|---------|---------------|----------------|--------|---------|
-| **Built-in Skills** | ✅ 46+ Claude skills | ✅ Tools | ✅ LangChain tools | ✅ Tools | ✅ Tools |
-| **Skill Format** | Python functions | Pydantic models | LangChain tools | Python classes | Python functions |
-| **MCP Support** | ✅ Builder skill | ✅ Native | ✅ Native | ⚠️ Plugin | ⚠️ Plugin |
-| **Tool Discovery** | ✅ Skill registry | Manual | Auto-discovery | Manual | Manual |
-| **Claude Skills** | ✅ Native format | ⚠️ Compatible | ⚠️ Compatible | ❌ | ❌ |
-
-**Winner:** 🏆 **Piranha** for Claude Skills compatibility, **LangChain** for tool ecosystem
+| Feature | Piranha | DeepAgents | LangGraph |
+|---------|---------|------------|-----------|
+| **Setup** | `pip install piranha-agent` | `pip install deepagents` | `pip install langgraph` |
+| **Debugging** | ✅ Time-travel UI (event replay + rollback) | Inherits LangGraph's checkpoint-based replay | ✅ LangGraph Studio (visual, low-code IDE) |
 
 ---
 
-### 6. Performance & Scalability
+## 🎯 Use Case Guidance
 
-| Metric | Piranha | Pydantic Deep | LangChain Deep | CrewAI | AutoGen |
-|--------|---------|---------------|----------------|--------|---------|
-| **Startup Time** | ⚡ Fast (Rust) | 🐢 Moderate | 🐢 Slow | 🐢 Moderate | 🐢 Slow |
-| **Memory Usage** | ⚡ Low | 🐢 Moderate | 🐢 High | 🐢 Moderate | 🐢 High |
-| **Concurrent Agents** | ✅ 100+ | ✅ 50+ | ✅ 50+ | ⚠️ 20+ | ⚠️ 20+ |
-| **Event Throughput** | ⚡ 10K+/sec | 🐢 1K/sec | 🐢 1K/sec | 🐢 500/sec | 🐢 500/sec |
-| **Database** | SQLite/Postgres | PostgreSQL | Any (LangGraph) | SQLite | SQLite |
+Editorial judgment, not a scored comparison:
 
-**Winner:** 🏆 **Piranha** for raw performance (Rust core)
+### Consider Piranha Agent if:
+- You want a Wasm-sandboxed code execution path
+- You need native local-LLM support (Ollama) without extra setup
+- You want built-in time-travel debugging (event replay/rollback)
+- You're evaluating a Rust-core implementation for the systems layer
 
----
+### Consider DeepAgents if:
+- You're already using LangGraph and want a higher-level agent abstraction on top
+- You want automatic context summarization for long-running agents
 
-### 7. Production Features
+### Consider LangGraph if:
+- You want a mature, visual debugging tool (LangGraph Studio)
+- You need explicit, graph-based control over agent state transitions
 
-| Feature | Piranha | Pydantic Deep | LangChain Deep | CrewAI | AutoGen |
-|---------|---------|---------------|----------------|--------|---------|
-| **Event Sourcing** | ✅ Full audit log | ✅ Checkpoints | ✅ Checkpoints | ❌ | ❌ |
-| **Cost Tracking** | ✅ USD + tokens | ✅ USD budget | ⚠️ Token count | ⚠️ Basic | ⚠️ Basic |
-| **Guardrails** | ✅ Token budget | ✅ Permissions | ✅ HITL | ⚠️ Basic | ⚠️ Basic |
-| **Semantic Cache** | ✅ Fuzzy matching | ❌ | ❌ | ❌ | ❌ |
-| **Observability** | ✅ Event trace | Logfire | LangSmith | ⚠️ Logs | ⚠️ Logs |
-| **CI/CD Ready** | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes | ⚠️ Beta |
+### Consider CrewAI if:
+- You want a simple, role-based multi-agent abstraction
+- You want a built-in no-code builder (CrewAI Studio) and native OpenTelemetry
+- You're aware of and mitigating its sandbox's CVE history if using `CodeInterpreterTool`
 
-**Winner:** 🏆 **Piranha** for built-in features, **LangChain** for observability ecosystem
-
----
-
-## 🎯 Use Case Recommendations
-
-### Choose Piranha Agent If:
-
-- ✅ **Performance matters** - Rust core for high throughput
-- ✅ **Security is critical** - Wasm sandbox for code execution
-- ✅ **You need Claude Skills** - 46+ pre-built skills
-- ✅ **Audit trails required** - Full event sourcing
-- ✅ **Cost optimization** - Semantic cache with fuzzy matching
-- ✅ **Local LLM** - Native Ollama integration
-- ✅ **Time-travel debugging** - Step through agent decisions
-
-### Choose Pydantic Deep Agents If:
-
-- ✅ **File editing accuracy** - Hashline is 64pp more accurate
-- ✅ **Multi-agent teams** - SharedTodoList, MessageBus
-- ✅ **Checkpoint rewind** - Agent-callable fork/rewind
-- ✅ **USD budget enforcement** - Built-in cost control
-- ✅ **Modular architecture** - Use only what you need
-- ✅ **Already using Pydantic AI** - Native integration
-
-### Choose LangChain Deep Agents If:
-
-- ✅ **Already on LangGraph** - Zero migration
-- ✅ **Visual debugging** - LangGraph Studio
-- ✅ **IDE integration** - ACP with Zed editor
-- ✅ **Cloud sandboxes** - Modal, Runloop support
-- ✅ **Benchmarking** - Harbor framework
-- ✅ **Enterprise support** - Large ecosystem
-
-### Choose CrewAI If:
-
-- ✅ **Simple workflows** - Easy to get started
-- ✅ **Role-based agents** - Intuitive abstraction
-- ✅ **Business processes** - Structured task flows
-- ✅ **Small teams** - Quick prototyping
-
-### Choose AutoGen If:
-
-- ✅ **Conversational agents** - Chat-based collaboration
-- ✅ **Code generation** - Excellent code execution
-- ✅ **Research** - Flexible experimentation
-- ✅ **Microsoft ecosystem** - Azure integration
-
----
-
-## 📈 Feature Evolution
-
-### Piranha Agent Roadmap
-
-| Phase | Feature | Status |
-|-------|---------|--------|
-| Phase 1 | Python SDK, Event Sourcing, Guardrails | ✅ Complete |
-| Phase 2 | Wasm Sandbox | ✅ Complete |
-| Phase 3 | Time-Travel Debugger | ✅ Complete |
-| Phase 4 | Semantic Cache (Fuzzy) | ✅ Complete |
-| Phase 5 | PostgreSQL Backend | ✅ Complete |
-| Phase 6 | Distributed Agents | ✅ Complete |
-| Phase 7 | Claude Skills (46+) | ✅ Complete |
-
-### DeepAgents Roadmap
-
-| Feature | Pydantic | LangChain |
-|---------|----------|-----------|
-| Hashline Editing | ✅ | ❌ |
-| Multi-agent Teams | ✅ | ❌ |
-| IDE Integration | ❌ | ✅ |
-| Visual Debugger | ❌ | ✅ |
-| Cloud Sandboxes | ⚠️ | ✅ |
-| Benchmarking | ❌ | ✅ |
-
----
-
-## 💰 Cost Comparison
-
-| Framework | License | Hosting | Estimated Monthly Cost* |
-|-----------|---------|---------|------------------------|
-| **Piranha Agent** | MIT/Apache 2.0 | Self-hosted | $0-50 (infra only) |
-| **Pydantic Deep** | MIT | Self-hosted | $0-100 (infra + Logfire) |
-| **LangChain Deep** | MIT | Self-hosted/Cloud | $0-500 (infra + LangSmith) |
-| **CrewAI** | MIT | Self-hosted | $0-50 (infra only) |
-| **AutoGen** | MIT | Self-hosted | $0-100 (infra only) |
-
-*Excluding LLM API costs
-
----
-
-## 🏁 Final Verdict
-
-### Overall Winner: **Piranha Agent** 🏆
-
-**Why Piranha Wins:**
-
-1. **Performance** - Rust core provides 10x throughput
-2. **Security** - Wasm sandbox is production-ready
-3. **Features** - Most complete out-of-box (46+ skills, fuzzy cache, time-travel)
-4. **Claude Skills** - Only framework with native Claude Skills support
-5. **Local LLM** - Best Ollama integration
-6. **Cost** - Semantic cache reduces LLM costs by 30-50%
-
-### Best For:
-
-| Use Case | Winner |
-|----------|--------|
-| **Production deployment** | Piranha Agent |
-| **Enterprise security** | Piranha Agent |
-| **Multi-agent teams** | Pydantic Deep Agents |
-| **File editing accuracy** | Pydantic Deep Agents |
-| **Visual debugging** | LangChain Deep Agents |
-| **IDE integration** | LangChain Deep Agents |
-| **Quick prototyping** | CrewAI |
-| **Conversational AI** | AutoGen |
-| **RAG applications** | LlamaIndex |
-| **Enterprise .NET** | Semantic Kernel |
+### Consider AutoGen if:
+- You're doing research/prototyping and want the easiest possible setup
+- Note: AutoGen is in Microsoft-confirmed maintenance mode, superseded by Microsoft Agent Framework
 
 ---
 
 ## 📚 References
 
-- [Pydantic Deep Agents vs LangChain Deep Agents](https://vstorm.co/open-source/pydantic-deep-agents-vs-langchain-deep-agents-which-python-ai-agent-framework-should-you-choose/)
-- [Agent Framework Comparison 2026](https://www.linkedin.com/posts/mikegchambers_autogen-googleadk-openaisdk-activity-7437376879831150592-qWTv)
-- [Turing AI Agent Frameworks](https://www.turing.com/resources/ai-agent-frameworks)
-- [Piranha Agent Documentation](https://docs.piranha-agent.dev)
+- [langchain-ai/deepagents](https://github.com/langchain-ai/deepagents)
+- [LangGraph Studio](https://blog.langchain.com/langgraph-studio-the-first-agent-ide/)
+- [CrewAI sandbox CVE details](https://www.kb.cert.org/vuls/id/221883)
+- [Microsoft Agent Framework Overview](https://learn.microsoft.com/en-us/agent-framework/overview/)
 
 ---
 
-*Last updated: March 2026*
-*Version: 0.3.0*
+*Last updated: August 2026*
