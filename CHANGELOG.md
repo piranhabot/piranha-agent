@@ -82,6 +82,11 @@ passing test.
   Agno's `SlackTools`.
 - 4 real Google Sheets skills (read/create/update sheets, duplicate
   sheets) via Agno's `GoogleSheetsTools`.
+- `piranha-agent monitor` CLI command - launches Piranha Studio
+  (`RealtimeMonitor`) with `--host`/`--port`/`--dashboard`/`--db`
+  options. Several docs previously referenced `piranha monitor` as if it
+  already existed; it didn't - this makes that command real instead of
+  aspirational.
 
 ### Removed
 

@@ -465,9 +465,7 @@ await collab.execute_task("Build a comprehensive market report")
 
 ```bash
 # Launch Studio with Benchmarking Dashboard
-# (there is no `piranha monitor` CLI command; this is how the realtime
-# server is actually started - see studio/README.md)
-python -m piranha_agent.realtime --port 8080
+piranha-agent monitor
 ```
 
 **Features:**
@@ -643,7 +641,7 @@ for i in 1 2 3; do python tests/test_benchmarking.py 2>&1 | grep -E "^Benchmark:
 
 ### 📊 Visual Benchmarking
 You can view these benchmarks in real-time using Piranha Studio:
-1. Start the monitor: `python -m piranha_agent.realtime --port 8080` (there is no `piranha monitor` CLI command - the CLI's real commands are `piranha-agent agent|debug|explore|version`)
+1. Start the monitor: `piranha-agent monitor` (or `python -m piranha_agent.realtime --port 8080` directly)
 2. Run benchmarks with reporting: `PIRANHA_MONITOR_URL=http://localhost:8080 python tests/test_benchmarking.py`
 3. Open `http://localhost:8080` and click the **Benchmarks** tab to see live charts.
 

@@ -5,6 +5,7 @@ Usage:
     piranha-agent debug    - Launch Time-Travel Debugger
     piranha-agent agent    - Create an agent
     piranha-agent explore  - Explore Claude Code source
+    piranha-agent monitor  - Launch Piranha Studio (real-time monitoring)
     piranha-agent version  - Show version
 """
 
@@ -77,6 +78,22 @@ def agent(name: str, model: str | None, ollama: bool) -> None:
     cost = agent.get_cost_report()
     if cost:
         click.echo(f"\n💰 Session cost: ${cost.get('total_cost_usd', 0):.4f}")
+
+
+@main.command()
+@click.option("--host", default="127.0.0.1", help="Host to bind to (default: localhost)")
+@click.option("--port", default=8080, help="Port to listen on")
+@click.option("--dashboard", default=None, help="Path to static dashboard files (optional)")
+@click.option("--db", default=None, help="Path to persistent EventStore for rehydration (optional)")
+def monitor(host: str, port: int, dashboard: str | None, db: str | None) -> None:
+    """Launch Piranha Studio (real-time agent/task monitoring dashboard)."""
+    from piranha_agent.realtime import RealtimeMonitor
+
+    click.echo(f"🐟 Launching Piranha Studio at http://{host}:{port}")
+    click.echo(f"  API:       http://{host}:{port}/api")
+    click.echo(f"  WebSocket: ws://{host}:{port}/ws")
+    monitor_instance = RealtimeMonitor(host=host, port=port, dashboard_path=dashboard, db_path=db)
+    monitor_instance.start(blocking=True)
 
 
 @main.command()

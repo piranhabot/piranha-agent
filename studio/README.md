@@ -16,6 +16,10 @@ Real-time monitoring and management dashboard for Piranha Agent framework.
 
 ```bash
 # From Piranha Agent root
+piranha-agent monitor
+# or, with custom options:
+piranha-agent monitor --host 0.0.0.0 --port 8080
+# equivalent direct invocation:
 python -m piranha_agent.realtime --port 8080
 ```
 
@@ -105,10 +109,13 @@ The dashboard frontend will need to send one of these headers once
 
 `RealtimeMonitor`'s FastAPI app (`self.app`) is a per-instance attribute,
 not a module-level object, so `uvicorn piranha_agent.realtime:app` will
-not find anything to import. Run the module's own CLI entry point
-instead (it doesn't currently support `--reload`):
+not find anything to import. Use `piranha-agent monitor` (or the
+module's own CLI entry point directly) instead - neither currently
+supports `--reload`:
 
 ```bash
+piranha-agent monitor --port 8080
+# or:
 python -m piranha_agent.realtime --port 8080
 ```
 
@@ -191,7 +198,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 Make sure the backend server is running:
 
 ```bash
-python -m piranha_agent.realtime --port 8080
+piranha-agent monitor
 ```
 
 If it's running but requests fail with `401 Unauthorized`, the frontend
