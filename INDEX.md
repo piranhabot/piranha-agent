@@ -110,6 +110,7 @@ report, not a defect in these files.
 | [docs/EMPTY_EXCEPT_FIXED.md](docs/EMPTY_EXCEPT_FIXED.md) |
 | [docs/DEPENDABOT_UPDATE_COMPLETE.md](docs/DEPENDABOT_UPDATE_COMPLETE.md) |
 | [docs/IMPROVEMENT_ROADMAP.md](docs/IMPROVEMENT_ROADMAP.md) |
+| [docs/SKILLS_AND_LLM.md](docs/SKILLS_AND_LLM.md) |
 
 ### GitHub Community Files
 

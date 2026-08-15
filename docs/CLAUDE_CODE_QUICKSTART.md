@@ -258,4 +258,4 @@ Use exact case-sensitive name from `list_tools()`
 
 ---
 
-**Version:** 1.0.0 | **Status:** ✅ Ready
+**Version:** 0.4.2 | **Status:** ✅ Ready

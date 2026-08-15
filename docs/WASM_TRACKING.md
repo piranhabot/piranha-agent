@@ -1,7 +1,7 @@
 # WasmTime Log Tracking in Piranha Studio
 
-**Version:** 0.4.0  
-**Added:** March 2026
+**Version:** 0.4.2
+**Added:** March 2026; corrected against code August 2026
 
 ---
 
@@ -275,5 +275,5 @@ today only happens through `WasmRunner`/`DynamicSkillCompiler` directly
 
 ---
 
-*Last updated: March 2026*  
-*Version: 0.4.0*
+*Last updated: March 2026; corrected against code August 2026*
+*Version: 0.4.2*

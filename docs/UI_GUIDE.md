@@ -1,7 +1,7 @@
 # Piranha Studio - UI Components Guide
 
-**Version:** 0.4.0  
-**Last Updated:** March 2026
+**Version:** 0.4.2
+**Last Updated:** March 2026; version corrected August 2026
 
 ---
 
@@ -337,5 +337,5 @@ theme: {
 
 ---
 
-*Last updated: March 2026*  
-*Version: 0.4.0*
+*Last updated: March 2026; version corrected August 2026*
+*Version: 0.4.2*

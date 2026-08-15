@@ -232,7 +232,7 @@ result = agent.run_autonomous(
 
 ---
 
-## 🆕 NEW: Claude Code Explorer Integration (v0.4.1)
+## 🆕 NEW: Claude Code Explorer Integration (v0.4.2)
 
 Explore **Claude Code's 512K+ lines of source code** directly from your Piranha Agents!
 
@@ -823,7 +823,13 @@ Please read our [Contributing Guide](CONTRIBUTING.md) for details.
 
 ---
 
-## 🆕 What's New in v0.4.0?
+## 🆕 What's New in v0.4.1?
+
+*Corrected August 2026: this section was mislabeled "v0.4.0" - the
+security hardening, Piranha Studio, and No-Code Builder items below all
+shipped in v0.4.1 per [CHANGELOG.md](CHANGELOG.md). See the sections
+above for what shipped in the current v0.4.2 (Plan Mode, Claude Code
+Explorer).*
 
 ### Security Enhancements 🔒
 - ✅ **Environment-based SECRET_KEY** - No more hardcoded defaults

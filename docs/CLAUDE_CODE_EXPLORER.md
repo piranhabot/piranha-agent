@@ -396,6 +396,6 @@ Want to add more exploration features?
 
 ---
 
-**Version:** 1.0.0  
+**Version:** 0.4.2  
 **Author:** Piranha Agent Team  
 **License:** MIT

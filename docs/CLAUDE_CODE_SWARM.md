@@ -320,5 +320,5 @@ When using swarm:
 
 ---
 
-**Version:** 1.0.0  
+**Version:** 0.4.2  
 **Status:** ✅ Ready to Use

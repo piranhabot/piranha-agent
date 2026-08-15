@@ -1,7 +1,7 @@
 # Piranha Agent - Security Guide
 
-**Version:** 0.4.0  
-**Last Updated:** March 2026
+**Version:** 0.4.2
+**Last Updated:** March 2026; version corrected August 2026
 
 ---
 
@@ -340,5 +340,5 @@ print(f"Warnings: {result['warnings']}")
 
 ---
 
-*Last updated: March 2026*  
-*Version: 0.4.0*
+*Last updated: March 2026; version corrected August 2026*
+*Version: 0.4.2*
