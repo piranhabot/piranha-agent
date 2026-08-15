@@ -328,18 +328,26 @@ Skills require permissions to execute. Available permissions:
 
 ## Skill Inheritance
 
-Skills can be inherited by sub-agents:
+`Agent` has no `parent=` argument - skills are not inherited implicitly
+just by constructing a child agent. Inheritance is explicit, via
+`piranha_core.SkillRegistry.delegate_to_child()`:
 
 ```python
+from piranha_core import SkillRegistry
+
+registry = SkillRegistry()
+
 # Parent agent with inheritable skills
 parent = Agent(
     name="parent",
     skills=[search_web, calculator]  # Both inheritable=True
 )
+child = Agent(name="child")
 
-# Spawn sub-agent - inherits parent's skills
-child = Agent(name="child", parent=parent)
-# child can use search_web and calculator
+# Explicitly delegate - the registry refuses skills registered
+# with inheritable=False
+registry.delegate_to_child(parent.id, child.id, ["web_search", "calculator"])
+# child can now use web_search and calculator
 ```
 
 ### Non-Inheritable Skills

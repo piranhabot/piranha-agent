@@ -25,13 +25,24 @@ piranha-agent chat
 Create your first agent in Python:
 
 ```python
-import asyncio
 from piranha_agent import Agent
 
+agent = Agent(name="Researcher")
+response = agent.run("Research the latest trends in AI agents.")
+print(response.content)
+```
+
+`Agent.run()` is synchronous. If you're already inside an async
+application, use `AsyncAgent` instead, whose `run()` is a coroutine:
+
+```python
+import asyncio
+from piranha_agent import AsyncAgent
+
 async def main():
-    agent = Agent(name="Researcher")
+    agent = AsyncAgent(name="Researcher")
     response = await agent.run("Research the latest trends in AI agents.")
-    print(response)
+    print(response.content)
 
 if __name__ == "__main__":
     asyncio.run(main())
@@ -58,7 +69,7 @@ agent = Agent(
 )
 
 result = agent.run("List all Claude Code tools")
-print(result)
+print(result.content)
 ```
 
 Or use the CLI:
@@ -69,6 +80,12 @@ piranha-agent explore --search "class.*Tool"
 ```
 
 See [docs/CLAUDE_CODE_EXPLORER.md](docs/CLAUDE_CODE_EXPLORER.md) for full documentation.
+
+## Optional Integrations
+
+Real GitHub, Slack, and Google Sheets skills are available as optional
+extras (`pip install "piranha-agent[github]"`, `[slack]`, `[google-sheets]`).
+See [skills.md](skills.md) for setup and usage.
 
 ## Next Steps
 

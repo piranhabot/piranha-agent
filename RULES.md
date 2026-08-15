@@ -164,20 +164,36 @@ When spawning sub-agents:
 
 ### Example
 
+`Agent` has no `parent=` constructor argument - inheritance is explicit,
+via `piranha_core.SkillRegistry.delegate_to_child()`, not implied by
+constructing a child around a parent object:
+
 ```python
-# Parent with mixed skills
+from piranha_core import SkillRegistry
+
 @skill(inheritable=True)
 def research(): pass
 
-@skill(inheritable=False)  
+@skill(inheritable=False)
 def admin_operation(): pass
 
+registry = SkillRegistry()
 parent = Agent(name="parent", skills=[research, admin_operation])
-child = Agent(name="child", parent=parent)
+child = Agent(name="child")
+
+# Only skills explicitly listed here are delegated, and the registry
+# itself will refuse to delegate a skill registered as inheritable=False.
+registry.delegate_to_child(parent.id, child.id, ["research"])
 
 # child can use: research
-# child CANNOT use: admin_operation
+# child CANNOT use: admin_operation (never delegated)
 ```
+
+Note: the higher-level `delegate_task` orchestration skill (see
+[skills.md](skills.md)) creates sub-agents from scratch with a fresh
+system prompt and does **not** automatically inherit the parent's
+skills - use `delegate_to_child` above when the sub-agent genuinely
+needs to share tooling with its parent.
 
 ---
 

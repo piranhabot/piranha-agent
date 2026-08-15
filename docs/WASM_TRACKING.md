@@ -121,6 +121,10 @@ GET /api/wasm
 POST /api/wasm/execute
 ```
 
+Like every other `/api/*` route except `/api/health`, this requires
+authentication (see [docs/SECURITY_HARDENING.md](SECURITY_HARDENING.md)) -
+send an `Authorization: Bearer <jwt>`, `X-API-Key`, or `X-Demo-Secret` header.
+
 **Request:**
 ```json
 {
@@ -137,24 +141,27 @@ POST /api/wasm/execute
 
 ### Python Code
 
+`RealtimeMonitor.execute_wasm()` (the method backing the endpoint above)
+is currently a placeholder - it does not run the Wasm module you pass it
+and always returns `success: False`. It exists so execution attempts are
+still tracked/broadcast consistently rather than silently doing nothing;
+see its docstring in `piranha_agent/realtime.py`. To actually execute
+Wasm code, use `WasmRunner`/`DynamicSkillCompiler` directly
+(`rust_core/src/wasm_runner.rs`), which is real and Wasmtime-backed:
+
 ```python
-from piranha_agent import start_monitoring, WasmRunner
+from piranha_core import WasmRunner
 
-# Start monitoring
-monitor = start_monitoring(port=8080)
-
-# Create Wasm runner
 runner = WasmRunner()
-
-# Execute Wasm (automatically tracked)
-result = monitor.execute_wasm(
-    wasm_bytes=wasm_bytes,
-    function_name="my_function",
-    input_data="test input"
-)
-
-# View in UI at http://localhost:8080/wasm
+# function_name is a WASI entrypoint, e.g. "_start"; the third argument
+# is currently unused (accepted for API-shape compatibility only)
+result = runner.execute(wasm_bytes, "_start", "")
+print(result)  # {"success": ..., "output": ..., "error": ..., "execution_time_ms": ...}
 ```
+
+Wiring `RealtimeMonitor.execute_wasm()` up to call the real runner (so
+executions triggered via the dashboard/API are tracked *and* actually
+run) is open work, not yet done.
 
 ### Automatic Tracking
 
@@ -217,57 +224,26 @@ All Wasm executions are automatically:
 
 ## 📈 Integration Points
 
-### 1. WasmRunner Integration
+### 1. WasmRunner (rust_core/src/wasm_runner.rs)
 
-```python
-# piranha/wasm_runner.rs
-pub fn execute(&self, wasm_bytes: &[u8], input: &str) -> Result<WasmExecutionResult> {
-    // Execute Wasm
-    let result = self.inner.execute(wasm_bytes, input)?;
-    
-    // Track in monitor
-    monitor.record_event("wasm.executed", {
-        "function_name": "main",
-        "execution_time_ms": result.execution_time_ms,
-        "success": true
-    });
-    
-    return result;
+The real, Wasmtime-backed execution path (used by
+`DynamicSkillCompiler.compile_and_execute()` for agent-generated code):
+
+```rust
+pub fn execute(&self, wasm_bytes: &[u8], function_name: &str) -> Result<WasmExecutionResult> {
+    // function_name is a WASI entrypoint, e.g. "_start"
+    self.runner.execute(wasm_bytes, function_name)
 }
 ```
 
-### 2. Monitor Integration
+### 2. Monitor (piranha_agent/realtime.py)
 
-```python
-# piranha/realtime.py
-def execute_wasm(self, wasm_bytes: bytes, function_name: str, input_data: str) -> dict:
-    result = {
-        "function_name": function_name,
-        "success": True,
-        "execution_time_ms": 0,
-        "output": "",
-        "error": None
-    }
-    
-    try:
-        # Execute Wasm
-        # ...
-        
-        # Track execution
-        self.record_event("wasm.executed", result)
-        
-    except Exception as e:
-        result["success"] = False
-        result["error"] = str(e)
-        
-        # Track failure
-        self.record_event("wasm.failed", {
-            "function_name": function_name,
-            "error": str(e)
-        })
-    
-    return result
-```
+`RealtimeMonitor.execute_wasm()` is the *tracked* entry point exposed via
+`POST /api/wasm/execute`, but as noted above it's currently a placeholder
+that doesn't call `WasmRunner` at all - it always records a
+`wasm.failed` event and returns `success: False`. Actual Wasm execution
+today only happens through `WasmRunner`/`DynamicSkillCompiler` directly
+(section 1), which is not yet wired into the monitor/dashboard.
 
 ---
 
