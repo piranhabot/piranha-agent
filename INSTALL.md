@@ -26,13 +26,29 @@ pip install "piranha-agent[claude-explorer]"
 
 This installs the `mcp` package required for Model Context Protocol support.
 
+## Skill Integrations (Optional)
+
+Real GitHub, Slack, and Google Sheets skills (see [skills.md](skills.md)):
+
+```bash
+pip install "piranha-agent[github]"        # GitHub issues/PRs/branches/files
+pip install "piranha-agent[slack]"         # Slack messaging/channels
+pip install "piranha-agent[google-sheets]" # Google Sheets read/write
+```
+
+Or install everything (dev tools + all optional extras) with:
+
+```bash
+pip install "piranha-agent[all]"
+```
+
 ## Development Installation
 
 If you want to contribute or build from source:
 
 1.  **Clone the Repository**:
     ```bash
-    git clone https://github.com/piranha-agent/piranha-agent.git
+    git clone https://github.com/piranhabot/piranha-agent.git
     cd piranha-agent
     ```
 

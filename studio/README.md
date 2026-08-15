@@ -16,7 +16,7 @@ Real-time monitoring and management dashboard for Piranha Agent framework.
 
 ```bash
 # From Piranha Agent root
-python -m piranha.realtime --port 8080
+python -m piranha_agent.realtime --port 8080
 ```
 
 Or programmatically:
@@ -58,6 +58,10 @@ result = task.run()
 
 ### API Endpoints
 
+A representative subset (see `piranha_agent/realtime.py` for the full
+list - there are over 30 `/api/*` routes covering agents, tasks, events,
+Wasm, security checks, and more):
+
 | Endpoint | Description |
 |----------|-------------|
 | `GET /api/agents` | Get all agents |
@@ -65,8 +69,17 @@ result = task.run()
 | `GET /api/tasks` | Get all tasks |
 | `GET /api/metrics` | Get system metrics |
 | `GET /api/events` | Get recent events |
-| `GET /api/health` | Health check |
-| `WS /ws` | WebSocket for real-time updates |
+| `GET /api/health` | Health check (no auth required) |
+| `WS /ws` | WebSocket for real-time updates (requires a JWT token) |
+
+**Authentication:** every `/api/*` route except `/api/health` requires
+credentials - `Authorization: Bearer <jwt>`, `X-API-Key`, or
+`X-Demo-Secret`. In a detected development environment with no
+`API_KEYS` configured, unauthenticated requests are allowed through as a
+convenience; sending a wrong key is always rejected. See
+[docs/SECURITY_HARDENING.md](../docs/SECURITY_HARDENING.md) for details.
+The dashboard frontend will need to send one of these headers once
+`API_KEYS`/JWT is configured for anything beyond local dev.
 
 ## Architecture
 
@@ -90,9 +103,13 @@ result = task.run()
 
 ### Backend
 
+`RealtimeMonitor`'s FastAPI app (`self.app`) is a per-instance attribute,
+not a module-level object, so `uvicorn piranha_agent.realtime:app` will
+not find anything to import. Run the module's own CLI entry point
+instead (it doesn't currently support `--reload`):
+
 ```bash
-# Run with auto-reload
-uvicorn piranha.realtime:app --reload --port 8080
+python -m piranha_agent.realtime --port 8080
 ```
 
 ### Frontend
@@ -174,8 +191,11 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 Make sure the backend server is running:
 
 ```bash
-python -m piranha.realtime --port 8080
+python -m piranha_agent.realtime --port 8080
 ```
+
+If it's running but requests fail with `401 Unauthorized`, the frontend
+needs to send valid credentials - see Authentication above.
 
 ### Frontend shows no data
 

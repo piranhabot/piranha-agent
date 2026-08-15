@@ -81,7 +81,7 @@ team = create_orchestrated_team("research-team")
 
 ```bash
 # Install from source
-git clone https://github.com/piranha-agent/piranha-agent.git
+git clone https://github.com/piranhabot/piranha-agent.git
 cd piranha-agent
 python3 -m venv .venv
 source .venv/bin/activate
@@ -301,7 +301,7 @@ Piranha includes the largest collection of pre-built AI skills:
 
 ```bash
 # From source
-git clone https://github.com/piranha-agent/piranha-agent.git
+git clone https://github.com/piranhabot/piranha-agent.git
 cd piranha-agent
 python3 -m venv .venv
 source .venv/bin/activate
@@ -742,7 +742,7 @@ Contributions are welcome! Here's how to help:
 
 ```bash
 # Clone and setup
-git clone https://github.com/piranha-agent/piranha-agent.git
+git clone https://github.com/piranhabot/piranha-agent.git
 cd piranha-agent
 python3 -m venv .venv
 source .venv/bin/activate
@@ -889,8 +889,8 @@ We welcome contributions of all kinds! Please check out these resources to get s
 
 ## 📬 Contact
 
-- **GitHub Issues**: [Report bugs or request features](https://github.com/piranha-agent/piranha-agent/issues)
-- **Discussions**: [Join the conversation](https://github.com/piranha-agent/piranha-agent/discussions)
+- **GitHub Issues**: [Report bugs or request features](https://github.com/piranhabot/piranha-agent/issues)
+- **Discussions**: [Join the conversation](https://github.com/piranhabot/piranha-agent/discussions)
 - **Documentation**: [Full docs](docs/)
 
 ---

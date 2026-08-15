@@ -8,8 +8,8 @@ Before opening a new issue, please try the following resources:
 
 1. **[Documentation](docs/)**: Check our comprehensive guides on architecture, security, and UI.
 2. **[Examples](examples/)**: Look at our collection of example scripts for common use cases.
-3. **[GitHub Discussions](https://github.com/piranha-agent/piranha-agent/discussions)**: Search existing discussions or start a new one for general questions and architectural advice.
-4. **[GitHub Issues](https://github.com/piranha-agent/piranha-agent/issues)**: Search through existing issues to see if your problem has already been reported or solved.
+3. **[GitHub Discussions](https://github.com/piranhabot/piranha-agent/discussions)**: Search existing discussions or start a new one for general questions and architectural advice.
+4. **[GitHub Issues](https://github.com/piranhabot/piranha-agent/issues)**: Search through existing issues to see if your problem has already been reported or solved.
 
 ## 🐛 Reporting a Bug
 

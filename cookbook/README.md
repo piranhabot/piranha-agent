@@ -324,7 +324,7 @@ print(f"Trace size: {len(trace)} bytes")
 # Load trace in debugger UI
 ```
 
-**See also:** [`piranha/debugger.py`](piranha/debugger.py)
+**See also:** [`piranha_agent/debugger.py`](../piranha_agent/debugger.py)
 
 ---
 
@@ -421,30 +421,37 @@ from piranha_agent import AgentOrchestrator, DistributedAgent
 # Create orchestrator
 orchestrator = AgentOrchestrator(queue_size=100)
 
-# Create worker agents
+# Create worker agents and register them with the orchestrator -
+# DistributedAgent alone doesn't make a worker assignable; it must be
+# registered first
 workers = []
 for i in range(3):
     worker = DistributedAgent(f"worker-{i}")
+    orchestrator.register_worker(worker.get_id())
     workers.append(worker)
 
-# Submit tasks
+# Submit tasks (priority is required)
 task_ids = []
 for i in range(5):
-    task_id = orchestrator.submit_task(
-        f"Process data batch {i}",
-        priority=5
-    )
+    task_id = orchestrator.submit_task(f"Process data batch {i}", priority=5)
     task_ids.append(task_id)
+
+# Assign queued tasks to idle workers, then mark them complete
+assignments = orchestrator.auto_assign()
+for worker_id, task_id in assignments:
+    orchestrator.complete_task(task_id)
 
 # Get cluster status
 status = orchestrator.get_cluster_status()
-print(f"Active workers: {len(status)}")
+print(status)
 
-# Get worker statistics
-stats = orchestrator.get_worker_stats()
-for worker_id, tasks_completed in stats:
-    print(f"{worker_id}: {tasks_completed} tasks completed")
+# Inspect an individual task
+print(orchestrator.get_task(task_ids[0]))
 ```
+
+There is no `get_worker_stats()` method - `get_cluster_status()` and
+`get_task()` are the real ways to inspect orchestrator state. See
+`tests/test_phase5_6.py` for more complete usage.
 
 ---
 
@@ -466,9 +473,20 @@ store = PostgresEventStore(
 print(store.get_info())
 print(store.get_connection_info())
 
-# In production, use async methods
-# await store.record_llm_call_async(...)
-# await store.export_trace_async(...)
+# record_llm_call / export_trace / rollback_to_sequence are synchronous
+# (they bridge to Postgres via an internal Tokio runtime) - there is no
+# separate async variant to await.
+store.record_llm_call(
+    session_id=session_id,
+    agent_id=agent_id,
+    model="llama3",
+    prompt_tokens=10,
+    completion_tokens=25,
+    cost_usd=0.0003,
+    cache_hit=False,
+    context_event_count=1,
+)
+print(store.export_trace(session_id))
 ```
 
 ---
@@ -583,7 +601,7 @@ cache.put_with_embedding(
 result = cache.get_fuzzy("Tell me about Python programming", "llama3")
 ```
 
-**See also:** [`piranha/embeddings.py`](piranha/embeddings.py)
+**See also:** [`piranha_agent/memory.py`](../piranha_agent/memory.py) (embeddings live here now - the old standalone `embeddings.py` was a dead duplicate, deleted Aug 2026)
 
 ---
 
@@ -642,7 +660,7 @@ for chunk in response:
 - [Skills Catalog](skills/CATEGORIZATION.md)
 - [Framework Comparison](docs/FRAMEWORK_COMPARISON.md)
 - [Improvement Roadmap](docs/IMPROVEMENT_ROADMAP.md)
-- [GitHub Repository](https://github.com/piranha-agent/piranha-agent)
+- [GitHub Repository](https://github.com/piranhabot/piranha-agent)
 
 ---
 
@@ -657,6 +675,9 @@ Have a useful recipe? Submit it as a pull request!
 
 ---
 
-*Last updated: March 2026*
-*Version: 0.3.0*
+*Recipes originally written March 2026; code samples corrected August 2026 (see [CHANGELOG.md](../CHANGELOG.md)).*
+*Current package version: 0.4.2*
 *Total recipes: 18*
+
+Not covered by a dedicated recipe yet: the GitHub/Slack/Google Sheets
+skill integrations - see [skills.md](../skills.md) for those.

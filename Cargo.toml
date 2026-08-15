@@ -7,7 +7,7 @@ version = "0.4.0"
 edition = "2021"
 authors = ["Piranha Agent Contributors"]
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/piranha-agent/piranha-agent"
+repository = "https://github.com/piranhabot/piranha-agent"
 
 [workspace.dependencies]
 pyo3 = { version = "0.24", features = ["extension-module", "chrono"] }

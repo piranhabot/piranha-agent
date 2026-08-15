@@ -1,7 +1,7 @@
 site_name: Piranha Agent Documentation
-site_description: Next-generation autonomous agent framework with Rust core, time-travel debugging, Wasm sandbox, and 46+ Claude Skills
-repo_url: https://github.com/piranha-agent/piranha-agent
-repo_name: piranha-agent/piranha-agent
+site_description: Next-generation autonomous agent framework with Rust core, time-travel debugging, Wasm sandbox, and 51+ Claude Skills
+repo_url: https://github.com/piranhabot/piranha-agent
+repo_name: piranhabot/piranha-agent
 site_url: https://docs.piranha-agent.dev
 
 theme:

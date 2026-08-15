@@ -14,7 +14,7 @@ Piranha is a hybrid Rust and Python project. You'll need both toolchains install
 ### Local Setup
 1. Clone the repository:
    ```bash
-   git clone https://github.com/piranha-agent/piranha-agent.git
+   git clone https://github.com/piranhabot/piranha-agent.git
    cd piranha-agent
    ```
 

@@ -54,10 +54,10 @@ dev = [
 all = ["piranha-agent[dev]", "piranha-agent[claude-explorer]", "piranha-agent[github]", "piranha-agent[slack]", "piranha-agent[google-sheets]"]
 
 [project.urls]
-Homepage = "https://github.com/piranha-agent/piranha-agent"
+Homepage = "https://github.com/piranhabot/piranha-agent"
 Documentation = "https://docs.piranha-agent.dev"
-Repository = "https://github.com/piranha-agent/piranha-agent"
-"Bug Tracker" = "https://github.com/piranha-agent/piranha-agent/issues"
+Repository = "https://github.com/piranhabot/piranha-agent"
+"Bug Tracker" = "https://github.com/piranhabot/piranha-agent/issues"
 
 [project.scripts]
 piranha-agent = "piranha_agent.cli:main"
