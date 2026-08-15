@@ -136,6 +136,74 @@ def test_condition_node_with_only_one_branch_still_compiles():
     assert "pass" in code
 
 
+def test_compose_node_is_distinct_from_transform():
+    wf = {"nodes": [{"id": "n1", "type": "compose", "name": "Build"}], "connections": []}
+    code = generate_code(wf)
+    assert "composed_n1" in code
+    assert "def transform_n1" not in code
+    compile(code, "<test>", "exec")
+
+
+def test_filter_node_generates_real_list_comprehension():
+    wf = {"nodes": [{"id": "n1", "type": "filter", "name": "Keep"}], "connections": []}
+    code = generate_code(wf)
+    assert "[item for item in items_n1 if True]" in code
+    compile(code, "<test>", "exec")
+
+
+def test_apply_to_each_nests_child_nodes_inside_the_loop():
+    wf = {
+        "nodes": [
+            {"id": "loop", "type": "apply_to_each", "name": "ForEach"},
+            {"id": "body", "type": "output", "name": "PerItem"},
+        ],
+        "connections": [{"source": "loop", "target": "body"}],
+    }
+    code = generate_code(wf)
+    compile(code, "<test>", "exec")
+
+    for_line_idx = next(i for i, line in enumerate(code.splitlines()) if line.strip().startswith("for item_loop"))
+    body_line_idx = next(i for i, line in enumerate(code.splitlines()) if "PerItem" in line)
+    assert body_line_idx > for_line_idx
+    body_line = code.splitlines()[body_line_idx]
+    for_line = code.splitlines()[for_line_idx]
+    assert len(body_line) - len(body_line.lstrip()) > len(for_line) - len(for_line.lstrip())
+
+
+def test_apply_to_each_actually_loops_over_a_real_list():
+    """End-to-end: the generated for-loop must genuinely iterate, not just
+    compile - verified by running it and checking each item is processed."""
+    wf = {
+        "nodes": [
+            {"id": "n1", "type": "trigger", "name": "Start"},
+            {"id": "n2", "type": "apply_to_each", "name": "ForEachItem"},
+            {"id": "n3", "type": "output", "name": "Item"},
+        ],
+        "connections": [
+            {"source": "n1", "target": "n2"},
+            {"source": "n2", "target": "n3"},
+        ],
+    }
+    code = generate_code(wf).replace(
+        'input_data = "Start workflow"', 'input_data = ["x", "y", "z"]'
+    )
+    with patch("piranha_agent.nocode_builder.generate_code", return_value=code):
+        output = run_workflow(wf, timeout_seconds=30)
+    assert output.count("--- Workflow Result ---") == 3
+    assert "x" in output
+    assert "y" in output
+    assert "z" in output
+
+
+def test_do_until_defaults_to_running_once_not_forever():
+    """A do_until with an unimplemented condition must never hang - it
+    should run its body once and stop by default."""
+    wf = {"nodes": [{"id": "n1", "type": "do_until", "name": "Retry"}], "connections": []}
+    code = generate_code(wf)
+    assert "while True" not in code
+    compile(code, "<test>", "exec")
+
+
 def test_add_node_appends_and_auto_connects():
     wf = {"nodes": [], "connections": []}
     wf, _, _, _ = add_node(wf, "trigger")

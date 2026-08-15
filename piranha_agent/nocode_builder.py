@@ -27,7 +27,13 @@ NODE_CATEGORIES = {
     "🔧 Processing": {
         "skill": {"icon": "🔧", "label": "Skill", "color": "#F38181", "desc": "Execute skill"},
         "transform": {"icon": "🔁", "label": "Transform", "color": "#FFD93D", "desc": "Transform data"},
-        "condition": {"icon": "🔀", "label": "Condition", "color": "#AA96DA", "desc": "Branch logic"},
+        "compose": {"icon": "🧩", "label": "Compose", "color": "#F6BD60", "desc": "Build/construct a value"},
+    },
+    "🔁 Control Flow": {
+        "condition": {"icon": "🔀", "label": "Condition", "color": "#AA96DA", "desc": "Branch logic (if/else)"},
+        "filter": {"icon": "🧹", "label": "Filter", "color": "#84A59D", "desc": "Filter a list"},
+        "apply_to_each": {"icon": "🔂", "label": "Apply to Each", "color": "#F28482", "desc": "Loop over a list"},
+        "do_until": {"icon": "🔁", "label": "Do Until", "color": "#F5CAC3", "desc": "Loop until a condition"},
     },
     "📤 Output": {
         "output": {"icon": "📤", "label": "Output", "color": "#6BCB77", "desc": "Output result"},
@@ -164,9 +170,28 @@ def generate_code(workflow):
             lines.append(f'{pad}    # TODO: implement the transform for "{name}"')
             lines.append(f'{pad}    return data')
             lines.append(f'{pad}input_data = transform_{nid}(input_data)')
+        elif ntype == "compose":
+            lines.append(f'{pad}# {name}: Compose a value')
+            lines.append(f'{pad}composed_{nid} = input_data  # TODO: build the real expression for "{name}"')
+            lines.append(f'{pad}input_data = composed_{nid}')
+        elif ntype == "filter":
+            lines.append(f'{pad}# {name}: Filter')
+            lines.append(f'{pad}items_{nid} = input_data if isinstance(input_data, list) else [input_data]')
+            lines.append(f'{pad}input_data = [item for item in items_{nid} if True]  # TODO: real filter condition for "{name}"')
         elif ntype == "condition":
             lines.append(f'{pad}# {name}: Branch')
             lines.append(f'{pad}if True:  # TODO: implement the real condition for "{name}"')
+        elif ntype == "apply_to_each":
+            lines.append(f'{pad}# {name}: Apply to Each')
+            lines.append(f'{pad}items_{nid} = input_data if isinstance(input_data, list) else [input_data]')
+            lines.append(f'{pad}for item_{nid} in items_{nid}:')
+            lines.append(f'{pad}    input_data = item_{nid}')
+        elif ntype == "do_until":
+            lines.append(f'{pad}# {name}: Do Until')
+            lines.append(
+                f'{pad}for _ in range(1):  # TODO: replace with a real until-condition for "{name}" '
+                '(runs once by default so generated code never loops forever)'
+            )
         elif ntype == "output":
             lines.append(f'{pad}# {name}: Final Result')
             lines.append(f'{pad}print("--- Workflow Result ---\\n", input_data)')
@@ -190,6 +215,11 @@ def generate_code(workflow):
 
             for target in other:
                 emit(target, indent, visited)
+        elif ntype in ("apply_to_each", "do_until"):
+            for target, _label in next_edges:
+                emit(target, indent + 1, visited)
+            if not next_edges:
+                lines.append(f'{pad}    pass')
         else:
             for target, _label in next_edges:
                 emit(target, indent, visited)
