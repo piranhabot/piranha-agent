@@ -1,8 +1,23 @@
 """Tests for Piranha Python SDK."""
 
+from unittest.mock import patch
+
 import pytest
 from piranha_agent import Agent, Session, Skill, Task
+from piranha_agent.llm_provider import LLMProvider, LLMResponse
 from piranha_agent.skill import skill
+
+
+@pytest.fixture(autouse=True)
+def mock_llm_chat():
+    """Prevent Agent/Task tests from making real LLM calls (e.g. to a
+    local Ollama server that may not have the default model pulled)."""
+
+    def fake_chat(self, messages, stream=False, **kwargs):
+        return LLMResponse(content="Mock response", model=self.model)
+
+    with patch.object(LLMProvider, "chat", fake_chat):
+        yield
 
 
 class TestAgent:

@@ -92,7 +92,7 @@ class TestPhase6DistributedAgents:
         for i in range(5):
             agent = DistributedAgent(f"agent-{i}")
             _agents.append(agent)
-            orchestrator.register_agent(agent)
+            orchestrator.register_worker(agent.get_id())
         
         assert len(_agents) == 5
         _ids = [a.get_id() for a in _agents]

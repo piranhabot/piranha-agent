@@ -59,7 +59,7 @@ class LLMResponse:
     
     @property
     def is_complete(self) -> bool:
-        return self.finish_reason == "stop" or self.finish_reason is None
+        return self.finish_reason in ("stop", "cache_hit") or self.finish_reason is None
 
 
 class LLMProvider:
@@ -197,7 +197,9 @@ class LLMProvider:
         usage = response.usage
         
         # Calculate cost
-        cost = litellm.cost_calculator.completion_cost(response)
+        cost = litellm.cost_calculator.completion_cost(
+            completion_response=response, model=getattr(response, "model", None)
+        )
         
         # Check for cache hit (LiteLLM specific)
         cache_hit = getattr(response, "cache_hit", False)
@@ -218,7 +220,7 @@ class LLMProvider:
             ]
         
         return LLMResponse(
-            content=choice.message.content,
+            content=choice.message.content or "",
             model=response.model,
             tool_calls=tool_calls,
             prompt_tokens=usage.prompt_tokens,

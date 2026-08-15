@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from piranha_agent.agent import Agent
 from piranha_agent.orchestration import create_orchestrated_team
@@ -17,10 +17,9 @@ def test_delegation_mock():
     
     # Mock Agent.run to avoid actual LLM calls
     # We need to mock it on the Agent class or the instance
-    with MagicMock() as mock_run:
+    with patch.object(Agent, 'run', new_callable=MagicMock) as mock_run:
         mock_run.return_value.content = "Sub-agent result"
-        Agent.run = mock_run
-        
+
         # Find the delegate_task skill
         delegate_skill = next(s for s in coordinator.skills if s.name == "delegate_task")
         

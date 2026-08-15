@@ -317,7 +317,7 @@ class TestLLMProvider:
         """Test getting available models."""
         provider = LLMProvider()
 
-        with patch('piranha_agent.llm_provider.litellm.model_list', return_value=['gpt-4', 'gpt-3.5-turbo']):
+        with patch('piranha_agent.llm_provider.litellm.model_list', new=['gpt-4', 'gpt-3.5-turbo']):
             models = provider.get_available_models()
 
             assert 'gpt-4' in models
@@ -327,7 +327,7 @@ class TestLLMProvider:
         """Test getting available models when list is empty."""
         provider = LLMProvider()
 
-        with patch('piranha_agent.llm_provider.litellm.model_list', return_value=None):
+        with patch('piranha_agent.llm_provider.litellm.model_list', new=None):
             models = provider.get_available_models()
 
             assert models == []

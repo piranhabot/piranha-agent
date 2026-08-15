@@ -24,11 +24,18 @@ def test_explorer_config_default():
     """Test ExplorerConfig default values."""
     from piranha_agent.claude_code_explorer import ExplorerConfig
     
+    import os
+
     config = ExplorerConfig()
-    assert config.src_root == "../src"
-    assert config.mcp_server_command == "npx"
+    assert config.src_root == "/tmp/claude-code/src"
+    assert config.mcp_server_command == "node"
     assert config.timeout_seconds == 30
-    assert config.mcp_server_args == ["-y", "claude-code-explorer-mcp"]
+
+    mcp_path = "/tmp/claude-code/mcp-server/dist/src/index.js"
+    if os.path.exists(mcp_path):
+        assert config.mcp_server_args == [mcp_path]
+    else:
+        assert config.mcp_server_args == ["dist/src/index.js"]
 
 
 def test_explorer_config_custom():

@@ -477,8 +477,8 @@ impl PyWasmRunner {
             .map_err(|e| PyValueError::new_err(e.to_string()))
     }
 
-    fn execute(&self, wasm_bytes: &[u8], function_name: &str, input: &str) -> PyResult<PyObject> {
-        let result = self.inner.execute(wasm_bytes, input)
+    fn execute(&self, wasm_bytes: &[u8], function_name: &str, _input: &str) -> PyResult<PyObject> {
+        let result = self.inner.execute(wasm_bytes, function_name)
             .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
 
         Python::with_gil(|py| {
@@ -492,8 +492,8 @@ impl PyWasmRunner {
         })
     }
 
-    fn execute_with_io(&self, wasm_bytes: &[u8], input: &str) -> PyResult<PyObject> {
-        let result = self.inner.execute(wasm_bytes, input)
+    fn execute_with_io(&self, wasm_bytes: &[u8], _input: &str) -> PyResult<PyObject> {
+        let result = self.inner.execute(wasm_bytes, "_start")
             .map_err(|e| PyRuntimeError::new_err(e.to_string()))?;
 
         Python::with_gil(|py| {

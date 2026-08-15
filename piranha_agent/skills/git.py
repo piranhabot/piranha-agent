@@ -96,7 +96,7 @@ class GitWorktreeManager:
 def git_create_isolated_workspace(branch: str, workspace_name: str | None = None) -> str:
     """Skill to create an isolated Git workspace."""
     manager = GitWorktreeManager()
-    path = manager.create_worktree(branch, workspace_name)
+    path = manager.create_worktree(branch=branch, name=workspace_name)
     return f"Isolated workspace created at: {path}. You can now perform operations in this directory."
 
 @skill(
