@@ -342,12 +342,12 @@ result = calculate_tax(100.0, 0.08)
 
 | Document | Purpose |
 |----------|---------|
-| [README.md](README.md) | Main documentation |
-| [skills/CATEGORIZATION.md](skills/CATEGORIZATION.md) | Skills catalog |
-| [docs/FRAMEWORK_COMPARISON.md](docs/FRAMEWORK_COMPARISON.md) | Competitor comparison |
-| [docs/COMPARISON_SCORES.md](docs/COMPARISON_SCORES.md) | Detailed scores |
-| [docs/IMPROVEMENT_ROADMAP.md](docs/IMPROVEMENT_ROADMAP.md) | Future roadmap |
-| [docs/WIRING_VALIDATION.md](docs/WIRING_VALIDATION.md) | This document |
+| [README.md](../README.md) | Main documentation |
+| [skills/CATEGORIZATION.md](../skills/CATEGORIZATION.md) | Skills catalog |
+| [docs/FRAMEWORK_COMPARISON.md](FRAMEWORK_COMPARISON.md) | Competitor comparison |
+| [docs/COMPARISON_SCORES.md](COMPARISON_SCORES.md) | Detailed scores |
+| [docs/IMPROVEMENT_ROADMAP.md](IMPROVEMENT_ROADMAP.md) | Future roadmap |
+| [docs/WIRING_VALIDATION.md](WIRING_VALIDATION.md) | This document |
 
 ---
 

@@ -81,7 +81,7 @@
 **Location:** `skills/SKILLS.md`
 
 **View Online:**
-- GitHub: [skills/SKILLS.md](skills/SKILLS.md)
+- GitHub: [skills/SKILLS.md](../skills/SKILLS.md)
 - Skills UI: http://localhost:3000/skills
 
 ### LLM Providers UI
