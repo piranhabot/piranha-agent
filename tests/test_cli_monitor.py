@@ -1,7 +1,6 @@
 from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
-
 from piranha_agent.cli import main
 
 

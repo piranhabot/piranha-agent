@@ -5,7 +5,9 @@ Based on:
 - https://github.com/anthropics/skills
 - https://github.com/ComposioHQ/awesome-claude-skills
 
-This module contains ALL available Claude Skills (100+ skills).
+This module contains 16 "additional" Claude skills (corrected August
+2026 - previously claimed "100+", which was never true; see
+docs/SKILLS_REGISTRATION.md for the full, verified per-module count).
 """
 
 
@@ -27,9 +29,36 @@ from piranha_agent.skill import skill
         },
         "required": ["topic"],
     },
+    permissions=["network_read"],
 )
 def deep_research(topic: str, depth: str = "medium", sources: list[str] | None = None) -> str:
-    """Deep research skill for comprehensive analysis."""
+    """Deep research skill - runs a real web search, not an LLM-only template.
+
+    "sources" (preferred source types) is accepted but not currently used
+    to filter/bias search results - it's echoed back for now.
+    "depth" controls how many search results are pulled (shallow=3,
+    medium=6, deep=10), not a multi-step research pipeline.
+    """
+    from piranha_agent.skills._web_research import web_search
+
+    max_results = {"shallow": 3, "medium": 6, "deep": 10}.get(depth, 6)
+    try:
+        results = web_search(topic, max_results=max_results)
+    except ImportError as e:
+        return f"❌ Error: {e}"
+    except Exception as e:
+        return f"❌ Error searching for '{topic}': {e}"
+
+    if not results:
+        findings = "No search results found."
+        citations = "(none)"
+    else:
+        findings = "\n\n".join(
+            f"### {i}. {r['title']}\n{r['snippet']}\nSource: {r['url']}"
+            for i, r in enumerate(results, 1)
+        )
+        citations = "\n".join(f"- [{r['title']}]({r['url']})" for r in results)
+
     return f"""
 # Deep Research
 
@@ -37,26 +66,21 @@ def deep_research(topic: str, depth: str = "medium", sources: list[str] | None =
 {topic}
 
 ## Depth
-{depth}
+{depth} ({max_results} sources searched)
 
-## Sources
+## Preferred Source Types (not used to filter results)
 {sources or ['Academic papers', 'Industry reports', 'News articles']}
 
-## Research Process
-1. Define research questions
-2. Gather sources
-3. Analyze findings
-4. Synthesize insights
-5. Validate conclusions
-
 ## Findings
-[Research findings would be presented here]
+{findings}
 
 ## Citations
-[Sources would be cited here]
+{citations}
 
 ---
-*Note: Full implementation requires web search and research APIs*
+*Web search via DuckDuckGo (ddgs) - this returns real search results and
+snippets, not full-text synthesis or fact-checking. Treat as a research
+starting point, not a finished report.*
 """
 
 
@@ -132,10 +156,33 @@ def root_cause_tracing(error: str, context: str | None = None, timeline: str | N
         },
         "required": ["industry"],
     },
+    permissions=["network_read"],
 )
-def lead_research_assistant(industry: str, company_size: str | None = None, 
+def lead_research_assistant(industry: str, company_size: str | None = None,
                             location: str | None = None, criteria: list[str] | None = None) -> str:
-    """Lead research assistant skill."""
+    """Lead research assistant skill - finds real candidate companies via web
+    search to research further.
+
+    Deliberately does NOT fabricate named contacts/emails - a plain web
+    search can't verify who the actual decision-maker or their contact
+    info is, and presenting invented names/emails as real leads would be
+    worse than an honest placeholder. It surfaces real companies matching
+    the criteria as a starting point for the outreach strategy below.
+    """
+    from piranha_agent.skills._web_research import web_search
+
+    query = f"{industry} companies" + (f" in {location}" if location else "")
+    if company_size:
+        query += f" {company_size}"
+    try:
+        results = web_search(query, max_results=8)
+    except ImportError as e:
+        return f"❌ Error: {e}"
+    except Exception as e:
+        return f"❌ Error searching for '{query}': {e}"
+
+    candidates = "\n".join(f"| {r['title']} | {r['url']} |" for r in results) if results else "| (no results) | - |"
+
     return f"""
 # Lead Research Assistant
 
@@ -160,10 +207,14 @@ def lead_research_assistant(industry: str, company_size: str | None = None,
 4. Choose optimal channel
 5. Follow-up sequence
 
-## Lead List Template
-| Company | Contact | Role | Email | Status |
-|---------|---------|------|-------|--------|
-| [Name] | [Name] | [Role] | [Email] | [Status] |
+## Candidate Companies (from web search: "{query}")
+| Result | Link |
+|--------|------|
+{candidates}
+
+*These are real search results for the query above, not verified leads -
+no contact names/emails are fabricated. Use these as a starting point,
+then research each company's actual decision-makers before outreach.*
 
 ---
 *Based on sales best practices*

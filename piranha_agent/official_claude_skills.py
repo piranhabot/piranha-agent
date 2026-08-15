@@ -573,10 +573,25 @@ Best regards,
         },
         "required": ["url"],
     },
+    permissions=["network_read"],
 )
 def article_extractor(url: str, include_metadata: bool = True) -> str:
-    """Article extractor skill."""
-    metadata = '### Metadata\n- Tags: [tags]\n- Category: [category]\n- Reading Time: [X] min' if include_metadata else ''
+    """Article extractor skill - fetches the URL and extracts real text."""
+    from piranha_agent.skills._web_research import fetch_url_text
+
+    try:
+        page = fetch_url_text(url)
+    except Exception as e:
+        return f"❌ Error fetching {url}: {e}"
+
+    word_count = len(page["text"].split())
+    metadata = (
+        f"### Metadata\n- Word Count: ~{word_count}\n"
+        f"- Reading Time: ~{max(1, word_count // 200)} min\n"
+        f"- Truncated: {page['truncated']}"
+        if include_metadata
+        else ""
+    )
     return f"""
 # Article Extractor
 
@@ -586,21 +601,17 @@ def article_extractor(url: str, include_metadata: bool = True) -> str:
 ## Extracted Content
 
 ### Title
-[Article title would be extracted here]
-
-### Author
-[Author name]
-
-### Published Date
-[Publication date]
+{page["title"] or "(no <title> found)"}
 
 ### Content
-[Full article text would be extracted here]
+{page["text"] or "(no extractable text found)"}
 
 {metadata}
 
 ---
-*Note: Full implementation requires newspaper3k or similar library*
+*Extraction is a minimal dependency-free text strip (no ad/boilerplate
+removal) - not readability-quality. Author/publish-date extraction is
+not implemented.*
 """
 
 
@@ -619,9 +630,51 @@ def article_extractor(url: str, include_metadata: bool = True) -> str:
         },
         "required": ["file_path"],
     },
+    permissions=["file_read"],
 )
 def csv_data_summarizer(file_path: str, analysis_type: str = "descriptive") -> str:
-    """CSV data summarizer skill."""
+    """CSV data summarizer skill - actually reads the file and computes real stats.
+
+    "diagnostic"/"predictive" analysis_type values are accepted but do not
+    currently change the output - only descriptive statistics are computed
+    (real numbers, not a modeling pipeline).
+    """
+    import pandas as pd
+
+    try:
+        df = pd.read_csv(file_path)
+    except FileNotFoundError:
+        return f"❌ Error: File not found: {file_path}"
+    except Exception as e:
+        return f"❌ Error reading CSV: {e}"
+
+    rows, cols = df.shape
+    missing_total = int(df.isna().sum().sum())
+
+    numeric_df = df.select_dtypes(include="number")
+    stat_rows = []
+    for col in df.columns:
+        dtype = str(df[col].dtype)
+        if col in numeric_df.columns:
+            col_min = df[col].min()
+            col_max = df[col].max()
+            col_mean = df[col].mean()
+            stat_rows.append(f"| {col} | {dtype} | {col_min:.2f} | {col_max:.2f} | {col_mean:.2f} |")
+        else:
+            stat_rows.append(f"| {col} | {dtype} | - | - | - |")
+    stats_table = "\n".join(stat_rows) if stat_rows else "| (no columns) | - | - | - | - |"
+
+    insights = []
+    null_cols = df.columns[df.isna().any()].tolist()
+    if null_cols:
+        insights.append(f"Missing values found in: {', '.join(null_cols)}")
+    dup_count = int(df.duplicated().sum())
+    if dup_count:
+        insights.append(f"{dup_count} duplicate row(s) found")
+    if not insights:
+        insights.append("No missing values or duplicate rows detected")
+    insights_text = "\n".join(f"{i}. {text}" for i, text in enumerate(insights, 1))
+
     return f"""
 # CSV Data Summarizer
 
@@ -632,27 +685,50 @@ def csv_data_summarizer(file_path: str, analysis_type: str = "descriptive") -> s
 {analysis_type}
 
 ## Data Overview
-- Rows: [count]
-- Columns: [count]
-- Missing Values: [count]
+- Rows: {rows}
+- Columns: {cols}
+- Missing Values: {missing_total}
 
 ## Column Statistics
 | Column | Type | Min | Max | Mean |
 |--------|------|-----|-----|------|
-| [col] | numeric | - | - | - |
+{stats_table}
 
 ## Key Insights
-1. [Insight 1]
-2. [Insight 2]
-3. [Insight 3]
-
-## Recommendations
-- [Recommendation 1]
-- [Recommendation 2]
+{insights_text}
 
 ---
-*Note: Full implementation requires pandas library*
+*"diagnostic"/"predictive" analysis_type is accepted but not yet
+implemented differently from "descriptive" - only real descriptive
+statistics are computed above.*
 """
+
+
+_POSTGRES_FORBIDDEN_KEYWORDS = (
+    "INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "TRUNCATE",
+    "CREATE", "GRANT", "REVOKE", "EXECUTE", "CALL", "COPY", "VACUUM",
+)
+
+
+def _validate_readonly_sql(query: str) -> str | None:
+    """Return an error message if `query` isn't a safe single SELECT, else None.
+
+    Defense in depth beyond a single connection.read_only=True: rejects
+    multi-statement queries (e.g. "SELECT 1; DROP TABLE users;--") and any
+    forbidden keyword appearing anywhere in the query, not just checking
+    the first token.
+    """
+    stripped = query.strip().rstrip(";").strip()
+    if not stripped.upper().startswith("SELECT"):
+        return "Only SELECT queries are allowed for security"
+    if ";" in stripped:
+        return "Multi-statement queries are not allowed"
+    import re
+
+    for kw in _POSTGRES_FORBIDDEN_KEYWORDS:
+        if re.search(rf"\b{kw}\b", stripped, re.IGNORECASE):
+            return f"Forbidden keyword '{kw}' found in query"
+    return None
 
 
 @skill(
@@ -667,13 +743,81 @@ def csv_data_summarizer(file_path: str, analysis_type: str = "descriptive") -> s
         },
         "required": ["query"],
     },
+    permissions=["network_read"],
 )
 def postgres(query: str, database: str = "default", limit: int = 100) -> str:
-    """PostgreSQL query skill with read-only security."""
-    # Security check - only SELECT allowed
-    if not query.strip().upper().startswith('SELECT'):
-        return "❌ Error: Only SELECT queries are allowed for security"
-    
+    """PostgreSQL query skill with read-only security - runs a real query.
+
+    Connection is read via a `PIRANHA_POSTGRES_DSN` environment variable
+    (a full `postgresql://user:pass@host:port/dbname` connection string).
+    `database` is accepted for API compatibility but does not currently
+    select between multiple configured databases - only a single DSN is
+    supported today.
+    """
+    error = _validate_readonly_sql(query)
+    if error:
+        return f"❌ Error: {error}"
+
+    import os
+
+    dsn = os.environ.get("PIRANHA_POSTGRES_DSN")
+    if not dsn:
+        return (
+            "❌ Error: PIRANHA_POSTGRES_DSN environment variable is not set. "
+            "Set it to a postgresql://user:pass@host:port/dbname connection string."
+        )
+
+    try:
+        import psycopg
+    except ImportError:
+        return (
+            "❌ Error: the 'postgres' skill requires psycopg. "
+            'Install with: pip install "piranha-agent[postgres]"'
+        )
+
+    stripped = query.strip().rstrip(";").strip()
+    wrapped_query = f"SELECT * FROM ({stripped}) AS _piranha_subquery LIMIT %(limit)s"
+
+    try:
+        with psycopg.connect(dsn, autocommit=False) as conn:
+            conn.execute("SET TRANSACTION READ ONLY")
+            with conn.cursor() as cur:
+                cur.execute(wrapped_query, {"limit": limit})
+                columns = [desc.name for desc in cur.description] if cur.description else []
+                rows = cur.fetchall()
+    except Exception as e:
+        return f"❌ Error executing query: {e}"
+
+    if not columns:
+        return f"""
+# PostgreSQL Query Result
+
+## Database
+{database}
+
+## Query
+```sql
+{query}
+```
+
+## Results
+(no columns returned)
+
+## Summary
+- Rows returned: 0
+
+---
+*Security: enforced via SET TRANSACTION READ ONLY + query validation ({len(_POSTGRES_FORBIDDEN_KEYWORDS)}-keyword blocklist)*
+"""
+
+    header = "| " + " | ".join(columns) + " |"
+    separator = "|" + "|".join("---" for _ in columns) + "|"
+    body_lines = [
+        "| " + " | ".join("NULL" if v is None else str(v) for v in row) + " |"
+        for row in rows
+    ]
+    table = "\n".join([header, separator, *body_lines]) if body_lines else header + "\n" + separator
+
     return f"""
 # PostgreSQL Query Result
 
@@ -687,16 +831,13 @@ LIMIT {limit}
 ```
 
 ## Results
-| Column1 | Column2 | ... |
-|---------|---------|-----|
-| [data] | [data] | ... |
+{table}
 
 ## Summary
-- Rows returned: [count]
-- Query time: [ms]
+- Rows returned: {len(rows)}
 
 ---
-*Security: Read-only access enforced*
+*Security: enforced via SET TRANSACTION READ ONLY + query validation ({len(_POSTGRES_FORBIDDEN_KEYWORDS)}-keyword blocklist)*
 """
 
 

@@ -15,6 +15,35 @@ passing test.
 
 ### Fixed
 
+- **All 46 built-in "Claude Skills" turned out to have zero real I/O** -
+  every one of `claude_skills.py`/`official_claude_skills.py`/
+  `complete_claude_skills.py`'s functions returned an f-string template
+  with the caller's input echoed into markdown headers, same pattern as
+  the old `git_workflows` skill. Fixed the 5 highest-value ones:
+  - `deep_research` / `lead_research_assistant` now run a real DuckDuckGo
+    web search (`ddgs`, no API key) instead of returning
+    "[Research findings would be presented here]".
+    `lead_research_assistant` deliberately does not fabricate contact
+    names/emails - it surfaces real candidate companies from search
+    results, not invented leads.
+  - `article_extractor` now actually fetches the URL and extracts
+    title/text (minimal dependency-free HTML parsing, not
+    readability-quality), instead of "[Article title would be extracted
+    here]".
+  - `csv_data_summarizer` now actually reads the file with pandas and
+    computes real row/column counts, missing-value detection, and
+    min/max/mean - instead of "[count]" placeholders.
+  - `postgres` now actually executes the query (previously had a "only
+    SELECT allowed" check gating nothing, since no query ever ran).
+    Read-only is enforced twice: app-level validation (rejects
+    multi-statement queries and a keyword blocklist) plus a real
+    `SET TRANSACTION READ ONLY` on the connection - verified against a
+    live Postgres that a SELECT-wrapped write (`SELECT setval(...)`)
+    that passes the app-level check is still rejected by Postgres
+    itself. Configured via `PIRANHA_POSTGRES_DSN`.
+  The remaining ~41 skills (docx/pdf/pptx/xlsx, frontend-design,
+  root-cause-tracing, etc.) are unchanged and mostly already disclose
+  "Full implementation requires X library" in their own output.
 - **`DynamicSkillCompiler.compile_and_execute()`** decoded base64 input and
   reported a hardcoded `success=True` with the byte count as "output" -
   it never executed anything. Now genuinely runs the decoded Wasm module.
@@ -87,6 +116,12 @@ passing test.
   options. Several docs previously referenced `piranha monitor` as if it
   already existed; it didn't - this makes that command real instead of
   aspirational.
+- `piranha_agent/skills/_web_research.py` - shared `web_search()`
+  (DuckDuckGo via `ddgs`, no API key) and `fetch_url_text()` (real HTTP
+  fetch + minimal text extraction, respects `allowed_hosts` egress
+  policy) helpers, backing the research skill fixes above. New core
+  dependencies: `ddgs`, `pandas`. New optional extra `[postgres]`
+  (`psycopg[binary]`) for the `postgres` skill.
 
 ### Removed
 
