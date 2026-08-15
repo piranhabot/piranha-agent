@@ -261,25 +261,25 @@ def create_provider(
     if provider_type == "ollama":
         return LLMProvider(
             model=f"ollama/{model}",
-            api_base=kwargs.get("api_base", "http://localhost:11434"),
+            api_base=kwargs.pop("api_base", "http://localhost:11434"),
             **kwargs,
         )
     elif provider_type == "openai":
         return LLMProvider(
             model=f"openai/{model}",
-            api_key=kwargs.get("api_key"),
+            api_key=kwargs.pop("api_key", None),
             **kwargs,
         )
     elif provider_type == "anthropic":
         return LLMProvider(
             model=f"anthropic/{model}",
-            api_key=kwargs.get("api_key"),
+            api_key=kwargs.pop("api_key", None),
             **kwargs,
         )
     elif provider_type == "gemini":
         return LLMProvider(
             model=f"gemini/{model}",
-            api_key=kwargs.get("api_key"),
+            api_key=kwargs.pop("api_key", None),
             **kwargs,
         )
     else:
