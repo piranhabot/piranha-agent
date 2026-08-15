@@ -75,7 +75,13 @@ def benchmark_event_store_append(runner: "BenchmarkRunner", event_store):
     assert result.throughput > 100
 
 def benchmark_semantic_cache_put(runner: "BenchmarkRunner", semantic_cache):
-    """Benchmark: Semantic cache put performance."""
+    """Benchmark: Semantic cache put performance.
+
+    put() computes a real embedding via a local Ollama call (nomic-embed-text)
+    to support fuzzy matching, so this is now network-bound (tens of ms per
+    call) rather than the ~600K ops/sec a fake hash-based embedding could
+    hit. The threshold below reflects that real cost, not the old fake one.
+    """
     def put_cache():
         semantic_cache.put(
             key=f"test_{time.time()}",
@@ -87,7 +93,7 @@ def benchmark_semantic_cache_put(runner: "BenchmarkRunner", semantic_cache):
         )
     result = runner.run("SemanticCache Put", put_cache, iterations=100)
     print(f"\nSemanticCache Put: {result.avg_time * 1000:.2f}ms avg, {result.throughput:.2f} ops/sec")
-    assert result.throughput > 500
+    assert result.throughput > 10
 
 def benchmark_semantic_cache_get(runner: "BenchmarkRunner", semantic_cache):
     """Benchmark: Semantic cache get performance."""

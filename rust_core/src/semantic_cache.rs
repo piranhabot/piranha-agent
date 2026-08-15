@@ -8,6 +8,8 @@ use parking_lot::Mutex;
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Duration as StdDuration;
+use tracing::warn;
 
 /// Embedding vector type
 pub type Embedding = Vec<f32>;
@@ -38,22 +40,44 @@ pub struct SemanticCache {
     max_entries: usize,
     total_savings_usd: Arc<Mutex<f64>>,
     similarity_threshold: f32,
+    ollama_base_url: String,
+    embedding_model: String,
 }
 
 impl SemanticCache {
     pub fn new(ttl_hours: i64, max_entries: usize) -> Self {
+        let ollama_base_url = std::env::var("OLLAMA_HOST")
+            .map(|host| {
+                if host.starts_with("http://") || host.starts_with("https://") {
+                    host
+                } else {
+                    format!("http://{host}")
+                }
+            })
+            .unwrap_or_else(|_| "http://localhost:11434".to_string());
+
         SemanticCache {
             entries: Arc::new(Mutex::new(HashMap::new())),
             ttl: Duration::hours(ttl_hours),
             max_entries,
             total_savings_usd: Arc::new(Mutex::new(0.0)),
             similarity_threshold: 0.85, // Default similarity threshold
+            ollama_base_url,
+            embedding_model: "nomic-embed-text".to_string(),
         }
     }
 
     /// Set similarity threshold for fuzzy matching (0.0 - 1.0)
     pub fn with_similarity_threshold(mut self, threshold: f32) -> Self {
         self.similarity_threshold = threshold.clamp(0.0, 1.0);
+        self
+    }
+
+    /// Override the Ollama endpoint and embedding model used for real
+    /// embeddings (mainly for tests/custom deployments).
+    pub fn with_ollama_config(mut self, base_url: String, embedding_model: String) -> Self {
+        self.ollama_base_url = base_url;
+        self.embedding_model = embedding_model;
         self
     }
 
@@ -67,19 +91,79 @@ impl SemanticCache {
         hex::encode(hash)
     }
 
-    /// Compute embedding for text (simple hash-based for demo)
-    /// In production, replace with real embeddings (sentence-transformers, etc.)
+    /// Compute a real semantic embedding for text via a local Ollama
+    /// instance (nomic-embed-text by default). Falls back to a
+    /// non-semantic, hash-based embedding if Ollama isn't reachable, so
+    /// the cache degrades to exact-ish matching rather than failing
+    /// outright - fuzzy matching just won't find topically-similar-but-
+    /// differently-worded entries in that case.
     pub fn compute_embedding(&self, text: &str) -> Embedding {
+        match self.compute_embedding_via_ollama(text) {
+            Ok(embedding) => embedding,
+            Err(e) => {
+                warn!(
+                    "Falling back to non-semantic embedding, Ollama unavailable: {}",
+                    e
+                );
+                self.compute_embedding_fallback(text)
+            }
+        }
+    }
+
+    fn compute_embedding_via_ollama(&self, text: &str) -> Result<Embedding, String> {
+        #[derive(serde::Serialize)]
+        struct EmbedRequest<'a> {
+            model: &'a str,
+            prompt: &'a str,
+        }
+
+        #[derive(serde::Deserialize)]
+        struct EmbedResponse {
+            embedding: Vec<f32>,
+        }
+
+        let client = reqwest::blocking::Client::builder()
+            .timeout(StdDuration::from_secs(10))
+            .build()
+            .map_err(|e| e.to_string())?;
+
+        let url = format!("{}/api/embeddings", self.ollama_base_url);
+        let response = client
+            .post(&url)
+            .json(&EmbedRequest {
+                model: &self.embedding_model,
+                prompt: text,
+            })
+            .send()
+            .map_err(|e| e.to_string())?;
+
+        if !response.status().is_success() {
+            return Err(format!("Ollama returned HTTP {}", response.status()));
+        }
+
+        let parsed: EmbedResponse = response.json().map_err(|e| e.to_string())?;
+        if parsed.embedding.is_empty() {
+            return Err("Ollama returned an empty embedding".to_string());
+        }
+
+        Ok(parsed.embedding)
+    }
+
+    /// Non-semantic fallback embedding (SHA-256 hash-based). Deterministic
+    /// and fast, but has no actual notion of meaning - two related-but-
+    /// differently-worded texts hash to unrelated vectors. Only used when
+    /// Ollama can't be reached.
+    fn compute_embedding_fallback(&self, text: &str) -> Embedding {
         let hash = Sha256::digest(text.as_bytes());
         let mut embedding = Vec::with_capacity(384);
-        
+
         for i in 0..384 {
             let byte_idx = i % hash.len();
             // Normalize to [-1, 1] range
             let value = ((hash[byte_idx] as f32) / 127.5) - 1.0;
             embedding.push(value);
         }
-        
+
         embedding
     }
 
@@ -316,10 +400,23 @@ mod tests {
         let text = "Hello, world!";
         let embedding1 = cache.compute_embedding(text);
         let embedding2 = cache.compute_embedding(text);
-        
-        // Same text should produce same embedding
+
+        // Same text should produce same embedding. Dimension isn't
+        // hardcoded here: it's 768 via a real nomic-embed-text call, or
+        // 384 via the non-semantic fallback if Ollama isn't reachable in
+        // this environment - both are valid, deterministic outcomes.
         assert_eq!(embedding1, embedding2);
-        assert_eq!(embedding1.len(), 384);
+        assert!(!embedding1.is_empty());
+    }
+
+    #[test]
+    fn test_embedding_fallback_is_deterministic_and_384_dim() {
+        let cache = SemanticCache::default();
+        let text = "some text";
+        let e1 = cache.compute_embedding_fallback(text);
+        let e2 = cache.compute_embedding_fallback(text);
+        assert_eq!(e1, e2);
+        assert_eq!(e1.len(), 384);
     }
 
     #[test]

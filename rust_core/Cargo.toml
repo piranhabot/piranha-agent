@@ -30,6 +30,9 @@ base64 = "0.21"
 deadpool-postgres = "0.12"
 tokio-postgres = "0.7"
 
+# Semantic cache: real embeddings via Ollama
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+
 [dev-dependencies]
 tempfile = "3.10"
 criterion = { version = "0.5", features = ["html_reports"] }

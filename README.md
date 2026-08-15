@@ -581,8 +581,8 @@ More frameworks worth knowing about, checked against the same criteria (except P
 | Component | Avg Time | Throughput | P95 | P99 |
 |-----------|----------|------------|-----|-----|
 | **EventStore Append** | 0.02ms | **59,263 ops/sec** | 0.02ms | 0.02ms |
-| **SemanticCache Put** | 0.00ms | **643,413 ops/sec** | 0.00ms | 0.00ms |
-| **SemanticCache Get** | 0.00ms | **1,499,093 ops/sec** | 0.00ms | 0.00ms |
+| **SemanticCache Put**¹ | ~27-37ms | **~27-38 ops/sec** | - | - |
+| **SemanticCache Get** | 0.00ms | **~495,000 ops/sec** | 0.00ms | 0.00ms |
 | **SkillRegistry Authorize** | 0.00ms | **4,530,021 ops/sec** | 0.00ms | 0.00ms |
 | **Guardrail Check** | 0.01ms | **197,095 ops/sec** | 0.00ms | 0.02ms |
 | **Wasm Validate** | 0.00ms | **1,633,801 ops/sec** | 0.00ms | 0.00ms |
@@ -590,6 +590,8 @@ More frameworks worth knowing about, checked against the same criteria (except P
 | **Metrics Collection** | 0.01ms | **103,506 ops/sec** | 0.02ms | 0.02ms |
 
 **Piranha is 50-100x faster** than competitors for core operations!
+
+¹ `SemanticCache.put()` computes a real embedding via a local Ollama call (`nomic-embed-text`) to support fuzzy matching, so it's network-bound - this replaced an earlier hash-based placeholder embedding that had no actual semantic meaning (and inflated this number to ~643K ops/sec). `get()` by exact key doesn't call the embedding model and stays fast.
 
 ### 📊 Visual Benchmarking
 You can view these benchmarks in real-time using Piranha Studio:
