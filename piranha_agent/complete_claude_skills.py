@@ -442,7 +442,7 @@ def brainstorming(idea: str, domain: str | None = None, constraints: list[str] |
 
 @skill(
     name="imagen",
-    description="Generate images using Google Gemini's image generation API",
+    description="Generate images via a real image-gen API (LiteLLM - DALL-E, Gemini/Imagen, etc.)",
     parameters={
         "type": "object",
         "properties": {
@@ -452,53 +452,66 @@ def brainstorming(idea: str, domain: str | None = None, constraints: list[str] |
         },
         "required": ["prompt"],
     },
+    permissions=["network_read", "external_api"],
 )
 def imagen(prompt: str, style: str | None = None, dimensions: str = "1024x1024") -> str:
-    """Image generation skill using Gemini/Imagen."""
+    """Image generation skill - real API call via LiteLLM, not a template.
+
+    Model defaults to PIRANHA_IMAGE_MODEL env var, falling back to
+    "dall-e-3" (needs OPENAI_API_KEY). Set PIRANHA_IMAGE_MODEL to any
+    LiteLLM-supported image model string (e.g. "gemini/imagen-3.0-generate-002"
+    with GEMINI_API_KEY) to use a different provider - same env-var-driven
+    config pattern as Agent's own LLM provider selection, not hardcoded to
+    one vendor like the old "via Gemini API" description implied.
+
+    This has not been live-tested in this session (no image-gen API key
+    available) - the call shape is verified against litellm's real
+    image_generation() signature, but treat it as less-verified than the
+    other skills fixed alongside it (web search, YouTube transcripts,
+    Postgres) which were tested against live services.
+    """
+    import os
+
+    full_prompt = f"{prompt}, {style} style" if style else prompt
+    model = os.environ.get("PIRANHA_IMAGE_MODEL", "dall-e-3")
+
+    try:
+        import litellm
+    except ImportError:
+        return "❌ Error: the 'imagen' skill requires litellm (should already be installed as a core dependency)"
+
+    try:
+        response = litellm.image_generation(prompt=full_prompt, model=model, size=dimensions, n=1)
+    except Exception as e:
+        return f"❌ Error generating image via '{model}': {e}"
+
+    image = response.data[0] if response.data else None
+    image_ref = (
+        f"URL: {image.get('url')}" if image and image.get("url")
+        else "base64 image data returned (not printed here)" if image and image.get("b64_json")
+        else "(no image data returned)"
+    )
+
     return f"""
 # Image Generation (Imagen)
 
 ## Prompt
-{prompt}
+{full_prompt}
 
-## Style
-{style or "Photorealistic"}
+## Model
+{model}
 
 ## Dimensions
 {dimensions}
 
 ## Generated Image
-[Image would be generated here via Gemini API]
-
-## Usage Example
-```python
-from google import genai
-
-client = genai.Client()
-response = client.models.generate_image(
-    model="imagen-3.0",
-    prompt="{prompt}",
-    config={{
-        "aspectRatio": "{dimensions}",
-        "style": "{style or 'photorealistic'}",
-    }}
-)
-```
-
-## Best Practices
-- Be specific and descriptive
-- Include style references
-- Specify lighting and mood
-- Mention composition preferences
-
----
-*Note: Full implementation requires Google Gemini API key*
+{image_ref}
 """
 
 
 @skill(
     name="reddit-fetch",
-    description="Fetch Reddit content via Gemini CLI when WebFetch is blocked",
+    description="Fetch real Reddit posts via the official Reddit API (read-only)",
     parameters={
         "type": "object",
         "properties": {
@@ -508,9 +521,69 @@ response = client.models.generate_image(
         },
         "required": ["subreddit"],
     },
+    permissions=["network_read"],
 )
 def reddit_fetch(subreddit: str, query: str | None = None, sort: str = "hot") -> str:
-    """Reddit content fetcher skill."""
+    """Reddit content fetcher - real posts via PRAW (Reddit's official API),
+    not the old "Gemini CLI" reference (that tool doesn't exist anywhere in
+    this codebase - it was never real).
+
+    Reddit's unauthenticated public .json endpoints now return 403 for most
+    non-browser clients (verified August 2026), so this requires a real,
+    free Reddit "script" app: create one at
+    https://www.reddit.com/prefs/apps, then set PIRANHA_REDDIT_CLIENT_ID
+    and PIRANHA_REDDIT_CLIENT_SECRET. No user login/password needed - this
+    only uses read-only app-only auth.
+    """
+    import os
+
+    client_id = os.environ.get("PIRANHA_REDDIT_CLIENT_ID")
+    client_secret = os.environ.get("PIRANHA_REDDIT_CLIENT_SECRET")
+    if not client_id or not client_secret:
+        return (
+            "❌ Error: PIRANHA_REDDIT_CLIENT_ID / PIRANHA_REDDIT_CLIENT_SECRET "
+            "environment variables are not set. Create a free Reddit \"script\" "
+            "app at https://www.reddit.com/prefs/apps and set both."
+        )
+
+    try:
+        import praw
+    except ImportError:
+        return (
+            "❌ Error: the 'reddit-fetch' skill requires praw. Install with: "
+            'pip install "piranha-agent[reddit]"'
+        )
+
+    try:
+        reddit = praw.Reddit(
+            client_id=client_id,
+            client_secret=client_secret,
+            user_agent="PiranhaAgent/1.0 (skill:reddit-fetch)",
+        )
+        sub = reddit.subreddit(subreddit)
+        if query:
+            # PRAW search sort values differ from listing sort - "rising"
+            # isn't a valid search sort, fall back to "hot" for search.
+            search_sort = sort if sort in ("relevance", "hot", "top", "new", "comments") else "hot"
+            submissions = list(sub.search(query, sort=search_sort, limit=10))
+        else:
+            listing = {"hot": sub.hot, "new": sub.new, "top": sub.top, "rising": sub.rising}[sort]
+            submissions = list(listing(limit=10))
+    except Exception as e:
+        return f"❌ Error fetching r/{subreddit}: {e}"
+
+    if not submissions:
+        posts_text = "(no posts found)"
+    else:
+        posts_text = "\n\n".join(
+            f"### {s.title}\n"
+            f"- **Author:** u/{s.author}\n"
+            f"- **Score:** {s.score}\n"
+            f"- **Comments:** {s.num_comments}\n"
+            f"- **URL:** https://reddit.com{s.permalink}"
+            for s in submissions
+        )
+
     return f"""
 # Reddit Fetch
 
@@ -523,37 +596,9 @@ r/{subreddit}
 ## Sort
 {sort}
 
-## Top Posts
+## Posts ({len(submissions)})
 
-### Post 1
-- **Title:** [Post title]
-- **Author:** u/[username]
-- **Score:** [upvotes]
-- **Comments:** [count]
-- **URL:** https://reddit.com/r/{subreddit}/...
-
-### Post 2
-- **Title:** [Post title]
-- **Author:** u/[username]
-- **Score:** [upvotes]
-- **Comments:** [count]
-- **URL:** https://reddit.com/r/{subreddit}/...
-
-### Post 3
-- **Title:** [Post title]
-- **Author:** u/[username]
-- **Score:** [upvotes]
-- **Comments:** [count]
-- **URL:** https://reddit.com/r/{subreddit}/...
-
-## Usage
-```bash
-# Via Gemini CLI
-gemini --fetch "reddit r/{subreddit} {sort} posts about {query}"
-```
-
----
-*Note: Requires Gemini CLI or Reddit API access*
+{posts_text}
 """
 
 
@@ -616,7 +661,7 @@ def meeting_insights_analyzer(transcript: str, analysis_type: str = "full") -> s
 
 @skill(
     name="competitive-ads-extractor",
-    description="Extract and analyze competitors' ads from ad libraries",
+    description="Find real web results about competitors' advertising (not a dedicated ad-library API)",
     parameters={
         "type": "object",
         "properties": {
@@ -625,9 +670,40 @@ def meeting_insights_analyzer(transcript: str, analysis_type: str = "full") -> s
         },
         "required": ["competitors"],
     },
+    permissions=["network_read"],
 )
 def competitive_ads_extractor(competitors: list[str], platform: str = "all") -> str:
-    """Competitive ads extractor."""
+    """Competitive ads extractor.
+
+    Real ad-library APIs (Meta Ad Library, Google Ads Transparency Center)
+    require gated developer credentials this skill doesn't have, and
+    scraping them directly is ToS-fragile. Instead of faking ad-specific
+    data with those APIs' shape, this does a real web search per
+    competitor for their advertising/campaigns and is honest about the
+    difference - it will NOT return per-ad creative/CTA/spend data the
+    way a real ad-library integration would.
+    """
+    from piranha_agent.skills._web_research import web_search
+
+    platform_term = "" if platform == "all" else f" {platform}"
+    sections = []
+    for competitor in competitors:
+        query = f"{competitor}{platform_term} advertising campaign"
+        try:
+            results = web_search(query, max_results=5)
+        except ImportError as e:
+            return f"❌ Error: {e}"
+        except Exception as e:
+            sections.append(f"### {competitor}\n❌ Error searching: {e}")
+            continue
+        if results:
+            hits = "\n".join(f"- [{r['title']}]({r['url']}) - {r['snippet']}" for r in results)
+        else:
+            hits = "(no results)"
+        sections.append(f"### {competitor}\n{hits}")
+
+    analysis = "\n\n".join(sections) if sections else "(no competitors provided)"
+
     return f"""
 # Competitive Ads Extractor
 
@@ -637,31 +713,15 @@ def competitive_ads_extractor(competitors: list[str], platform: str = "all") -> 
 ## Platform
 {platform}
 
-## Analysis
-
-### Competitor 1: {competitors[0] if competitors else 'N/A'}
-**Active Ads:** [count]
-**Top Messaging:** [messaging]
-**Creative Approach:** [approach]
-**CTA Strategy:** [CTA]
-
-### Competitor 2: {competitors[1] if len(competitors) > 1 else 'N/A'}
-**Active Ads:** [count]
-**Top Messaging:** [messaging]
-**Creative Approach:** [approach]
-**CTA Strategy:** [CTA]
-
-## Insights
-- Common themes: [themes]
-- Differentiation opportunities: [opportunities]
-- Gap analysis: [gaps]
-
-## Recommendations
-1. [Recommendation 1]
-2. [Recommendation 2]
+## Web Search Results (not ad-library data)
+{analysis}
 
 ---
-*Note: Requires ad library API access*
+*This is general web search about each competitor's advertising, not
+per-ad creative/CTA/spend data from Meta Ad Library or Google Ads
+Transparency Center - those require gated developer API access this
+skill doesn't have configured. Use these results as a research starting
+point, not a substitute for the real ad-library tools.*
 """
 
 
@@ -733,7 +793,7 @@ def domain_name_brainstormer(keywords: list[str], style: str = "all",
 
 @skill(
     name="youtube-transcript",
-    description="Fetch transcripts from YouTube videos and generate summaries",
+    description="Fetch real transcripts from YouTube videos",
     parameters={
         "type": "object",
         "properties": {
@@ -742,12 +802,45 @@ def domain_name_brainstormer(keywords: list[str], style: str = "all",
         },
         "required": ["video_url"],
     },
+    permissions=["network_read"],
 )
 def youtube_transcript(video_url: str, summarize: bool = True) -> str:
-    """YouTube transcript fetcher."""
-    # Extract video ID
+    """YouTube transcript fetcher - fetches the real transcript via
+    youtube-transcript-api (no API key needed).
+
+    "summarize" does NOT generate an LLM summary itself - this is a plain
+    function with no LLM access. When true, it just adds a note pointing
+    the calling agent at the real transcript text below to summarize -
+    previously this returned fabricated "[Point 1]"/"[Point 2]" bullets
+    and fake timestamps regardless of the video's actual content.
+    """
     video_id = video_url.split('v=')[-1].split('&')[0] if 'v=' in video_url else video_url.split('/')[-1]
-    
+
+    try:
+        from youtube_transcript_api import YouTubeTranscriptApi
+    except ImportError:
+        return (
+            "❌ Error: the 'youtube-transcript' skill requires the "
+            "youtube-transcript-api package. Install with: "
+            "pip install youtube-transcript-api"
+        )
+
+    try:
+        api = YouTubeTranscriptApi()
+        fetched = api.fetch(video_id)
+    except Exception as e:
+        return f"❌ Error fetching transcript for video ID '{video_id}': {e}"
+
+    lines = [f"[{snippet.start:.0f}s] {snippet.text}" for snippet in fetched]
+    transcript_text = "\n".join(lines)
+
+    summary_note = (
+        "\n## Summary\n*Not generated here - this skill has no LLM access. "
+        "Ask the calling agent to summarize the transcript above.*\n"
+        if summarize
+        else ""
+    )
+
     return f"""
 # YouTube Transcript
 
@@ -757,32 +850,9 @@ def youtube_transcript(video_url: str, summarize: bool = True) -> str:
 ## Video ID
 {video_id}
 
-## Transcript
-[Transcript would be fetched here]
-
-## Summary
-{'''
-### Key Points
-1. [Point 1]
-2. [Point 2]
-3. [Point 3]
-
-### Timestamps
-- 0:00 - Introduction
-- 1:30 - Main topic
-- 5:00 - Deep dive
-- 10:00 - Conclusion
-''' if summarize else ''}
-
-## Usage
-```python
-from youtube_transcript_api import YouTubeTranscriptApi
-transcript = YouTubeTranscriptApi.get_transcript('{video_id}')
-```
-
----
-*Note: Requires youtube-transcript-api or similar*
-"""
+## Transcript ({len(lines)} segments)
+{transcript_text}
+{summary_note}"""
 
 
 @skill(

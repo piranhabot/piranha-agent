@@ -34,6 +34,7 @@ dependencies = [
     "gradio>=4.0",
     "ddgs>=9.0.0",
     "pandas>=2.0.0",
+    "youtube-transcript-api>=1.0.0",
 ]
 
 [project.optional-dependencies]
@@ -42,6 +43,7 @@ github = ["agno>=1.0.0", "pygithub>=2.0.0"]
 slack = ["agno>=1.0.0", "slack-sdk>=3.27.0"]
 google-sheets = ["agno>=1.0.0", "google-api-python-client>=2.100.0", "google-auth-httplib2>=0.2.0", "google-auth-oauthlib>=1.2.0"]
 postgres = ["psycopg[binary]>=3.1.0"]
+reddit = ["praw>=7.7.0"]
 dev = [
     "maturin>=1.5",
     "pytest>=8.0",
@@ -54,7 +56,7 @@ dev = [
     "mkdocs-material>=9.5",
     "mkdocstrings[python]>=0.24",
 ]
-all = ["piranha-agent[dev]", "piranha-agent[claude-explorer]", "piranha-agent[github]", "piranha-agent[slack]", "piranha-agent[google-sheets]", "piranha-agent[postgres]"]
+all = ["piranha-agent[dev]", "piranha-agent[claude-explorer]", "piranha-agent[github]", "piranha-agent[slack]", "piranha-agent[google-sheets]", "piranha-agent[postgres]", "piranha-agent[reddit]"]
 
 [project.urls]
 Homepage = "https://github.com/piranhabot/piranha-agent"

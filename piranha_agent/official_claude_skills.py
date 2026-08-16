@@ -845,22 +845,90 @@ LIMIT {limit}
 # Productivity & Workflow
 # =============================================================================
 
+_FILE_ORGANIZER_TYPE_CATEGORIES = {
+    "documents": {".pdf", ".docx", ".doc", ".txt", ".md", ".rtf", ".odt"},
+    "images": {".jpg", ".jpeg", ".png", ".svg", ".gif", ".bmp", ".webp"},
+    "code": {".py", ".js", ".ts", ".rs", ".go", ".java", ".c", ".cpp", ".rb"},
+    "data": {".csv", ".json", ".yaml", ".yml", ".xml", ".parquet"},
+}
+
+
+def _categorize_by_type(ext: str) -> str:
+    for category, exts in _FILE_ORGANIZER_TYPE_CATEGORIES.items():
+        if ext.lower() in exts:
+            return category
+    return "other"
+
+
+def _categorize_by_size(size_bytes: int) -> str:
+    if size_bytes < 1_000_000:
+        return "small"
+    if size_bytes < 100_000_000:
+        return "medium"
+    return "large"
+
+
 @skill(
     name="file-organizer",
-    description="Intelligently organize files and folders by understanding context",
+    description="Organize files in a directory by type, date, or size",
     parameters={
         "type": "object",
         "properties": {
             "directory": {"type": "string", "description": "Directory to organize"},
             "strategy": {"type": "string", "enum": ["by-type", "by-date", "by-project", "by-size"], "description": "Organization strategy"},
+            "dry_run": {"type": "boolean", "description": "If true (default), only report the plan - don't move any files"},
         },
         "required": ["directory"],
     },
+    permissions=["file_write"],
+    requires_confirmation=True,
 )
-def file_organizer(directory: str, strategy: str = "by-type") -> str:
-    """File organizer skill."""
-    return f"""
-# File Organizer
+def file_organizer(directory: str, strategy: str = "by-type", dry_run: bool = True) -> str:
+    """File organizer skill - actually scans and (optionally) moves files.
+
+    "by-project" is not implemented (grouping files by "project" requires
+    heuristics this skill doesn't have - see below); by-type/by-date/by-size
+    are real. Defaults to dry_run=True so a call without dry_run=False never
+    touches the filesystem, on top of the skill-level confirmation gate.
+    """
+    import shutil
+    from datetime import datetime
+    from pathlib import Path
+
+    if strategy == "by-project":
+        return (
+            "❌ Error: \"by-project\" is not implemented - grouping files by "
+            "project requires heuristics (e.g. shared config files, git repo "
+            "boundaries) this skill doesn't have. Use \"by-type\", \"by-date\", "
+            "or \"by-size\" instead."
+        )
+
+    root = Path(directory)
+    if not root.is_dir():
+        return f"❌ Error: not a directory: {directory}"
+
+    files = [p for p in root.iterdir() if p.is_file()]
+    plan: dict[str, list[Path]] = {}
+    for f in files:
+        if strategy == "by-type":
+            bucket = _categorize_by_type(f.suffix)
+        elif strategy == "by-date":
+            mtime = datetime.fromtimestamp(f.stat().st_mtime)
+            bucket = mtime.strftime("%Y-%m")
+        elif strategy == "by-size":
+            bucket = _categorize_by_size(f.stat().st_size)
+        else:
+            return f"❌ Error: unknown strategy: {strategy}"
+        plan.setdefault(bucket, []).append(f)
+
+    plan_lines = [f"- {bucket}/ ({len(paths)} files): {', '.join(p.name for p in paths[:5])}"
+                  + (f", ... +{len(paths) - 5} more" if len(paths) > 5 else "")
+                  for bucket, paths in sorted(plan.items())]
+    plan_text = "\n".join(plan_lines) if plan_lines else "(no files found in directory)"
+
+    if dry_run:
+        return f"""
+# File Organizer (dry run - no files moved)
 
 ## Directory
 {directory}
@@ -868,86 +936,127 @@ def file_organizer(directory: str, strategy: str = "by-type") -> str:
 ## Strategy
 {strategy}
 
-## Organization Plan
-
-### By Type
-```
-{directory}/
-├── documents/
-│   ├── pdf/
-│   ├── docx/
-│   └── txt/
-├── images/
-│   ├── jpg/
-│   ├── png/
-│   └── svg/
-├── code/
-│   ├── python/
-│   ├── javascript/
-│   └── rust/
-└── data/
-    ├── csv/
-    └── json/
-```
-
-## Actions
-1. Scan directory
-2. Categorize files
-3. Create folder structure
-4. Move files
-5. Generate report
+## Plan
+{plan_text}
 
 ---
-*Note: Full implementation requires file system access*
+*Call again with dry_run=False to actually move these {len(files)} file(s).*
+"""
+
+    moved = 0
+    errors = []
+    for bucket, paths in plan.items():
+        bucket_dir = root / bucket
+        bucket_dir.mkdir(exist_ok=True)
+        for f in paths:
+            try:
+                shutil.move(str(f), str(bucket_dir / f.name))
+                moved += 1
+            except Exception as e:
+                errors.append(f"{f.name}: {e}")
+
+    error_text = "\n".join(f"- {e}" for e in errors) if errors else "(none)"
+    return f"""
+# File Organizer (executed)
+
+## Directory
+{directory}
+
+## Strategy
+{strategy}
+
+## Result
+- Files moved: {moved}
+- Errors: {error_text}
+
+## Plan Applied
+{plan_text}
 """
 
 
 @skill(
     name="git-workflows",
-    description="Manage git workflows: branches, PRs, merges, and collaboration",
+    description="Run local git operations: status, branch, merge, rebase (PR creation redirects to the real github_create_pull_request skill)",
     parameters={
         "type": "object",
         "properties": {
             "action": {"type": "string", "enum": ["status", "branch", "merge", "pr", "rebase"], "description": "Git action"},
             "branch": {"type": "string", "description": "Branch name"},
+            "repo_path": {"type": "string", "description": "Path to the git repository (defaults to current directory)"},
         },
         "required": ["action"],
     },
+    permissions=["file_write"],
+    requires_confirmation=True,
 )
-def git_workflows(action: str, branch: str | None = None) -> str:
-    """Git workflows skill."""
+def git_workflows(action: str, branch: str | None = None, repo_path: str = ".") -> str:
+    """Git workflows skill - runs real local git commands via subprocess.
+
+    Previously returned a canned template showing ``git {action}`` as an
+    example command, next to the 39 real GitHub skills (github_create_*)
+    added earlier - with nothing indicating this one was fake. Now runs
+    real local git operations. "pr" is a GitHub API operation, not a local
+    git one - it redirects to github_create_pull_request rather than
+    reimplementing GitHub API calls a second time.
+
+    requires_confirmation=True applies to every action here (including
+    read-only "status") because this single function multiplexes both
+    safe and repo-mutating operations (merge/rebase) - the framework's
+    confirmation gate can't distinguish which action a given call is for.
+    """
+    import subprocess
+
+    if action == "pr":
+        return (
+            "ℹ️ Creating a pull request is a GitHub API operation, not a "
+            "local git one. Use the real `github_create_pull_request` skill "
+            "instead (see piranha_agent/skills/github_tools.py / skills.md) "
+            "rather than this local-git skill."
+        )
+
+    if action == "status":
+        cmd = ["git", "status", "--short", "--branch"]
+    elif action == "branch":
+        cmd = ["git", "branch", branch] if branch else ["git", "branch", "--list"]
+    elif action == "merge":
+        if not branch:
+            return "❌ Error: 'branch' is required for the merge action"
+        cmd = ["git", "merge", branch]
+    elif action == "rebase":
+        if not branch:
+            return "❌ Error: 'branch' is required for the rebase action"
+        cmd = ["git", "rebase", branch]
+    else:
+        return f"❌ Error: unknown action: {action}"
+
+    try:
+        result = subprocess.run(
+            cmd, cwd=repo_path, capture_output=True, text=True, timeout=30
+        )
+    except FileNotFoundError:
+        return "❌ Error: git is not installed or not on PATH"
+    except subprocess.TimeoutExpired:
+        return f"❌ Error: `{' '.join(cmd)}` timed out after 30s"
+
+    output = result.stdout.strip() or "(no output)"
+    if result.returncode != 0:
+        return f"❌ Error running `{' '.join(cmd)}`:\n{result.stderr.strip() or output}"
+
     return f"""
 # Git Workflows
 
 ## Action
 {action}
 
-## Branch
-{branch or "current"}
-
-## Commands
-
-### Status Check
+## Command
 ```bash
-git status
-git branch -a
-git log --oneline -10
+{' '.join(cmd)}
 ```
 
-### {action.title()}
-```bash
-git {'checkout -b ' + branch if branch == 'new' else action}
+## Output
 ```
-
-## Best Practices
-- ✓ Commit frequently with clear messages
-- ✓ Create feature branches for new work
-- ✓ Review changes before committing
-- ✓ Sync with remote regularly
-- ✓ Use descriptive PR descriptions
-
----
-*Based on git best practices*
+{output}
+```
 """
 
 

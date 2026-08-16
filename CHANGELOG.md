@@ -41,7 +41,48 @@ passing test.
     live Postgres that a SELECT-wrapped write (`SELECT setval(...)`)
     that passes the app-level check is still rejected by Postgres
     itself. Configured via `PIRANHA_POSTGRES_DSN`.
-  The remaining ~41 skills (docx/pdf/pptx/xlsx, frontend-design,
+  Fixed 6 more identified by a follow-up full audit of all 46:
+  - `git-workflows` was the worst of the six - it duplicated the 39 real
+    GitHub skills added earlier this session with nothing indicating it
+    was the fake one. Now runs real local git (`status`/`branch`/`merge`/
+    `rebase` via subprocess); `pr` redirects to the real
+    `github_create_pull_request` skill instead of reimplementing GitHub
+    API calls a second time.
+  - `file-organizer` now actually scans and moves files (by-type/by-date/
+    by-size are real; by-project is honestly left unimplemented rather
+    than faked). Defaults to `dry_run=True` on top of
+    `requires_confirmation=True`, so a call never touches the filesystem
+    unless both the dry-run default and the confirmation gate are
+    explicitly overridden.
+  - `youtube-transcript` now fetches the real transcript via
+    `youtube-transcript-api` (no API key). `summarize=True` no longer
+    fabricates "[Point 1]"/fake timestamps - it has no LLM access, so it
+    just points the calling agent at the real transcript text to
+    summarize itself.
+  - `reddit-fetch` now uses the real Reddit API (`praw`, read-only
+    app-only auth via `PIRANHA_REDDIT_CLIENT_ID`/`_SECRET`) instead of a
+    nonexistent "Gemini CLI" reference. Reddit's unauthenticated
+    `.json` endpoints return 403 for non-browser clients now (verified
+    August 2026), so real access needs a free Reddit "script" app.
+  - `imagen` now calls `litellm.image_generation()` for real (model
+    configurable via `PIRANHA_IMAGE_MODEL`, same env-driven pattern as
+    Agent's own LLM provider selection) instead of describing what a
+    Gemini API call would look like.
+  - `competitive-ads-extractor` now runs a real web search per
+    competitor instead of "[count]"/"[messaging]" placeholders. Real ad-
+    library APIs (Meta Ad Library, Google Ads Transparency Center)
+    need gated developer credentials this doesn't have; the output says
+    so explicitly rather than presenting search results as if they were
+    ad-library data.
+
+  `reddit-fetch` and `imagen` were verified only against mocked calls
+  matching each library's real documented API shape - no live Reddit
+  app or image-gen API key was available this session to test them
+  end-to-end, unlike the other 9 skills fixed above (all confirmed
+  against live services: DuckDuckGo, a real fetched URL, a real CSV, a
+  live Postgres, a real YouTube video, and local git on this repo).
+
+  The remaining ~35 skills (docx/pdf/pptx/xlsx, frontend-design,
   root-cause-tracing, etc.) are unchanged and mostly already disclose
   "Full implementation requires X library" in their own output.
 - **`DynamicSkillCompiler.compile_and_execute()`** decoded base64 input and
@@ -120,8 +161,8 @@ passing test.
   (DuckDuckGo via `ddgs`, no API key) and `fetch_url_text()` (real HTTP
   fetch + minimal text extraction, respects `allowed_hosts` egress
   policy) helpers, backing the research skill fixes above. New core
-  dependencies: `ddgs`, `pandas`. New optional extra `[postgres]`
-  (`psycopg[binary]`) for the `postgres` skill.
+  dependencies: `ddgs`, `pandas`, `youtube-transcript-api`. New optional
+  extras: `[postgres]` (`psycopg[binary]`) and `[reddit]` (`praw`).
 
 ### Removed
 
