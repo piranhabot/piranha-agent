@@ -75,3 +75,6 @@ secrets/
 *.db
 *.sqlite
 /tmp/piranha_debug.db
+
+# Next.js build output
+.next/
