@@ -74,7 +74,7 @@ def test_deep_research_uses_real_search_results():
 
     mock_search.assert_called_once_with("quantum computing", max_results=3)
     assert "Paper A" in result
-    assert "https://a.example.com" in _urls_in(result)
+    assert {"https://a.example.com"} <= set(_urls_in(result))
     assert "[Research findings would be presented here]" not in result
 
 
@@ -103,7 +103,7 @@ def test_lead_research_assistant_uses_real_search_results_not_fabricated_contact
 
     assert mock_search.call_args.args[0] == "robotics companies in Japan"
     assert "Acme Corp" in result
-    assert "https://acme.example.com" in _urls_in(result)
+    assert {"https://acme.example.com"} <= set(_urls_in(result))
     # Must not present fabricated contact names/emails as if real
     assert "[Name]" not in result
     assert "[Email]" not in result
